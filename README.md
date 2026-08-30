@@ -111,7 +111,7 @@ sees, and results are held inside Chrome's 1.5K character budget.
 | `show_in_catalog` | Put the agent's own search on the shopper's screen |
 | `list_compatible_parts` | Parts for one slot that fit the build on screen |
 | `set_build_component` | Fit a part, or return a slot to its default |
-| `check_build_compatibility` | Conflicts in plain sentences, plus power headroom |
+| `check_build_compatibility` | All nine slots with stock and delivery, conflicts in plain sentences, power headroom |
 | `estimate_performance` | Frame rate, noise, price, power and delivery |
 | `explain_build_bottleneck` | The part holding the frame rate down, and what it costs |
 | `fix_build_issue` | Swaps that clear a conflict, smallest price change first |

@@ -176,8 +176,11 @@ export interface BuildProposal {
   fps: number;
   watt: number;
   issues: string[];
-  /** Budget left unspent. Negative when the cheapest machine costs more. */
-  headroom: number;
+  /**
+   * Money left unspent, in US dollars. Negative when the cheapest machine
+   * costs more. Named for what it is: PSU headroom is `powerReport.headroomW`.
+   */
+  budgetRemainingUSD: number;
   /** The most this proposal was allowed to cost. */
   cap: number;
   withinBudget: boolean;
@@ -352,7 +355,7 @@ export function recommendBuild(budget: number, res: Resolution = "1440p", quiet 
     fps: numbers.fps,
     watt: numbers.watt,
     issues: compatibilityIssues(complete),
-    headroom: budget - numbers.price,
+    budgetRemainingUSD: budget - numbers.price,
     cap: Math.round(cap),
     withinBudget: numbers.price <= cap,
     ...(numbers.price > cap ? { cheapestPossible: floor.price } : {}),
