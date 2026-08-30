@@ -1,7 +1,4 @@
-import type { Part, PcSlot } from "../types";
-
-/** Parts the shop always includes at no charge. */
-export const FIXED: { slot: PcSlot; cat: string; icon: string; name: string; note: string; price: number; days: number }[] = [];
+import type { Part } from "../types";
 
 export type FacetDefinition = { id: string; label: string; get(product: Part): string | string[] | undefined };
 

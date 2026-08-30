@@ -1,15 +1,14 @@
 import React from "react";
 import "./styles.css";
-import { FIXED } from "./app/catalogFacets";
 import { buildVals } from "./app/buildVals";
 import { RigsmithView } from "./app/RigsmithView";
 import type { AppState } from "./app/AppState";
 import { stateFromLocation, urlForState } from "./app/navigation";
 import {
-  CATALOG, DEFAULT_PICKS, GUIDED, ORDER,
+  CATALOG, DEFAULT_PICKS, ORDER,
 } from "./data/catalog";
-import { RES, compatibilityIssues, money, noiseWord, shipDate } from "./data/metrics";
-import type { PcSlot, Picks, Route } from "./types";
+import { metrics, money, noiseWord, shipDate } from "./data/metrics";
+import type { CartLine, PcSlot, Picks, Route, Slot } from "./types";
 
 /**
  * The whole shop. State, the metrics model, and the derived value bag are the
@@ -18,15 +17,24 @@ import type { PcSlot, Picks, Route } from "./types";
 // ADR 0002: this controller owns the active build for UI and future tool bindings.
 // docs/decisions/0002-single-build-state-and-domain-view-models.md
 export class RigsmithApp extends React.Component<{}, AppState> {
+  /**
+   * The mounted controller, for code that lives outside the React tree —
+   * WebMCP tool handlers above all. A class instance is the right holder here:
+   * `this` never goes stale the way a hook closure does, so a tool registered
+   * once at mount always reads and writes the current build.
+   */
+  static instance: RigsmithApp | null = null;
+
   state: AppState = {
-    route: "home", pickerSlot: null, productId: DEFAULT_PICKS.gpu, category: "gpu", productSlot: "gpu",
+    route: "home", productId: DEFAULT_PICKS.gpu, category: "gpu", productSlot: "gpu",
     catalogOpen: false, dept: "pc", openDept: null,
     picks: { ...DEFAULT_PICKS },
-    builderSlot: "gpu", builderSearch: "",
-    gStep: 0, gDone: [], cornerMin: true, cornerX: null, cornerY: null,
+    chosen: [],
+    builderSlot: "cpu", builderSearch: "", builderCompatibleOnly: true, builderFacets: {},
+    cornerMin: true, cornerX: null, cornerY: null,
     budget: 1800, target: 144, res: "1440p", quiet: true,
-    fitOnly: true, minPrice: 0, maxPrice: 2200, useFilter: "any", brand: "any", facetFilters: {}, sort: "popular", stockOnly: false, onSale: false, search: "",
-    lastChange: null, prev: null, inCart: false, step: 0, toast: null, saved: 2, scrolled: false,
+    fitOnly: false, fastShip: false, minPrice: 0, maxPrice: 2200, useFilter: "any", brand: "any", facetFilters: {}, sort: "popular", stockOnly: false, onSale: false, search: "",
+    lastChange: null, prev: null, cart: [], step: 0, toast: null, saved: 2,
   };
 
   private t?: number;
@@ -40,6 +48,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   };
 
   componentDidMount() {
+    RigsmithApp.instance = this;
     window.addEventListener("resize", this.onResize);
     window.addEventListener("popstate", this.onPopState);
     const next = stateFromLocation();
@@ -51,6 +60,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     }
   }
   componentWillUnmount() {
+    if (RigsmithApp.instance === this) RigsmithApp.instance = null;
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("popstate", this.onPopState);
     clearTimeout(this.t);
@@ -62,7 +72,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
       this.syncingFromUrl = false;
       return;
     }
-    const navigationChanged = prevState.route !== this.state.route || prevState.category !== this.state.category || prevState.productId !== this.state.productId || prevState.dept !== this.state.dept || prevState.openDept !== this.state.openDept;
+    const navigationChanged = prevState.route !== this.state.route || prevState.category !== this.state.category || prevState.productId !== this.state.productId || prevState.dept !== this.state.dept || prevState.openDept !== this.state.openDept || prevState.brand !== this.state.brand;
     if (navigationChanged) {
       const nextUrl = urlForState(this.state);
       if (nextUrl !== window.location.pathname) window.history.pushState({}, "", nextUrl);
@@ -85,21 +95,38 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     return CATALOG[slot].find(x => x.id === p[slot])!;
   }
 
+  /** Delegates to the one model in data/metrics.ts. ADR 0002. */
   metrics(picks?: Picks) {
-    const gpu = this.part("gpu", picks), cpu = this.part("cpu", picks);
-    const ram = this.part("ram", picks), storage = this.part("storage", picks), cooler = this.part("cooler", picks);
-    const board = this.part("board", picks), psu = this.part("psu", picks);
-    const cs = this.part("case", picks), fans = this.part("fans", picks);
-    const chosen = [gpu, cpu, board, ram, storage, cooler, psu, cs, fans];
-    const price = chosen.reduce((a, p) => a + p.price, 0) + FIXED.reduce((a, p) => a + p.price, 0);
-    const factor = Math.min(1, cpu.score! / 100) * Math.min(1, ram.score! / 100);
-    const fps = Math.round(gpu.fps! * factor * RES[this.state.res]);
-    const noise = Math.max(gpu.noise!, cooler.noise!) + (fans.id === "f6" ? 1.2 : 0);
-    const days = Math.max(...chosen.map(p => p.days), ...FIXED.map(p => p.days));
-    const watt = (gpu.watt ?? 0) + (cpu.cpuPowerW ?? 65) + 80;
-    const issues = compatibilityIssues(picks || this.state.picks);
-    const fits = issues.length === 0;
-    return { price, fps, noise, days, watt, fits, issues, gpu, cpu, ram, storage, cooler };
+    return metrics(picks || this.state.picks, this.state.res);
+  }
+
+  // Cart ---------------------------------------------------------------
+  /** Adds a catalog product, merging with an existing line of the same product. */
+  addToCart(slot: Slot, id: string, qty = 1) {
+    const at = this.state.cart.findIndex(line => line.kind === "product" && line.id === id);
+    const cart = at >= 0
+      ? this.state.cart.map((line, index) => index === at ? { ...line, qty: line.qty + qty } : line)
+      : [...this.state.cart, { kind: "product", id, slot, qty } as CartLine];
+    const name = CATALOG[slot].find(part => part.id === id)?.name ?? "Product";
+    this.setState({ cart, toast: `${name} added to cart` }, () => this.flash());
+  }
+
+  /** The assembled machine is one line; adding it twice does nothing. */
+  addBuildToCart() {
+    if (this.state.cart.some(line => line.kind === "build")) { this.setState({ route: "cart" }); return; }
+    this.setState({
+      cart: [...this.state.cart, { kind: "build", id: "build", qty: 1 }],
+      route: "cart", toast: "Build added to cart",
+    }, () => this.flash());
+  }
+
+  setCartQty(index: number, qty: number) {
+    if (qty < 1) return this.removeCartLine(index);
+    this.setState({ cart: this.state.cart.map((line, at) => at === index ? { ...line, qty } : line) });
+  }
+
+  removeCartLine(index: number) {
+    this.setState({ cart: this.state.cart.filter((_, at) => at !== index), toast: "Removed from cart" }, () => this.flash());
   }
 
   shipDate(days: number) { return shipDate(days); }
@@ -120,12 +147,28 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   flash() { clearTimeout(this.t); this.t = window.setTimeout(() => this.setState({ toast: null }), 2400); }
   go = (r: Route) => this.setState({ route: r, toast: null, catalogOpen: r === "category" || r === "product" ? this.state.catalogOpen : false });
 
+  toggleBuilderFacet(id: string, value: string) {
+    const selected = this.state.builderFacets[id] || [];
+    const next = selected.includes(value) ? selected.filter(item => item !== value) : [...selected, value];
+    this.setState({ builderFacets: { ...this.state.builderFacets, [id]: next } });
+  }
+
   toggleFacet(id: string, value: string) {
     const selected = this.state.facetFilters[id] || [];
     const next = selected.includes(value) ? selected.filter(item => item !== value) : [...selected, value];
     this.setState({ facetFilters: { ...this.state.facetFilters, [id]: next } });
   }
 
+  /** Slots the shopper has explicitly chosen, as a partial build. */
+  chosenPicks(): Partial<Picks> {
+    return Object.fromEntries(this.state.chosen.map(slot => [slot, this.state.picks[slot]])) as Partial<Picks>;
+  }
+
+  private withChosen(slot: PcSlot) {
+    return this.state.chosen.includes(slot) ? this.state.chosen : [...this.state.chosen, slot];
+  }
+
+  /** The one write path into the active build. ADR 0002. */
   set(slot: PcSlot, id: string) {
     const before = this.metrics();
     const picks = { ...this.state.picks, [slot]: id };
@@ -133,7 +176,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     const item = CATALOG[slot].find(x => x.id === id)!;
     const dp = after.price - before.price, df = after.fps - before.fps;
     this.setState({
-      picks, prev: this.state.picks, route: "builder", pickerSlot: null,
+      picks, chosen: this.withChosen(slot), prev: this.state.picks, route: "builder",
       lastChange: {
         icon: (ORDER.find(o => o.slot === slot) || ({} as any)).icon || "build",
         title: "Changed to " + item.name,
@@ -144,6 +187,25 @@ export class RigsmithApp extends React.Component<{}, AppState> {
         ],
       },
       toast: "Build updated — everything re-checked",
+    });
+    this.flash();
+  }
+
+  /** Recommended build order: each part constrains the ones after it. */
+  static readonly BUILD_STEPS: PcSlot[] = ["cpu", "board", "ram", "gpu", "storage", "cooler", "psu", "case", "fans"];
+
+  /** Builder-screen selection: same write path, then move to the next gap. */
+  setBuilderPart(slot: PcSlot, id: string) {
+    const chosen = this.withChosen(slot);
+    const next = RigsmithApp.BUILD_STEPS.find(step => !chosen.includes(step));
+    this.setState({
+      picks: { ...this.state.picks, [slot]: id },
+      chosen,
+      prev: this.state.picks,
+      builderSlot: next ?? slot,
+      builderSearch: "",
+      builderFacets: {},
+      toast: `${CATALOG[slot].find(part => part.id === id)?.name ?? "Part"} selected`,
     });
     this.flash();
   }
@@ -168,22 +230,6 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);
   };
-
-  gAdvance(slot: PcSlot) {
-    const done = this.state.gDone.includes(slot) ? this.state.gDone : [...this.state.gDone, slot];
-    const at = GUIDED.indexOf(slot);
-    const last = at >= GUIDED.length - 1;
-    this.setState({
-      gDone: done, gStep: last ? at : at + 1, route: last ? "builder" : "guided",
-      toast: last ? "Build complete — nine parts installed" : null,
-    });
-    if (last) this.flash();
-  }
-
-  gPick(slot: PcSlot, id: string) {
-    this.setState({ picks: { ...this.state.picks, [slot]: id }, prev: this.state.picks });
-    this.gAdvance(slot);
-  }
 
   /** Everything the screens read. One place, so no screen computes its own numbers. */
   vals() { return buildVals(this); }

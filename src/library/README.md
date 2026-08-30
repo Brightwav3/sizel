@@ -23,7 +23,9 @@ RigsmithApp
 
 ## State ownership
 
-`AppState.picks` is the only active PC build. Screens do not keep a second writable copy. Builder selections call the controller's existing mutation path, so totals, compatibility, overlays, cart, and checkout update together.
+`AppState.picks` is the only active PC build. Screens do not keep a second writable copy. Builder selections call the controller's existing mutation path, so totals, compatibility, overlays, cart, and checkout update together. `AppState.chosen` records which slots the shopper picked explicitly; the untouched slots keep their defaults so metrics stay defined. `RigsmithApp.set` and `setBuilderPart` are the only write paths, and `RigsmithApp.instance` exposes the mounted controller to code outside the tree.
+
+Catalog reads live in `domain/queries.ts` — pure functions over the catalog with no React, styling, or closures. The view-models and any tool layer call the same `searchProducts` / `facetSummary`, so a machine-readable result cannot drift from the listing on screen.
 
 See `docs/decisions/0002-single-build-state-and-domain-view-models.md`.
 
