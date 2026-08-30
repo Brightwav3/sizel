@@ -1,6 +1,6 @@
 # Rigsmith
 
-Rigsmith is a fictional electronics shop and PC configurator built for a human-and-agent workflow. The app includes a 135-product local catalog, component selection, compatibility checks, a persistent build summary, and checkout screens.
+Rigsmith is a fictional electronics shop and PC configurator built for a human-and-agent workflow. It carries a local catalog of 135 product records, shown as 164 listings once phones and consoles expand into their storage tiers, with component selection, compatibility checks, a persistent build summary, and checkout screens. The same catalog and the same live build are exposed to browser agents through 33 WebMCP tools.
 
 All products, brands, logos, and product images are fictional. The application does not depend on an external catalog API.
 
@@ -26,15 +26,20 @@ submission period.
 | `npm run dev` | Start the Vite development server |
 | `npm run build` | Type-check and create a production build |
 | `npm run preview` | Preview the production build |
+| `npm test` | Run the test suite once |
+| `npm run test:watch` | Run the tests in watch mode |
 | `npm run check:catalog` | Validate product IDs, category coverage, SQLite, brands, and image paths |
 | `npm run audit:catalog` | Validate the catalog adapter, routes, and screens |
 
 ## Product capabilities
 
-- Browse 135 products across PC parts, phones, and consoles.
-- Filter by price, brand, availability, and technical specifications.
+- Browse 164 listings across PC parts, phones, and consoles.
+- Filter by price, brand, availability, and per-category technical facets.
+- Choose a storage tier or finish on phones and consoles.
+- Read ratings and reviews.
 - Build a nine-part PC from one shared application state.
 - Check socket, memory, case-clearance, cooling, and power compatibility.
+- Watch a listing for stock or a price drop.
 - Carry the same build into the floating summary, cart, and checkout.
 
 ## Architecture
@@ -44,13 +49,21 @@ submission period.
 ```text
 src/
   app/          application composition, routes, and state
+  app/webmcp/   WebMCP tool definitions and their registration lifecycle
   features/     catalog, product, search, cart, checkout, and PC builder
-  entities/     reusable product queries and build calculations
+  entities/     reusable product, build, cart, and checkout rules
   shared/       UI primitives, layout, styles, and shared types
   data/catalog/ canonical catalog adapter and storefront listing data
 ```
 
-The canonical frontend catalog is `public/catalog/products.json`. Architectural decisions are recorded in `docs/decisions/`.
+Each domain rule has one owner, read by both a screen and a tool: build
+metrics and compatibility in `entities/build`, cart totals in `entities/cart`,
+checkout fields in `entities/checkout`. An agent therefore cannot quote a
+figure the shopper is not looking at.
+
+The canonical frontend catalog is `public/catalog/products.json`. Architectural
+decisions are recorded in `docs/decisions/`, and `docs/ARCHITECTURE.md`
+describes the UI layering.
 
 ## WebMCP Challenge status
 
@@ -104,6 +117,15 @@ not: `add_build_to_cart` refuses outright while a conflict is open, and
 `start_checkout` stops at the delivery step rather than placing an order.
 `get_reviews` returns text written by other shoppers, so it carries
 `untrustedContentHint`.
+
+### Documentation
+
+| Document | What it covers |
+| --- | --- |
+| [docs/webmcp-tools.md](docs/webmcp-tools.md) | Every tool: parameters, results, screens, error codes |
+| [docs/webmcp-architecture.md](docs/webmcp-architecture.md) | How the layer works, budgets, safety posture, performance, testing |
+| [docs/build-recommendation.md](docs/build-recommendation.md) | How `recommend_build` decides, measured, with its known limits |
+| [docs/decisions/](docs/decisions/) | Architectural decision records |
 
 ### Running the tools locally
 

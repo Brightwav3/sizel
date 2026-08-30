@@ -19,18 +19,27 @@ RigsmithApp
 - `src/features/` owns route experiences and their feature-specific view-models.
 - `src/shared/layout/` owns persistent navigation and the application shell.
 - `src/shared/ui/` owns reusable presentation primitives.
+- `src/app/webmcp/` registers the WebMCP tools and reads the same state the screens do.
 
 ## State ownership
 
 `AppState.picks` is the only active PC build. Screens do not keep a second writable copy. Builder selections call the controller's existing mutation path, so totals, compatibility, overlays, cart, and checkout update together. `AppState.chosen` records which slots the shopper picked explicitly; the untouched slots keep their defaults so metrics stay defined. `RigsmithApp.set` and `setBuilderPart` are the only write paths, and `RigsmithApp.instance` exposes the mounted controller to code outside the tree.
 
+WebMCP tool handlers write through that same controller — `set`, `resetSlot`, `undoBuild`, `setTargets`, `applyPicks`, `showInCatalog` — so an agent is not a second owner of the build. Handlers compute their reply from the values they hand the controller rather than reading state back, because React applies state on its own schedule.
+
 Catalog reads live in `src/entities/product/queries.ts` — pure functions over the catalog with no React, styling, or closures. The view-models and any tool layer call the same `searchProducts` / `facetSummary`, so a machine-readable result cannot drift from the listing on screen.
 
-See `docs/decisions/0002-single-build-state-and-domain-view-models.md`.
+See `docs/decisions/0002-single-build-state-and-domain-view-models.md`, and `docs/decisions/0006-webmcp-tools-follow-the-screen.md` for the tool layer.
 
 ## Data boundary
 
-`src/data/catalog/realCatalog.ts` adapts `public/catalog/products.json` into the UI model. Product IDs and source specifications remain stable. `src/entities/build/metrics.ts` owns compatibility and derived build metrics.
+`src/data/catalog/realCatalog.ts` adapts `public/catalog/products.json` into the UI model. Product IDs and source specifications remain stable. `src/data/catalog/catalogIndex.ts` holds the id lookup the compatibility checks resolve through; the catalog is built once and never changes, so it is a map rather than a scan.
+
+One owner per domain rule, each read by both a screen and a tool:
+
+- `src/entities/build/metrics.ts` — compatibility and derived build metrics. `buildFits` answers the same seven rules as `compatibilityIssues` without composing the sentences, for callers that only branch on the answer; a test holds the two to the same verdict across every constrained combination in the catalog.
+- `src/entities/cart/cartTotals.ts` — what a cart costs, including the free-shipping threshold.
+- `src/entities/checkout/checkoutSteps.ts` — the checkout steps and the fields each asks for.
 
 ## Styling
 
