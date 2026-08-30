@@ -123,6 +123,13 @@ describe("search_products filters", () => {
     expect(result.hint).toContain("cpu-socket");
   });
 
+  it("reaches list_compatible_parts too, and names a bad one there as well", () => {
+    const tool = TOOLS.find(entry => entry.name === "list_compatible_parts")!;
+    expect((tool.inputSchema as any).properties.filters, "filters parameter missing").toBeDefined();
+    const result = JSON.parse(text(tool.execute({ slot: "gpu", filters: { "cpu-socket": ["AM5"] } }) as any));
+    expect(result.error).toBe("unknown_filter");
+  });
+
   it("refuses filters without a category, because facets are per category", () => {
     expect(JSON.parse(call("search_products", { query: "rtx", filters: { "gpu-memory": ["16 GB"] } })).error)
       .toBe("category_required");
@@ -157,7 +164,7 @@ describe("get_checkout_fields", () => {
 });
 
 describe("recommend_build", () => {
-  it.each([900, 1500, 2400, 4000])("returns a compatible machine for $%i", budget => {
+  it.each([900, 1500, 2400, 4000])("returns a compatible machine for %i dollars", budget => {
     const proposal = recommendBuild(budget);
     expect(compatibilityIssues(proposal.picks)).toEqual([]);
     expect(proposal.issues).toEqual([]);
@@ -165,7 +172,7 @@ describe("recommend_build", () => {
 
   const BUDGETS = [800, 1000, 1200, 1600, 2000, 2400, 3500, 5000];
 
-  it.each(BUDGETS)("keeps $%i inside the ten per cent it promises", budget => {
+  it.each(BUDGETS)("keeps %i dollars inside the ten per cent it promises", budget => {
     const proposal = recommendBuild(budget);
     expect(proposal.price).toBeLessThanOrEqual(budget * (1 + BUDGET_TOLERANCE));
     expect(proposal.withinBudget).toBe(true);
@@ -178,7 +185,7 @@ describe("recommend_build", () => {
     expect(proposal.cheapestPossible).toBe(floor);
   });
 
-  it.each(BUDGETS)("sizes the power supply to the draw at $%i, not to the wallet", budget => {
+  it.each(BUDGETS)("sizes the power supply to the draw at %i dollars, not to the wallet", budget => {
     const report = powerReport(recommendBuild(budget).picks);
     expect(report.ok).toBe(true);
     // Enough headroom to be legal, not so much that the shopper paid for air.
