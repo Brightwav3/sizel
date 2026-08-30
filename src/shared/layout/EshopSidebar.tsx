@@ -116,8 +116,8 @@ export const EshopSidebar: React.FC<{ v: Vals }> = ({ v }) => {
             <nav aria-label="Shop categories" className="eshop-rail-list">{departmentItems}</nav>
           )}
           {v.isHome && <div className="eshop-audience-services" aria-label="Upcoming Rigsmith services">
-            <div className="eshop-audience-service" aria-disabled="true"><span className="audience-icon is-student"><span className="ms">school</span></span><span><strong>Rigsmith for students</strong><small>Student pricing and study-ready tech</small></span><em>Soon</em></div>
-            <div className="eshop-audience-service" aria-disabled="true"><span className="audience-icon is-business"><span className="ms">business</span></span><span><strong>Rigsmith for firms</strong><small>Bulk orders and company hardware</small></span><em>Soon</em></div>
+            <div className="eshop-audience-service" aria-disabled="true"><span className="audience-icon"><img src="/rigsmith-promos/students.png" alt="" /></span><span><strong>Rigsmith for students</strong><small>Student pricing and study-ready tech</small></span><em>Soon</em></div>
+            <div className="eshop-audience-service" aria-disabled="true"><span className="audience-icon"><img src="/rigsmith-promos/firms.png" alt="" /></span><span><strong>Rigsmith for firms</strong><small>Bulk orders and company hardware</small></span><em>Soon</em></div>
           </div>}
         </div>
         {(v.isCategory || v.isProduct) && (
