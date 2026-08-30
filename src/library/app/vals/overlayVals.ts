@@ -7,6 +7,11 @@ import type { BuildContext } from "../buildContext";
  * The floating build card. It reports the build the shopper is actually
  * assembling — the slots they have chosen — rather than the progress of the
  * guided flow the app no longer has.
+ *
+ * It appears only once there is a build to report. The configurator is one
+ * service among several, so a shopper who has not opened it should not be
+ * followed around the shop by a card counting to zero; the sidebar, the home
+ * hero and the product page all still lead into it.
  */
 export function buildOverlayVals(context: BuildContext) {
   const { app, s, m, route } = context;
@@ -16,6 +21,7 @@ export function buildOverlayVals(context: BuildContext) {
   const started = s.chosen.length > 0 && s.chosen.length < steps.length;
 
   return {
+      cornerShow: s.chosen.length > 0,
       cornerOpen: route !== "builder" ? "true" : "false",
       cornerTransform: "translate(" + app.dockPoint().x + "px," + app.dockPoint().y + "px)",
       cornerExpanded: !s.cornerMin, cornerCollapsed: s.cornerMin,

@@ -9,7 +9,7 @@ import type { PcSlot } from "../../types";
 import type { BuildContext } from "../buildContext";
 
 export function buildProductVals(context: BuildContext) {
-  const { app, route, openDept, pSlot, pick, buildableProduct, candidateBuild, pFits } = context;
+  const { app, route, openDept, pSlot, pick, buildableProduct, hasBuild, chosenCount, candidateIssues, pFits } = context;
   const watchKind = pick.stock === 0 ? "availability" as const : "price" as const;
   // The same device at other storage capacities: separate listings, one choice.
   const variants = siblingVariants(pick, CATALOG[pSlot] ?? []);
@@ -47,14 +47,15 @@ export function buildProductVals(context: BuildContext) {
         { k: "Availability", v: pick.stock === 0 ? "Out of stock" : "In stock" },
       ],
       // The compatibility box is only meaningful for a part that goes into a
-      // build; a phone has nothing to be compatible with.
-      pFitShow: buildableProduct ? "grid" : "none",
+      // build the shopper has actually started. A phone has nothing to be
+      // compatible with, and neither has an empty configurator.
+      pFitShow: buildableProduct && hasBuild ? "grid" : "none",
       pFitBg: pFits ? "var(--success-soft)" : "var(--danger-soft)",
       pFitFg: pFits ? "var(--success)" : "var(--danger)",
       pFitIcon: pFits ? "check_circle" : "error",
-      pFitText: !buildableProduct ? ""
-        : pFits ? "Fits the PC build you are putting together."
-        : (candidateBuild?.issues || ["This product is not compatible with your current build."]).join(" "),
+      pFitText: !buildableProduct || !hasBuild ? ""
+        : pFits ? `Fits the ${chosenCount === 1 ? "part" : `${chosenCount} parts`} you have chosen.`
+        : candidateIssues.join(" "),
       // Buying comes first; the configurator is one service the shop offers,
       // so slotting a part into a build is the secondary action.
       pTitle: productTitle(pick, pSlot),

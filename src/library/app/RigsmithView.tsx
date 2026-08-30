@@ -19,7 +19,7 @@ export function RigsmithView({ v }: { v: Vals }) {
         {v.isCheckout && <CheckoutScreen v={v} />}
         {v.isDone && <DoneScreen v={v} />}
       </AppShell>
-      {!v.isBuilder && <FloatingBuildCard v={v} />}
+      {!v.isBuilder && v.cornerShow && <FloatingBuildCard v={v} />}
       <Toast v={v} />
     </>
   );

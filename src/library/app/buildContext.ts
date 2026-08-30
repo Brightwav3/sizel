@@ -1,7 +1,7 @@
 import type { RigsmithApp } from "../RigsmithApp";
 import type { Vals } from "../types";
 import { CATALOG, CAT_ICON, CAT_META, DEFAULT_PICKS, DEPTS } from "../data/catalog";
-import { money } from "../data/metrics";
+import { compatibilityIssues, money } from "../data/metrics";
 import type { Part, PcSlot, Picks, Slot } from "../types";
 import { FACETS, FIT_FACET_IDS } from "./catalogFacets";
 import {
@@ -96,8 +96,24 @@ export function createBuildContext(app: RigsmithApp) {
     const pSlot = s.productSlot || "gpu";
     const pick = (CATALOG[pSlot] || CATALOG.gpu).find(g => g.id === s.productId) || CATALOG[pSlot][0];
     const buildableProduct = ["gpu", "cpu", "board", "ram", "storage", "cooler", "psu", "case", "fans"].includes(pSlot);
-    const candidateBuild = buildableProduct ? app.metrics({ ...s.picks, [pSlot as PcSlot]: pick.id }) : null;
-    const pFits = candidateBuild?.fits ?? true;
+    /**
+     * There is a build only once the shopper has chosen a part for themselves.
+     * `picks` always holds a part in every slot so build metrics stay defined,
+     * but those defaults are not a machine anyone asked for: judging a product
+     * against them told a shopper with an empty configurator that a 550 W
+     * supply was short of the 888 W "this build" needed.
+     *
+     * So the verdict weighs the chosen parts only, the way the "Fits my N-part
+     * build" filter already does, and the shop says nothing at all until there
+     * is something to say.
+     */
+    const chosenPicks = app.chosenPicks();
+    const chosenCount = s.chosen.length;
+    const hasBuild = chosenCount > 0;
+    const candidateIssues = buildableProduct && hasBuild
+      ? compatibilityIssues({ ...chosenPicks, [pSlot as PcSlot]: pick.id })
+      : [];
+    const pFits = candidateIssues.length === 0;
 
     const stepDefs = [
       { title: "Where should it go?", cta: "Continue to payment",
@@ -148,7 +164,7 @@ export function createBuildContext(app: RigsmithApp) {
       go: () => app.setState({ route: "category", dept: category === "phones" ? "phone" : category === "consoles" ? "gaming" : "pc", category, brand: "any", search: "" }),
     }));
 
-    return { app, s, m, route, on, sideStyle, shopping, dept, picked, depts, openDept, categories, spend, over, fpsOk, quietOk, allProducts, searchText, cat, catList, brandOf, brandLogo, facetValues, specFilters, fitFilters, visible, hidden, bounds, query, pSlot, pick, buildableProduct, candidateBuild, pFits, stepDefs, st, filtersOn, valueGpu, quietGpu, featuredCpu, featuredCooler, featuredStorage, featuredPhone, featuredConsole, promoProduct, brandRibbon, homeDepartments, homeCategories };
+    return { app, s, m, route, on, sideStyle, shopping, dept, picked, depts, openDept, categories, spend, over, fpsOk, quietOk, allProducts, searchText, cat, catList, brandOf, brandLogo, facetValues, specFilters, fitFilters, visible, hidden, bounds, query, pSlot, pick, buildableProduct, chosenPicks, chosenCount, hasBuild, candidateIssues, pFits, stepDefs, st, filtersOn, valueGpu, quietGpu, featuredCpu, featuredCooler, featuredStorage, featuredPhone, featuredConsole, promoProduct, brandRibbon, homeDepartments, homeCategories };
 }
 
 export type BuildContext = ReturnType<typeof createBuildContext>;
