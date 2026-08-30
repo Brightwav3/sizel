@@ -31,7 +31,7 @@ import {
 import type { SortId } from "../../entities/product/queries";
 import type { Part, PcSlot, Picks, Route, Slot } from "../../shared/lib/types";
 import { bottleneck, fansForCase, fixOptions, powerReport, recommendBuild } from "./buildAdvisor";
-import { fail, ok, SNAPSHOT_OUTPUT_BUDGET } from "./toolResult";
+import { BUILD_REPORT_BUDGET, fail, ok, SNAPSHOT_OUTPUT_BUDGET } from "./toolResult";
 import type { ToolCallResult, ToolDescriptor } from "./webmcpApi";
 
 /** A tool, plus the routes it makes sense on. */
@@ -99,8 +99,39 @@ const brief = (product: Part, category?: Slot) => {
   };
 };
 
+/**
+ * Every selected slot, with the same stock the storefront and `check_stock`
+ * show. Bundled fans are a slot like any other: an agent that cannot see them
+ * here goes looking for them one product at a time.
+ */
+const slotReport = (picks: Picks) => PC_SLOTS.map(slot => {
+  const item = part(picks, slot);
+  const units = listingStock(item, slot);
+  return {
+    slot,
+    id: item.id,
+    name: item.name,
+    price: item.price,
+    inStock: units > 0,
+    units: stockLabel(units),
+    shipsInDays: item.days,
+    ...(concernFor(item, slot) ?? {}),
+  };
+});
+
+/** Whether the build can actually be bought, and what is holding it up. */
+const availabilityOf = (slots: ReturnType<typeof slotReport>) => {
+  const outOfStock = slots.filter(entry => !entry.inStock).map(entry => entry.slot);
+  const slow = slots.filter(entry => entry.inStock && entry.shipsInDays >= SLOW_DELIVERY_DAYS).map(entry => entry.slot);
+  return {
+    allInStock: outOfStock.length === 0,
+    ...(outOfStock.length ? { outOfStock, offer: "create_watchdog" } : {}),
+    ...(slow.length ? { slowSlots: slow } : {}),
+  };
+};
+
 /** One line for a result whose list carries something worth raising. */
-const WATCH_HINT = "Some of these are slow or out of stock. Say so, and offer create_watchdog rather than substituting.";
+const WATCH_HINT = "Some of these are slow or out of stock. Say so rather than substituting silently. create_watchdog is an optional offer; skip it if the shopper has declined watches.";
 
 /** The compatibility facts, only where the catalog actually carries them. */
 const facts = (product: Part) => {
@@ -224,7 +255,11 @@ export const TOOLS: RigsmithTool[] = [
       // Bound context cost while naming every section not delivered in full.
       let body = JSON.stringify({ currency: "USD", sections });
       while (body.length > SNAPSHOT_OUTPUT_BUDGET) {
-        const largest = Object.keys(sections).filter(key => !sections[key].error)
+        // The build report is the section an agent cannot reconstruct without
+        // ten more calls, so it is the last one to go, never the first.
+        const droppable = Object.keys(sections).filter(key => !sections[key].error && key !== "build");
+        const candidates = droppable.length ? droppable : Object.keys(sections).filter(key => !sections[key].error);
+        const largest = candidates
           .sort((a, b) => JSON.stringify(sections[b]).length - JSON.stringify(sections[a]).length)[0];
         if (!largest) break;
         sections[largest] = { error: "section_too_large", hint: "Request this section separately." };
@@ -398,7 +433,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "check_stock",
     description:
-      "Stock on hand and delivery date. When a part is out of stock, say so and offer create_watchdog rather than substituting silently.",
+      "Stock on hand and delivery date. When a part is out of stock, say so rather than substituting silently. create_watchdog is an optional offer, not a step: skip it if the shopper has declined watches.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
@@ -543,7 +578,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "check_build_compatibility",
     description:
-      "One-call build report: compatibility, sockets, GPU clearance, PSU headroom, performance estimate, bottleneck and GPU stock. Replaces separate detail lookups. On a clash use fix_build_issue.",
+      "One-call build report: all nine selected slots with price, stock and delivery, plus total, compatibility, sockets, GPU clearance, PSU headroom, performance and bottleneck. No per-part check_stock or get_current_build needed. On a clash use fix_build_issue.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
@@ -551,17 +586,21 @@ export const TOOLS: RigsmithTool[] = [
     execute() {
       const instance = app();
       const model = instance.metrics();
+      const slots = slotReport(instance.state.picks);
       return ok({
         compatible: model.fits,
         issues: model.issues,
         price: model.price, priceLabel: money(model.price), arrives: shipDate(model.days),
+        availability: availabilityOf(slots),
+        // Every slot, always: the whole point of this report is that nothing
+        // sends the agent back for a part it has already chosen.
+        slots,
         power: powerReport(instance.state.picks),
         socket: { cpu: model.cpu.socket, board: part(instance.state.picks, "board").socket },
         clearance: { gpuMm: model.gpu.len, caseMm: part(instance.state.picks, "case").clearance },
         performance: { fps: model.fps, resolution: instance.state.res, basis: "catalog estimate; not a game benchmark" },
         bottleneck: bottleneck(instance.state.picks, instance.state.res as Resolution).reason,
-        gpu: brief(model.gpu, "gpu"),
-      }, "issues");
+      }, "issues", undefined, BUILD_REPORT_BUDGET);
     },
   },
 
@@ -630,7 +669,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "recommend_build",
     description:
-      "Assemble a complete nine-part PC for a budget. Returns the parts, price, frame rate and power. It only proposes; apply puts it on screen, so say the cost first.",
+      "Assemble a complete nine-part PC for a budget. Returns the parts, price, frame rate and budgetRemainingUSD. apply only updates the on-screen configurator; it buys nothing. Say the cost first unless the shopper already approved it.",
     routes: ["home", "category", "builder"],
     inputSchema: schema({
       budget: num("Budget for the whole machine."),
@@ -653,7 +692,10 @@ export const TOOLS: RigsmithTool[] = [
         budget, resolution: res,
         price: proposal.price, priceLabel: money(proposal.price),
         fps: proposal.fps, powerW: proposal.watt,
-        headroom: proposal.headroom,
+        budgetRemainingUSD: proposal.budgetRemainingUSD,
+        // Kept for callers written against the old name. Same value; it was
+        // always money left over, never PSU watts.
+        headroom: proposal.budgetRemainingUSD,
         targetFps: target,
         withinBudget: proposal.withinBudget,
         ...(proposal.cheapestPossible ? { cheapestPossible: proposal.cheapestPossible } : {}),
@@ -717,7 +759,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "create_watchdog",
     description:
-      "Watch a listing for stock or a price drop. Stays on this device. Offer it instead of substituting a part the shopper wanted.",
+      "Watch a listing for stock or a price drop. Stays on this device. An optional offer instead of substituting a part the shopper wanted; never create one the shopper has not asked for or agreed to.",
     routes: ["category", "product"],
     inputSchema: schema({
       productId: str("Id from another tool."),

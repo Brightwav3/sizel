@@ -116,7 +116,8 @@ At the default target of 144 fps and 1440p:
 | $5,000 | $3,642 | −27 % | 165 |
 
 $5,000 falls short because the catalog runs out: nothing above the $2,099 card
-exists. `headroom` reports it.
+exists. `budgetRemainingUSD` reports it, in dollars; the older `headroom`
+field is kept as an alias for callers written against it.
 
 The $999 machine, applied to the screen and read back from it:
 

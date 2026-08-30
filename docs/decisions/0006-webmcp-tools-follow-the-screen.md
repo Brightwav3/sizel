@@ -79,6 +79,16 @@ removing old tools would break existing callers; registering all mutation tools 
 all routes would offer edits unrelated to the screen. Raising every response limit
 would waste context. Stable read summaries avoid forced navigation without those costs.
 
+`check_build_compatibility` reports every selected slot with the storefront
+stock figure, under its own documented 3000-character ceiling. Completeness is
+not left to the agent finding a workaround: without it the observed behaviour
+was one `check_stock` call per part. Slots are never dropped to fit, and the
+build section is the last one a snapshot shortens.
+
+`recommend_build` returns `budgetRemainingUSD`, which is dollars. The old
+`headroom` name is kept with the same value rather than silently redefined;
+PSU headroom stays in the power report, in watts.
+
 The common PSU requirement now takes the maximum of calculated headroom and the
 GPU catalog recommendation. The adviser, fast fit check, UI issues and tool report
 use the same requirement. Missing game benchmarks and FX rates remain missing.

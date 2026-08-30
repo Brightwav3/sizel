@@ -204,9 +204,29 @@ to).
 
 ### `check_build_compatibility`
 
-`{ compatible, issues[], power }`. One plain sentence per conflict. `power` is
-`{ drawW, requiredW, psuW, psu, ok }`, where `requiredW` is the draw plus the
-fifteen per cent headroom the rule demands.
+The whole build in one read: `{ compatible, issues[], price, priceLabel,
+arrives, availability, slots[], power, socket, clearance, performance,
+bottleneck }`. One plain sentence per conflict.
+
+`slots[]` carries all nine selected parts, bundled fans included, each as
+`{ slot, id, name, price, inStock, units, shipsInDays }` plus `concern` and
+`offer` when the part is out of stock or slow. Stock is the same storefront
+figure `check_stock` and the product page show, so an agent never needs a
+per-part stock call or `get_current_build` to verify a build.
+
+`availability` states whether the build can be bought: `allInStock`, plus
+`outOfStock` (blocking slots) with `offer: "create_watchdog"`, and `slowSlots`
+for in-stock parts past the two-day line.
+
+`power` is `{ headroomW, marginAboveRequiredW, drawW, requiredW, psuW, psu, ok }`.
+`headroomW` is `psuW - drawW` and `marginAboveRequiredW` is `psuW - requiredW`;
+`requiredW` is the larger of the draw plus fifteen per cent and the card's
+catalog PSU recommendation. Every value here is watts, not money.
+
+This response has a documented ceiling of 3000 characters rather than the usual
+1500, because the alternative is nine `check_stock` calls. Slots are never
+dropped to fit, and in a `read_shop` snapshot the build section is the last one
+shortened, never the first.
 
 Seven rules are checked: CPU against board socket, memory type against board,
 board form factor against case, card length against case clearance, power
@@ -248,13 +268,21 @@ A complete nine-part machine for a budget. See
 | `resolution` | enum | Default 1440p |
 | `quiet` | boolean | Prefer quieter parts on a close call |
 | `targetFps` | number | Stop upgrading once reached. Defaults to the shopper's setting |
-| `apply` | boolean | Put it on screen. Default false |
+| `apply` | boolean | Update the on-screen configurator. Default false |
+| `configure` | boolean | With `apply`, also set budget, resolution, target FPS and quiet |
 
-Returns the parts, `price`, `fps`, `powerW`, `headroom`, `targetFps`,
+Returns the parts, `price`, `fps`, `powerW`, `budgetRemainingUSD`, `targetFps`,
 `withinBudget`, `compatible`, and `heldUpBy` when a part delays the whole
 order. When the budget cannot be met it adds `cheapestPossible`.
 
-It only proposes unless `apply` is true. Say the cost before applying.
+`budgetRemainingUSD` is money left over, in US dollars. It is negative when the
+cheapest working machine costs more than the budget. The older name `headroom`
+is still returned, with the same value, for callers written against it; PSU
+headroom is a different thing and lives in `check_build_compatibility.power`.
+
+`apply` only edits the configurator on screen. It buys nothing, adds nothing to
+the cart and places no order. Say the cost first unless the shopper has already
+approved the spend.
 
 ### `set_build_target`
 
@@ -407,8 +435,9 @@ only new schemas rather than repeatedly printing every known descriptor.
 
 `compare_build_to_product` also accepts `productIds` (1–3), returning `devices`
 plus one shared build. `productId` retains the original single-device response.
-`check_build_compatibility` now includes sockets, clearance, PSU headroom,
-GPU stock, a catalog performance estimate and the bottleneck in one response.
+`check_build_compatibility` returns all nine selected slots with price, stock
+and delivery, plus sockets, clearance, PSU headroom, a catalog performance
+estimate and the bottleneck in one response. Verifying a build takes one call.
 Phone comparisons include structured display, battery, storage and camera facts.
 These read-only summaries are available on every route. No per-game benchmarks
 or currency conversion are invented when the catalog does not provide them.

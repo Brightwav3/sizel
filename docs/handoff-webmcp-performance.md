@@ -1,5 +1,13 @@
 # Handoff: complete and accelerate the Rigsmith WebMCP shopping flow
 
+> **Status update.** Priority 1 (one complete build read) and Priority 2
+> (explicit units, accurate descriptions) are implemented and covered by tests.
+> Priority 3 — the cold-task benchmark — is **not** done: it needs a fresh task
+> and a live browser. The protocol is written up in
+> [webmcp-benchmark.md](webmcp-benchmark.md). The sub-minute target remains
+> undemonstrated.
+
+
 Date: 2026-08-31
 
 ## Objective

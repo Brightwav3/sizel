@@ -2,7 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DEFAULT_PICKS } from '../../data/catalog/catalog';
 import { metrics, requiredPower } from '../../entities/build/metrics';
 import { recommendBuild } from './buildAdvisor';
-import { OUTPUT_BUDGET, SNAPSHOT_OUTPUT_BUDGET } from './toolResult';
+import { BUILD_REPORT_BUDGET, OUTPUT_BUDGET, SNAPSHOT_OUTPUT_BUDGET } from './toolResult';
+
+const PC_SLOTS = ['cpu', 'gpu', 'board', 'ram', 'storage', 'cooler', 'psu', 'case', 'fans'];
 
 const holder = vi.hoisted(() => ({ instance: null as any }));
 vi.mock('../state/appInstance', () => ({ requireRigsmithApp: () => holder.instance }));
@@ -11,7 +13,9 @@ import { TOOLS, toolsForRoute } from './tools';
 const call = (name: string, args = {}) => {
   const result = TOOLS.find(tool => tool.name === name)!.execute(args) as any;
   const text = result.content[0].text;
-  expect(text.length).toBeLessThanOrEqual(name === 'read_shop' ? SNAPSHOT_OUTPUT_BUDGET : OUTPUT_BUDGET);
+  const ceiling = name === 'read_shop' ? SNAPSHOT_OUTPUT_BUDGET
+    : name === 'check_build_compatibility' ? BUILD_REPORT_BUDGET : OUTPUT_BUDGET;
+  expect(text.length).toBeLessThanOrEqual(ceiling);
   const data = JSON.parse(text);
   expect(data.error).toBeUndefined();
   return data;
@@ -80,9 +84,51 @@ describe('fewer WebMCP round trips', () => {
     expect(result.clearance.gpuMm).toBeLessThanOrEqual(result.clearance.caseMm);
     expect(result.power.headroomW).toBe(result.power.psuW - result.power.drawW);
     expect(result.power.psuW).toBeGreaterThanOrEqual(requiredPower(holder.instance.state.picks));
-    expect(result.gpu.stock).toBeDefined();
     expect(result.performance.basis).toContain('not a game benchmark');
     expect(result.bottleneck).toBeTruthy();
+    // Every slot, bundled fans included, so no follow-up stock calls are needed.
+    expect(result.slots.map((entry: any) => entry.slot).sort())
+      .toEqual([...PC_SLOTS].sort());
+    expect(result.slots.find((entry: any) => entry.slot === 'fans').id).toBeTruthy();
+    expect(result.availability.allInStock).toBe(true);
+    expect(result.slots.reduce((sum: number, entry: any) => sum + entry.price, 0)).toBe(result.price);
+  });
+
+  it('agrees with check_stock on every slot, so the extra calls buy nothing', () => {
+    const result = call('check_build_compatibility');
+    for (const entry of result.slots) {
+      const direct = call('check_stock', { productId: entry.id });
+      expect({ inStock: entry.inStock, units: entry.units, shipsInDays: entry.shipsInDays })
+        .toEqual({ inStock: direct.inStock, units: direct.units, shipsInDays: direct.shipsInDays });
+    }
+  });
+
+  it('names an unavailable non-GPU part and its delivery without another call', () => {
+    // The catalog ships its out-of-stock parts on the slow eight-day date, so
+    // one fixture covers both the unavailable and the slow-delivery reading.
+    const picks = { ...holder.instance.state.picks, cooler: 'alpine-liquid-420' };
+    holder.instance = { state: { picks, res: '1440p' }, metrics: () => metrics(picks, '1440p') };
+    const result = call('check_build_compatibility');
+    const cooler = result.slots.find((entry: any) => entry.slot === 'cooler');
+    expect(cooler.inStock).toBe(false);
+    expect(cooler.units).toBe('0');
+    expect(cooler.shipsInDays).toBe(8);
+    expect(cooler.concern).toBe('out_of_stock');
+    expect(result.availability.allInStock).toBe(false);
+    expect(result.availability.outOfStock).toEqual(['cooler']);
+    expect(result.availability.offer).toBe('create_watchdog');
+    expect(call('check_stock', { productId: cooler.id }).inStock).toBe(false);
+  });
+
+  it('keeps all nine slots when a phone comparison shares the response', () => {
+    const result = call('read_shop', {
+      search: { category: 'phones', brand: 'Pear', sort: 'priceDesc', compare: true },
+      compareDeviceSearch: { category: 'consoles', sort: 'priceDesc', limit: 5 },
+      include: ['build', 'cart', 'watchdogs'],
+    });
+    expect(result.sections.build.slots).toHaveLength(9);
+    expect(result.sections.build.availability.allInStock).toBe(true);
+    expect(result.sections.searchComparison.items.length).toBeGreaterThanOrEqual(2);
   });
   it('does not offer an undersized PSU for the RX 9070 XT', () => {
     const picks = { ...DEFAULT_PICKS, gpu: 'fabrikam-rx-9070-xt', psu: 'acme-labs-powercore-650' };

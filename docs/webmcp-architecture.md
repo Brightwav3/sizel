@@ -85,6 +85,13 @@ Anything derived from a list is computed from the list actually sent. A note
 saying "some of these are out of stock" would be a lie once shortening had
 dropped every out-of-stock row, so those fields are re-derived after each pass.
 
+Two results are deliberately larger, each with a documented ceiling: a
+`read_shop` snapshot (6000) and the `check_build_compatibility` build report
+(3000). Both are bought once instead of many times — the build report lists all
+nine slots with their stock, which is the alternative to nine `check_stock`
+calls. Its slots are never dropped to fit, and inside a snapshot the build
+section is the last one shortened rather than the first.
+
 ## Character budgets
 
 Chrome's guidance, all enforced by tests:
@@ -95,6 +102,8 @@ Chrome's guidance, all enforced by tests:
 | Tool description | 500 |
 | Parameter description | 150 |
 | Result | 1.5K |
+| Build report result | 3K |
+| `read_shop` snapshot result | 6K |
 
 Descriptions are the standing cost — they reach the agent on every turn, unlike
 results. Measured per screen:
