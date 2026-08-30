@@ -374,22 +374,29 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "list_compatible_parts",
     description:
-      "Parts for one slot that fit the build on screen. Unlike search_products this filters against what is already chosen, so nothing returned can break the machine.",
+      "Parts for one slot that fit the build on screen. Unlike search_products this filters against what is already chosen, so nothing returned can break the machine. Takes the same facet filters.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: ["category", "product", "builder"],
     inputSchema: schema({
       slot: str("Slot to fill.", PC_SLOTS),
-      maxPrice: num("Highest price in US dollars."),
+      maxPrice: num("Highest price."),
+      filters: {
+        type: "object",
+        additionalProperties: { type: "array", items: { type: "string" } },
+        description: "Facet id to values, from list_filters.",
+      },
       limit: num("1 to 10, default 5."),
     }, ["slot"]),
     execute(args) {
-      const instance = app();
       const slot = args.slot as PcSlot;
-      const build = instance.chosenPicks();
+      // Arguments are checked before the build is read: a bad filter is a bad
+      // filter whether or not there is a machine on screen to compare against.
+      const { facets, unknown } = readFilters(slot, args.filters);
+      if (unknown.length) return fail("unknown_filter", `No ${slot} filter named ${unknown.join(", ")}. Call list_filters.`);
+      const build = app().chosenPicks();
       const limit = Math.min(10, Math.max(1, Math.round(args.limit ?? 5)));
-      const pool = CATALOG[slot]
-        .filter(product => args.maxPrice === undefined || product.price <= args.maxPrice)
+      const pool = searchProducts({ category: slot, maxPrice: args.maxPrice, facets }).items
         .filter(product => partFits(product, slot, build));
       return ok({
         slot,

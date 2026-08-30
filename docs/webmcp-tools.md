@@ -185,9 +185,9 @@ picked rather than defaults), `price`, `fps`, `resolution`, `powerW`,
 
 Parts for one slot that raise no issue against the build on screen. Unlike
 `search_products` this filters against what is already chosen, so nothing it
-returns can break the machine. Takes `maxPrice`, `filters` and `limit` (1–10,
-default 5). Returns `fitting` and `of` so the agent can see how much was ruled
-out.
+returns can break the machine. Takes `maxPrice`, `filters` (the same facets, in
+this slot's category) and `limit` (1–10, default 5). Returns `fitting` and `of`
+so the agent can see how much was ruled out.
 
 Errors: `unknown_filter`.
 
