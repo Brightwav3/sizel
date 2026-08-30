@@ -1,6 +1,8 @@
 import { RES } from "../data/metrics";
 import type { PcSlot, Picks, Route, Slot } from "../types";
 
+// ADR 0002: AppState is the single owner of the active PC build.
+// docs/decisions/0002-single-build-state-and-domain-view-models.md
 export interface AppState {
   route: Route; pickerSlot: PcSlot | null; productId: string; category: Slot; productSlot: Slot;
   catalogOpen: boolean; dept: string; openDept: string | null;
