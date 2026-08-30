@@ -8,7 +8,10 @@ import type { Colorway } from "../data/colorways";
  * The selection lives here rather than in app state for that reason — nothing
  * downstream can act on it.
  */
-export const ColorPicker: React.FC<{ colorways: Colorway[] }> = ({ colorways }) => {
+export const ColorPicker: React.FC<{
+  colorways: Colorway[];
+  onChange?: (colorway: Colorway) => void;
+}> = ({ colorways, onChange }) => {
   const [chosen, setChosen] = React.useState(0);
   if (colorways.length < 2) return null;
   const active = colorways[chosen] ?? colorways[0];
@@ -22,7 +25,10 @@ export const ColorPicker: React.FC<{ colorways: Colorway[] }> = ({ colorways }) 
         label: colorway.name,
         note: "In stock",
         selected: index === chosen,
-        pick: () => setChosen(index),
+        pick: () => {
+          setChosen(index);
+          onChange?.(colorway);
+        },
       }))}
     />
   );

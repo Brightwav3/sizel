@@ -18,7 +18,17 @@ export interface Colorway {
   /** Swatch fill. Two stops means a two-tone finish. */
   hex: string;
   hex2?: string;
+  imagePath?: string;
 }
+
+const BRAND_SLUGS: Record<string, string> = {
+  Pear: "pear",
+  Litware: "litware",
+  Contoso: "contoso",
+  "Fourth Castle": "fourth-castle",
+  "Y-Ball": "y-ball",
+  "Adventure Works": "adventure-works",
+};
 
 const PALETTES: Record<string, Colorway[]> = {
   Pear: [
@@ -63,5 +73,12 @@ const PALETTES: Record<string, Colorway[]> = {
 /** The finishes this device is offered in. Empty for anything but phones and consoles. */
 export function colorwaysFor(product: Part, slot: Slot): Colorway[] {
   if (slot !== "phones" && slot !== "consoles") return [];
-  return PALETTES[product.brand ?? ""] ?? [];
+  const brand = product.brand ?? "";
+  const slug = BRAND_SLUGS[brand];
+  return (PALETTES[brand] ?? []).map(colorway => ({
+    ...colorway,
+    imagePath: slug
+      ? `/catalog/images/colorways/${slug}/${product.id}/${colorway.id}.png`
+      : undefined,
+  }));
 }
