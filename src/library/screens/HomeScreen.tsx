@@ -50,45 +50,67 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
       ))}
     </nav>
 
-    <section className="card offer-hero" style={sx("padding:var(--space-6);display:flex;flex-direction:column;gap:var(--space-3);background:var(--surface-sunken)")}>
-      <div className={`offer-hero__frame home-hero ${animationPhase ? "offer-slide-a" : "offer-slide-b"}`} >
-      <div style={sx("display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-3);padding-left:var(--space-4)")}>
-        <div className="eyebrow">{offer.heroEyebrow}</div>
-        <h1 style={sx("margin:0;max-width:560px;font-size:var(--text-2xl);font-weight:var(--weight-medium);line-height:var(--leading-tight);letter-spacing:var(--tracking)")}>{offer.heroTitle}</h1>
-        <p style={sx("margin:0;max-width:520px;font-size:var(--text-base);line-height:var(--leading-normal);color:var(--text-secondary)")}>{offer.copy}</p>
-        <div style={sx("display:flex;flex-wrap:wrap;gap:var(--space-3);margin-top:var(--space-2)")}>
-          <button className="pill dark" onClick={offer.heroGo}>{offer.heroCta}</button>
-          <button className="pill ghostb" onClick={offer.heroSecondaryGo}>{offer.heroSecondaryLabel}</button>
-        </div>
-        <div style={sx("display:flex;flex-wrap:wrap;gap:var(--space-5);margin-top:var(--space-2);font-size:var(--text-xs);color:var(--text-secondary)")}>
-          {(offer.heroStats || []).map((stat: Vals) => <span key={stat.label}><strong style={sx("color:var(--text-primary);font-weight:var(--weight-medium)")}>{stat.value}</strong> {stat.label}</span>)}
-        </div>
-      </div>
-      <div className="card" onClick={offer.go} style={sx("padding:var(--space-3);display:flex;flex-direction:column;gap:var(--space-2);background:var(--gray-0);cursor:pointer;box-shadow:var(--shadow-card)")}>
-        <div style={sx("display:flex;align-items:center;justify-content:space-between;padding:0 var(--space-1)")}>
-          <span className="eyebrow">{offer.label}</span>
-          <span className="ms" style={sx("font-size:var(--text-base);color:var(--text-tertiary)")}>arrow_outward</span>
-        </div>
-        <div className="ph" style={sx("height:168px;background:var(--gray-0)")}><CatalogImage src={offer.image} alt={offer.name} /></div>
-        <div style={sx("display:flex;align-items:flex-end;justify-content:space-between;gap:var(--space-4);padding:0 var(--space-1) var(--space-1)")}>
-          <div style={sx("min-width:0")}>
-            <div style={sx("font-size:var(--text-sm);color:var(--text-secondary)")}>{offer.brand}</div>
-            <div style={sx("font-size:var(--text-base);font-weight:var(--weight-medium);overflow:hidden;text-overflow:ellipsis;white-space:nowrap")}>{offer.name}</div>
-            <div style={sx("font-size:var(--text-sm);color:var(--text-secondary);margin-top:var(--space-1)")}>{offer.availability}</div>
+    <section className="hero">
+      <div className="hero-banner">
+        <div className={`hero-banner__slide ${animationPhase ? "offer-slide-a" : "offer-slide-b"}`}>
+          <div className="hero-banner__copy">
+            <span className="hero-banner__eyebrow">{offer.heroEyebrow}</span>
+            <h1>{offer.heroTitle}</h1>
+            <p>{offer.copy}</p>
+            <div className="hero-banner__actions">
+              <button type="button" className="hero-banner__cta" onClick={offer.heroGo}>{offer.heroCta}</button>
+              <button type="button" className="hero-banner__alt" onClick={offer.heroSecondaryGo}>{offer.heroSecondaryLabel}</button>
+            </div>
+            <div className="hero-banner__stats">
+              {(offer.heroStats || []).map((stat: Vals) => (
+                <span key={stat.label}><strong className="num">{stat.value}</strong>{stat.label}</span>
+              ))}
+            </div>
           </div>
-          <div className="num" style={sx("font-size:var(--text-base);font-weight:var(--weight-medium);white-space:nowrap")}>{offer.price}</div>
+          <button type="button" className="hero-banner__art" onClick={offer.go} aria-label={`Open ${offer.name}`}>
+            <CatalogImage src={offer.image} alt={offer.name} />
+            <span className="hero-banner__tag">
+              <small>{offer.brand}</small>
+              <strong className="num">{offer.price}</strong>
+              <em>{offer.availability}</em>
+            </span>
+          </button>
         </div>
-        <div style={sx("display:flex;align-items:center;padding:0 var(--space-1) var(--space-1)")}>
-          <span style={sx("font-size:var(--text-sm);color:var(--text-accent)")}>{offer.kind === "service" ? "Explore service" : "View offer"} <span className="ms" style={sx("font-size:var(--text-sm);vertical-align:-2px")}>arrow_forward</span></span>
+
+        <button type="button" className="hero-banner__nav is-prev" data-tip="Previous offer" data-tip-place="top"
+          aria-label="Previous offer" onClick={() => showOffer((offerIndex + offers.length - 1) % Math.max(offers.length, 1))}>
+          <span className="ms">chevron_left</span>
+        </button>
+        <button type="button" className="hero-banner__nav is-next" data-tip="Next offer" data-tip-place="top"
+          aria-label="Next offer" onClick={() => showOffer(offerIndex + 1)}>
+          <span className="ms">chevron_right</span>
+        </button>
+
+        <div className="hero-banner__dots">
+          {offers.map((item: Vals, index: number) => (
+            <button key={item.name} type="button" className={index === offerIndex ? "is-on" : ""}
+              aria-label={`Show ${item.label}`} aria-current={index === offerIndex} onClick={() => showOffer(index)} />
+          ))}
         </div>
       </div>
-      </div>
-      <div style={sx("grid-column:1 / -1;display:flex;justify-content:center;align-items:center;padding-top:var(--space-1)")}>
-        <div className="offer-hero__dots" style={sx(`position:relative;display:flex;align-items:center;gap:var(--space-2);width:${Math.max(20, (offers.length - 1) * 14 + 20)}px;height:6px`)}>
-          <span aria-hidden="true" style={sx(`position:absolute;z-index:2;top:-1px;left:0;width:20px;height:8px;border-radius:var(--radius-pill);background:var(--accent-active);pointer-events:none;transform:translateX(${offerIndex * 14}px);transition:transform 420ms cubic-bezier(0.22,1,0.36,1)`)} />
-          {offers.map((item: Vals, index: number) => <button key={item.name} aria-label={`Show ${item.label}`} aria-current={index === offerIndex} onClick={() => showOffer(index)} style={sx(`position:relative;z-index:1;width:6px;height:6px;flex:0 0 6px;padding:0;border:0;border-radius:var(--radius-pill);background:${index === offerIndex ? "transparent" : "var(--gray-500)"};cursor:pointer`)} />)}
+
+      <aside className="hero-rail" aria-label="More offers">
+        {offers.filter((_: Vals, index: number) => index !== offerIndex).slice(0, 2).map((item: Vals) => (
+          <button key={item.name} type="button" className="hero-rail__card" onClick={item.go}>
+            <span className="hero-rail__shot"><CatalogImage src={item.image} alt={item.name} /></span>
+            <span className="hero-rail__copy">
+              <small>{item.label === item.name ? item.brand : item.label}</small>
+              <strong>{item.name}</strong>
+              <em className="num">{item.price}</em>
+            </span>
+            <span className="ms">arrow_forward</span>
+          </button>
+        ))}
+        <div className="hero-rail__promise">
+          <span className="ms">local_shipping</span>
+          <span><strong>Free delivery over $99</strong><small>Ordered before 4pm ships today</small></span>
         </div>
-      </div>
+      </aside>
     </section>
 
     <section style={sx("display:flex;flex-direction:column;gap:var(--space-5)")}>
