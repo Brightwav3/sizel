@@ -1,10 +1,12 @@
+// ADR 0003: productColorId owns the selected derived colour listing.
+// docs/decisions/0003-storefront-variants-live-in-the-adapter.md
 import { RES } from "../data/metrics";
 import type { CartLine, PcSlot, Picks, Route, Slot, Watchdog } from "../types";
 
 // ADR 0002: AppState is the single owner of the active PC build.
 // docs/decisions/0002-single-build-state-and-domain-view-models.md
 export interface AppState {
-  route: Route; productId: string; category: Slot; productSlot: Slot;
+  route: Route; productId: string; productColorId: string | null; category: Slot; productSlot: Slot;
   catalogOpen: boolean; dept: string; openDept: string | null;
   /** The active build. Every slot always holds a part, so metrics stay defined. */
   picks: Picks;
@@ -24,6 +26,7 @@ export interface AppState {
   minPrice: number; maxPrice: number; useFilter: string; brand: string;
   facetFilters: Record<string, string[]>;
   sort: string; stockOnly: boolean; onSale: boolean; search: string;
+  recentSearches: string[];
   lastChange: { icon: string; title: string; deltas: { k: string; v: string; fg: string }[] } | null;
   prev: Picks | null;
   /** Real cart lines — products and, at most once, the assembled build. */

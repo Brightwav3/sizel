@@ -86,3 +86,5 @@ export function storageVariants(part: Part, slot: Slot): Part[] {
 /** Every listing of the same device, cheapest capacity first. */
 export const siblingVariants = (part: Part, pool: Part[]): Part[] =>
   part.variantOf ? pool.filter(item => item.variantOf === part.variantOf).sort((a, b) => a.price - b.price) : [];
+// ADR 0003: storefront variants are derived without changing canonical records.
+// docs/decisions/0003-storefront-variants-live-in-the-adapter.md

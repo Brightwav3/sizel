@@ -1,3 +1,5 @@
+// ADR 0003: product URLs preserve the selected derived colour listing.
+// docs/decisions/0003-storefront-variants-live-in-the-adapter.md
 import type { AppState } from "./AppState";
 import { CATALOG, DEPTS } from "../data/catalog";
 import type { Slot } from "../types";
@@ -36,7 +38,7 @@ export function stateFromLocation(): Partial<AppState> {
   if (segments[2]) {
     const brand = brandForSlug(segments[2], [slot]);
     if (brand) return { route: "category", dept, openDept: null, category: slot, productSlot: slot, brand };
-    return { route: "product", dept, openDept: null, category: slot, productSlot: slot, productId: segments[2], brand: "any" };
+    return { route: "product", dept, openDept: null, category: slot, productSlot: slot, productId: segments[2], productColorId: segments[3] ?? null, brand: "any" };
   }
   return { route: "category", dept, openDept: null, category: slot, productSlot: slot, brand: "any" };
 }
@@ -53,5 +55,8 @@ export function urlForState(state: AppState): string {
   const base = baseDept === "phone" ? "/phones" : baseDept === "gaming" ? "/gaming" : "/pc-parts";
   if (state.route === "category" && state.openDept) return state.brand === "any" ? base : `${base}/${brandSlug(state.brand)}`;
   const category = categorySlugs[slot] || categorySlugs.gpu;
-  return `${base}/${category}${state.route === "product" ? `/${encodeURIComponent(state.productId)}` : state.brand === "any" ? "" : `/${brandSlug(state.brand)}`}`;
+  const productPath = state.productColorId
+    ? `/${encodeURIComponent(state.productId)}/${encodeURIComponent(state.productColorId)}`
+    : `/${encodeURIComponent(state.productId)}`;
+  return `${base}/${category}${state.route === "product" ? productPath : state.brand === "any" ? "" : `/${brandSlug(state.brand)}`}`;
 }

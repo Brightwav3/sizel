@@ -1,3 +1,5 @@
+// ADR 0003: colour listings and their image paths are storefront-derived.
+// docs/decisions/0003-storefront-variants-live-in-the-adapter.md
 import type { Part, Slot } from "../types";
 
 /**
@@ -75,10 +77,11 @@ export function colorwaysFor(product: Part, slot: Slot): Colorway[] {
   if (slot !== "phones" && slot !== "consoles") return [];
   const brand = product.brand ?? "";
   const slug = BRAND_SLUGS[brand];
+  const imageProductId = product.variantOf ?? product.id;
   return (PALETTES[brand] ?? []).map(colorway => ({
     ...colorway,
     imagePath: slug
-      ? `/catalog/images/colorways/${slug}/${product.id}/${colorway.id}.png`
+      ? `/catalog/images/colorways/${slug}/${imageProductId}/${colorway.id}.png`
       : undefined,
   }));
 }

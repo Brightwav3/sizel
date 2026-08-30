@@ -13,11 +13,12 @@ import { ColorPicker } from "../shell/ColorPicker";
  * price, action. Everything that is not part of that decision sits below.
  */
 export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => {
-  const [image, setImage] = React.useState(v.pColorways[0]?.imagePath ?? v.pImage);
+  const selectedColor = v.pColorways.find((colorway: Vals) => colorway.id === v.pSelectedColorId) ?? v.pColorways[0];
+  const [image, setImage] = React.useState(selectedColor?.imagePath ?? v.pImage);
 
   React.useEffect(() => {
-    setImage(v.pColorways[0]?.imagePath ?? v.pImage);
-  }, [v.pSku, v.pImage, v.pColorways]);
+    setImage(selectedColor?.imagePath ?? v.pImage);
+  }, [v.pSku, v.pSelectedColorId, v.pImage]);
 
   return (
   <div className="t-page product-page">
@@ -59,7 +60,10 @@ export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => {
         </div>
 
         <div className="product-buy__options">
-          <ColorPicker key={v.pSku} colorways={v.pColorways} onChange={colorway => setImage(colorway.imagePath ?? v.pImage)} />
+          <ColorPicker key={`${v.pSku}:${v.pSelectedColorId ?? "default"}`} colorways={v.pColorways} selectedId={v.pSelectedColorId} onChange={colorway => {
+            setImage(colorway.imagePath ?? v.pImage);
+            v.pSelectColor(colorway.id);
+          }} />
           <OptionPicker label="Storage" value={v.pStorageLabel} icon="sd_card" options={v.pStorageOptions} />
         </div>
 

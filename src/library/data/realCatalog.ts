@@ -1,3 +1,5 @@
+// ADR 0003: canonical devices are expanded into storefront variants here.
+// docs/decisions/0003-storefront-variants-live-in-the-adapter.md
 import productsJson from "../../../public/catalog/products.json";
 import type { Catalog, CategoryMeta, Dept, Part, PcSlot, Slot } from "../types";
 import { MERCHANDISING } from "./merchandising";

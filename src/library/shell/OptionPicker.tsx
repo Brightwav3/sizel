@@ -79,3 +79,5 @@ export const OptionPicker: React.FC<Props> = ({ label, value, options, swatch, i
     </div>
   );
 };
+// ADR 0003: storage and colour choices render derived storefront variants.
+// docs/decisions/0003-storefront-variants-live-in-the-adapter.md

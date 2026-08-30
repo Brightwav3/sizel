@@ -27,14 +27,14 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   static instance: RigsmithApp | null = null;
 
   state: AppState = {
-    route: "home", productId: DEFAULT_PICKS.gpu, category: "gpu", productSlot: "gpu",
+    route: "home", productId: DEFAULT_PICKS.gpu, productColorId: null, category: "gpu", productSlot: "gpu",
     catalogOpen: false, dept: "pc", openDept: null,
     picks: { ...DEFAULT_PICKS },
     chosen: [],
     builderSlot: "cpu", builderSearch: "", builderCompatibleOnly: true, builderFacets: {},
     cornerMin: true, cornerX: null, cornerY: null,
     budget: 1800, target: 144, res: "1440p", quiet: true,
-    fitOnly: false, fastShip: false, minPrice: 0, maxPrice: 2200, useFilter: "any", brand: "any", facetFilters: {}, sort: "popular", stockOnly: false, onSale: false, search: "",
+    fitOnly: false, fastShip: false, minPrice: 0, maxPrice: 2200, useFilter: "any", brand: "any", facetFilters: {}, sort: "popular", stockOnly: false, onSale: false, search: "", recentSearches: ["quiet graphics card", "1 TB NVMe", "phone under $700"],
     lastChange: null, prev: null, cart: [], watchdogs: [], step: 0, toast: null, saved: 2,
   };
 
@@ -76,6 +76,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     const pageChanged = prevState.route !== this.state.route
       || prevState.category !== this.state.category
       || prevState.productId !== this.state.productId
+      || prevState.productColorId !== this.state.productColorId
       || prevState.dept !== this.state.dept
       || prevState.openDept !== this.state.openDept;
     const navigationChanged = pageChanged || prevState.brand !== this.state.brand;
