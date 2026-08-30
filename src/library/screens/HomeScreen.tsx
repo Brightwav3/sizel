@@ -10,7 +10,6 @@ const CatalogImage: React.FC<{ src?: string; alt: string }> = ({ src, alt }) => 
 export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
   const offers = v.promotions || [];
   const [offerIndex, setOfferIndex] = React.useState(0);
-  const [animationPhase, setAnimationPhase] = React.useState(false);
   const offerIndexRef = React.useRef(0);
 
   const showOffer = React.useCallback((nextIndex: number) => {
@@ -18,7 +17,6 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
     const next = nextIndex % offers.length;
     offerIndexRef.current = next;
     setOfferIndex(next);
-    setAnimationPhase(phase => !phase);
   }, [offers.length]);
 
   React.useEffect(() => {
@@ -31,15 +29,6 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
 
   return (
   <div className="t-page" style={sx("padding:var(--space-6) var(--space-8) var(--space-16);display:flex;flex-direction:column;gap:var(--space-8)")}>
-    <div style={sx("padding:var(--space-3) var(--space-5);display:flex;align-items:center;gap:var(--space-4);background:var(--surface-inverse);color:var(--text-inverse);border:1px solid var(--surface-inverse);border-radius:var(--radius-xs)")}>
-      <span className="ms" style={sx("font-size:var(--text-base);color:var(--success)")}>local_shipping</span>
-      <span style={sx("font-size:var(--text-sm);font-weight:var(--weight-medium)")}>Free delivery on orders over $99</span>
-      <span style={sx("font-size:var(--text-sm);color:var(--gray-300)")}>·</span>
-      <span style={sx("font-size:var(--text-sm);color:var(--gray-300)")}>30-day returns</span>
-      <span style={sx("flex:1")}></span>
-      <span style={sx("font-size:var(--text-sm);color:var(--gray-300)")}>{v.catalogCount} products from {v.brandCount} fictional brands</span>
-    </div>
-
     <nav className="home-quick-categories" aria-label="Popular categories">
       {v.homeCategories.slice(0, 6).map((category: Vals) => (
         <button key={category.name} onClick={category.go}>
@@ -52,29 +41,33 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
 
     <section className="hero">
       <div className="hero-banner">
-        <div className={`hero-banner__slide ${animationPhase ? "offer-slide-a" : "offer-slide-b"}`}>
-          <div className="hero-banner__copy">
-            <span className="hero-banner__eyebrow">{offer.heroEyebrow}</span>
-            <h1>{offer.heroTitle}</h1>
-            <p>{offer.copy}</p>
-            <div className="hero-banner__actions">
-              <button type="button" className="hero-banner__cta" onClick={offer.heroGo}>{offer.heroCta}</button>
-              <button type="button" className="hero-banner__alt" onClick={offer.heroSecondaryGo}>{offer.heroSecondaryLabel}</button>
+        <div className="hero-banner__track" style={{ transform: `translateX(-${offerIndex * 100}%)` }}>
+          {(offers.length ? offers : [offer]).map((slide: Vals, index: number) => (
+            <div className="hero-banner__slide" key={slide.name} aria-hidden={index !== offerIndex}>
+              <div className="hero-banner__copy">
+                <span className="hero-banner__eyebrow">{slide.heroEyebrow}</span>
+                <h1>{slide.heroTitle}</h1>
+                <p>{slide.copy}</p>
+                <div className="hero-banner__actions">
+                  <button type="button" className="hero-banner__cta" tabIndex={index === offerIndex ? 0 : -1} onClick={slide.heroGo}>{slide.heroCta}</button>
+                  <button type="button" className="hero-banner__alt" tabIndex={index === offerIndex ? 0 : -1} onClick={slide.heroSecondaryGo}>{slide.heroSecondaryLabel}</button>
+                </div>
+                <div className="hero-banner__stats">
+                  {(slide.heroStats || []).map((stat: Vals) => (
+                    <span key={stat.label}><strong className="num">{stat.value}</strong>{stat.label}</span>
+                  ))}
+                </div>
+              </div>
+              <button type="button" className="hero-banner__art" tabIndex={index === offerIndex ? 0 : -1} onClick={slide.go} aria-label={`Open ${slide.name}`}>
+                <CatalogImage src={slide.image} alt={slide.name} />
+                <span className="hero-banner__tag">
+                  <small>{slide.brand}</small>
+                  <strong className="num">{slide.price}</strong>
+                  <em>{slide.availability}</em>
+                </span>
+              </button>
             </div>
-            <div className="hero-banner__stats">
-              {(offer.heroStats || []).map((stat: Vals) => (
-                <span key={stat.label}><strong className="num">{stat.value}</strong>{stat.label}</span>
-              ))}
-            </div>
-          </div>
-          <button type="button" className="hero-banner__art" onClick={offer.go} aria-label={`Open ${offer.name}`}>
-            <CatalogImage src={offer.image} alt={offer.name} />
-            <span className="hero-banner__tag">
-              <small>{offer.brand}</small>
-              <strong className="num">{offer.price}</strong>
-              <em>{offer.availability}</em>
-            </span>
-          </button>
+          ))}
         </div>
 
         <button type="button" className="hero-banner__nav is-prev" data-tip="Previous offer" data-tip-place="top"
@@ -116,7 +109,7 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
     <section style={sx("display:flex;flex-direction:column;gap:var(--space-5)")}>
       <div style={sx("display:flex;align-items:baseline;gap:var(--space-3)")}>
         <h2 style={sx("margin:0;font-size:var(--text-2xl);font-weight:var(--weight-medium)")}>Brands in the catalog</h2>
-        <span style={sx("font-size:var(--text-sm);color:var(--text-secondary)")}>Fictional hardware, phones and consoles</span>
+        <span style={sx("font-size:var(--text-sm);color:var(--text-secondary)")}>{v.catalogCount} products from {v.brandCount} fictional brands</span>
       </div>
       <div className="brand-ribbon" aria-label="Rigsmith brands">
         <div className="brand-ribbon__track">

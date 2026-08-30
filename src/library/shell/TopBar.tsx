@@ -58,7 +58,7 @@ export const TopBar: React.FC<{ v: Vals }> = ({ v }) => {
         <span className="ms" style={sx("font-size:14px")}>search</span>
         <input aria-label="Search products" value={v.searchValue} onChange={v.searchChange} placeholder="Search parts, brands, or builds" style={sx("border:0;outline:0;background:transparent;color:var(--text-primary);font:inherit;min-width:0;width:100%;padding:0")} />
       </div>
-      <div style={sx("grid-column:3;justify-self:end;display:flex;align-items:center;gap:4px")}>
+      <div className="topbar-actions" style={sx("grid-column:3;justify-self:end;display:flex;align-items:center;gap:4px")}>
         <WatchBell v={v} />
         <div {...account} data-tip="Your account" role="button" tabIndex={0}>
           <span className="ms" style={sx("font-size:20px;color:var(--text-secondary)")}>account_circle</span>
