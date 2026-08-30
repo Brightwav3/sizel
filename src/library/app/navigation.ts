@@ -22,8 +22,8 @@ export function stateFromLocation(): Partial<AppState> {
   const dept = segments[0] === "pc-parts" ? "pc" : segments[0] === "phones" ? "phone" : segments[0] === "gaming" ? "gaming" : null;
   const slot = segments[1] ? slotForSlug(segments[1]) : null;
   if (!dept || !slot) return { route: "home" };
-  if (segments[2]) return { route: "product", dept, openDept: dept, category: slot, productSlot: slot, productId: segments[2] };
-  return { route: "category", dept, openDept: dept, category: slot, productSlot: slot };
+  if (segments[2]) return { route: "product", dept, openDept: null, category: slot, productSlot: slot, productId: segments[2] };
+  return { route: "category", dept, openDept: null, category: slot, productSlot: slot };
 }
 
 export function urlForState(state: AppState): string {
