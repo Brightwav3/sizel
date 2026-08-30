@@ -6,8 +6,6 @@ import { buildHomeVals } from "./vals/homeVals";
 import { buildCatalogVals } from "./vals/catalogVals";
 import { buildProductVals } from "./vals/productVals";
 import { buildBuilderVals } from "./vals/builderVals";
-import { buildPickerVals } from "./vals/pickerVals";
-import { buildGuidedVals } from "./vals/guidedVals";
 import { buildOverlayVals } from "./vals/overlayVals";
 import { buildCheckoutVals } from "./vals/checkoutVals";
 
@@ -21,8 +19,6 @@ export function buildVals(app: RigsmithApp): Vals {
     ...buildCatalogVals(context),
     ...buildProductVals(context),
     ...buildBuilderVals(context),
-    ...buildPickerVals(context),
-    ...buildGuidedVals(context),
     ...buildOverlayVals(context),
     ...buildCheckoutVals(context),
   };

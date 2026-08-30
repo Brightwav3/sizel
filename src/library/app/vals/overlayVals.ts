@@ -1,39 +1,48 @@
-import React from "react";
-import { CATALOG, CAT_ICON, CAT_META, DEFAULT_PICKS, DEPTS, DESCS, GSTEP, GUIDED, ORDER, SPECS } from "../../data/catalog";
-import { RES, money } from "../../data/metrics";
-import type { PcSlot } from "../../types";
+import { CATALOG, ORDER } from "../../data/catalog";
+import { money } from "../../data/metrics";
+import { RigsmithApp } from "../../RigsmithApp";
 import type { BuildContext } from "../buildContext";
 
+/**
+ * The floating build card. It reports the build the shopper is actually
+ * assembling — the slots they have chosen — rather than the progress of the
+ * guided flow the app no longer has.
+ */
 export function buildOverlayVals(context: BuildContext) {
-  const { app, s, m, route, on, sideStyle, shopping, dept, picked, depts, openDept, categories, spend, over, fpsOk, quietOk, rows, games, wantRes, allProducts, searchText, cat, catList, brandOf, brandLogo, facetDefinitions, facetValues, specFilters, fitFacetIds, fitFilters, technicalFilters, visible, hidden, pSlot, pick, buildableProduct, candidateBuild, pFits, pslot, cur, pool, ordered, mtx, rowDefs, fg, pickerRows, stepDefs, st, filtersOn, gSpent, valueGpu, quietGpu, featuredCpu, featuredCooler, featuredStorage, featuredPhone, featuredConsole, promoProduct, brandNames, brandRibbon, homeDepartments, homeCategorySlots, homeCategories } = context;
+  const { app, s, m, route } = context;
+  const steps = RigsmithApp.BUILD_STEPS;
+  const chosenParts = s.chosen.map(slot => CATALOG[slot].find(part => part.id === s.picks[slot])!);
+  const spent = chosenParts.reduce((total, part) => total + part.price, 0);
+  const started = s.chosen.length > 0 && s.chosen.length < steps.length;
+
   return {
-      cornerOpen: route !== "guided" ? "true" : "false",
+      cornerOpen: route !== "builder" ? "true" : "false",
       cornerTransform: "translate(" + app.dockPoint().x + "px," + app.dockPoint().y + "px)",
       cornerExpanded: !s.cornerMin, cornerCollapsed: s.cornerMin,
       cornerToggle: () => app.setState({ cornerMin: !s.cornerMin }),
       cornerDrag: app.cornerDrag,
-      cornerTitle: s.gDone.length > 0 && s.gDone.length < 9 ? "Guided build" : "Your build",
-      cornerCount: s.gDone.length > 0 && s.gDone.length < 9 ? s.gDone.length + " / 9" : "9 / 9",
-      cornerRows: GUIDED.slice(0, 3).map(slot => {
-        const inProgress = s.gDone.length > 0 && s.gDone.length < 9;
-        const done = !inProgress || s.gDone.includes(slot);
-        const p = app.part(slot), o = ORDER.find(x => x.slot === slot)!;
+      cornerTitle: started ? "Build in progress" : s.chosen.length ? "Your build" : "Start a build",
+      cornerCount: `${s.chosen.length} / ${steps.length}`,
+      cornerRows: steps.slice(0, 3).map(slot => {
+        const done = s.chosen.includes(slot);
+        const part = CATALOG[slot].find(item => item.id === s.picks[slot])!;
+        const order = ORDER.find(item => item.slot === slot)!;
         return {
-          name: done ? p.name : o.cat, icon: done ? "check" : "radio_button_checked",
+          name: done ? part.name : order.cat,
+          icon: done ? "check" : "radio_button_checked",
           ic: done ? "var(--success)" : "var(--accent)",
           fg: done ? "var(--text-primary)" : "var(--accent-active)",
-          price: done ? money(p.price) : "next",
+          price: done ? money(part.price) : "not chosen",
         };
       }),
-      cornerRest: s.gDone.length > 0 && s.gDone.length < 9
-        ? GUIDED.slice(3).map(x => (ORDER.find(o => o.slot === x) || ({} as any)).cat).join(", ")
-        : "Plus cooler, power supply, case and fans — " + m.fps + " fps, " + app.noiseWord(m.noise).toLowerCase(),
-      cornerSpent: s.gDone.length > 0 && s.gDone.length < 9 ? money(gSpent) + " spent so far" : money(m.price) + " total",
-      cornerLeft: s.gDone.length > 0 && s.gDone.length < 9
-        ? money(Math.max(0, s.budget - gSpent)) + " of " + money(s.budget) + " left"
-        : (m.price > s.budget ? money(m.price - s.budget) + " over budget" : money(s.budget - m.price) + " left of " + money(s.budget)),
-      cornerCta: s.gDone.length > 0 && s.gDone.length < 9 ? "Resume" : "Open",
-      cornerResume: () => app.go(s.gDone.length > 0 && s.gDone.length < 9 ? "guided" : "builder"),
+      cornerRest: steps.slice(3)
+        .map(slot => ORDER.find(item => item.slot === slot)!.cat.toLowerCase())
+        .join(", "),
+      cornerSpent: s.chosen.length ? money(spent) + " so far" : "Nothing chosen yet",
+      cornerLeft: spent > s.budget
+        ? money(spent - s.budget) + " over budget"
+        : money(s.budget - spent) + " left of " + money(s.budget),
+      cornerCta: started ? "Resume" : "Open",
+      cornerResume: () => app.go("builder"),
   };
 }
-
