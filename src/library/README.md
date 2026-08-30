@@ -37,11 +37,21 @@ See `docs/decisions/0002-single-build-state-and-domain-view-models.md`.
 
 The application uses the supplied design-system tokens plus route-specific CSS:
 
-- `styles.css` — preserved prototype styles.
-- `configurator.css` — PC builder.
+- `styles.css` — shared primitives (`.card`, `.ph`, `.pill`, `.eyebrow`).
 - `home.css` — storefront homepage.
-- `sidebar.css` and `shell/eshop-sidebar.css` — navigation and filters.
+- `catalog.css` — category listing and the product card.
+- `product.css`, `configurator.css` — product page and PC builder.
+- `cart.css`, `checkout.css` — cart, checkout, order confirmation.
+- `sidebar.css`, `shell/eshop-sidebar.css`, `shell/topbar.css`, `shell/app-shell.css` — page frame, navigation and filters.
+- `responsive.css` — every grid that reflows, with the base value each media query overrides.
 - `motion.css` — optional motion helpers.
+
+Components carry no inline declaration strings. A value that genuinely varies per
+instance is passed as a CSS custom property and consumed by the class; the two
+elements that still set `transform` / `opacity` inline do so to outrank
+`motion.css`, and say why in a comment.
+
+See `docs/decisions/0004-inline-style-strings-are-a-migration-bridge.md`.
 
 ## Verification
 

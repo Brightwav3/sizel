@@ -1,5 +1,5 @@
 import type { RigsmithApp } from "../RigsmithApp";
-import type { Vals } from "../sx";
+import type { Vals } from "../types";
 import { CATALOG, CAT_ICON, CAT_META, DEFAULT_PICKS, DEPTS } from "../data/catalog";
 import { money } from "../data/metrics";
 import type { Part, PcSlot, Picks, Slot } from "../types";

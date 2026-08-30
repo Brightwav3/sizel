@@ -1,11 +1,11 @@
 /**
- * Rigsmith UI — a byte-identical dissection of `Rigsmith Prototype.dc.html`.
+ * Rigsmith UI.
  *
- * Every style declaration string in these files is copied from the prototype
- * verbatim and parsed by `sx`, so a diff against the prototype is meaningful.
- * `styles.css` is the prototype's <style> block, unchanged.
+ * Ported from `Rigsmith Prototype.dc.html`. The port kept the prototype's
+ * inline declaration strings so it could be diffed against the original; that
+ * bridge is gone (ADR 0004) and every screen is now styled from the CSS files
+ * beside it and the tokens in `src/_ds`.
  */
-export { sx, useHover, type Vals } from "./sx";
 export * from "./types";
 
 export { CATALOG, CAT_META, CAT_ICON, DEPTS, ORDER, SPECS, DESCS, DEFAULT_PICKS, PRODUCTS, getProductById } from "./data/catalog";

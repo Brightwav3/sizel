@@ -1,5 +1,5 @@
 import React from "react";
-import type { Vals } from "../sx";
+import type { Vals } from "../types";
 import "../responsive.css";
 import "../product.css";
 import { RatingLine, Stars } from "../shell/Stars";

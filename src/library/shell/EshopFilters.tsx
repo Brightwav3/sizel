@@ -1,5 +1,5 @@
 import React from "react";
-import { sx, type Vals } from "../sx";
+import type { Vals } from "../types";
 import "../sidebar.css";
 
 /**

@@ -109,3 +109,9 @@ export interface Metrics {
 export type Route =
   | "home" | "category" | "product" | "builder"
   | "cart" | "checkout" | "done";
+
+/**
+ * The derived value bag a screen renders. `buildVals` composes it from the
+ * domain view-models; every region reads it and never the app state directly.
+ */
+export type Vals = Record<string, any>;

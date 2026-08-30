@@ -1,4 +1,4 @@
-import type { Vals } from "../sx";
+import type { Vals } from "../types";
 import { AppShell } from "../shell/AppShell";
 import { HomeScreen } from "../screens/HomeScreen";
 import { CategoryScreen } from "../screens/CategoryScreen";
