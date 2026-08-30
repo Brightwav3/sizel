@@ -5,7 +5,7 @@
  * The UI view-models and the WebMCP tools both call these functions, so an
  * agent searching the catalog sees exactly what the shopper sees.
  */
-import { CATALOG, CAT_META, DEPTS } from "../../data/catalog/catalog";
+import { CATALOG, CAT_META, DEPTS, locateProduct } from "../../data/catalog/catalog";
 // ADR 0005: reusable product rules live in the product entity.
 // docs/decisions/0005-feature-first-source-layout.md
 import { compatibilityIssues } from "../build/metrics";
@@ -115,13 +115,8 @@ export const brandLogo = (brand: string) => "/catalog/logos/" + brand.toLowerCas
 export const allProducts = (): Part[] =>
   Object.values(CATALOG).flat().filter(product => !product.id.endsWith("::fans"));
 
-export const findProduct = (id: string): { product: Part; category: Slot } | null => {
-  for (const [category, products] of Object.entries(CATALOG) as [Slot, Part[]][]) {
-    const product = products.find(item => item.id === id);
-    if (product) return { product, category };
-  }
-  return null;
-};
+export const findProduct = (id: string): { product: Part; category: Slot } | null =>
+  locateProduct(id) ?? null;
 
 export const facetValues = (definition: FacetDefinition, product: Part): string[] => {
   const value = definition.get(product);

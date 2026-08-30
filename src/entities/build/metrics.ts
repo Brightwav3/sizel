@@ -1,4 +1,4 @@
-import { CATALOG } from "../../data/catalog/catalog";
+import { partIn } from "../../data/catalog/catalogIndex";
 import type { Part, PcSlot, Picks } from "../../shared/lib/types";
 
 export const money = (n: number) => "$" + n.toLocaleString("en-US");
@@ -12,18 +12,17 @@ const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "
 /** Parts the shop assembles and prices as one machine. */
 const BUILD_SLOTS: PcSlot[] = ["gpu", "cpu", "board", "ram", "storage", "cooler", "psu", "case", "fans"];
 
-export const part = (picks: Picks, slot: PcSlot) =>
-  CATALOG[slot].find(p => p.id === picks[slot])!;
+export const part = (picks: Picks, slot: PcSlot) => partIn(slot, picks[slot])!;
 
 /** Watts the build draws. One formula, so the check and the readout agree. */
 export function powerDraw(picks: Partial<Picks>): number {
-  const selected = (slot: PcSlot) => picks[slot] ? CATALOG[slot].find(item => item.id === picks[slot]) : undefined;
+  const selected = (slot: PcSlot) => partIn(slot, picks[slot]);
   return (selected("gpu")?.watt ?? 0) + (selected("cpu")?.cpuPowerW ?? 0) + 80;
 }
 
 /** Compatibility checks read only normalized facts derived from products.json. */
 export function compatibilityIssues(picks: Partial<Picks>): string[] {
-  const selected = (slot: PcSlot) => picks[slot] ? CATALOG[slot].find(item => item.id === picks[slot]) : undefined;
+  const selected = (slot: PcSlot) => partIn(slot, picks[slot]);
   const cpu = selected("cpu");
   const board = selected("board");
   const ram = selected("ram");
