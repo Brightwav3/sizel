@@ -1,6 +1,6 @@
 # Rigsmith — WebMCP Challenge submission draft
 
-> Status: data-port milestone only. The live app, UI, WebMCP tools, public repository URL, and demo video are not ready yet.
+> Status: the catalog and interactive app are working. WebMCP tools, deployment, public repository URL, and demo video are not ready yet.
 
 This draft is based on the pasted **OpenAI WebMCP Challenge Official Rules** supplied with the project on 2026-08-29. The official rules remain the source of truth if they change.
 
@@ -14,7 +14,7 @@ The idea came from a simple frustration: product catalogs are designed for brows
 
 Rigsmith is designed around a shared workflow for a person and an AI agent. The person can browse real-looking product cards, compare trade-offs, and make the final call. An agent can search the same catalog, explain a compatibility conflict, and propose a replacement while keeping the person in control of the build.
 
-The first milestone ports a complete fictional catalog of 135 products across 13 fictional brands. It preserves the original product IDs, nested specifications, prices, availability, generated logos, brand guides, and image paths. The next milestone will expose those local records through a catalog UI and WebMCP tools for search, product lookup, build changes, and compatibility checks.
+The repository contains a complete fictional catalog of 135 products across 13 fictional brands and an interactive storefront and PC configurator. It preserves the original product IDs, nested specifications, prices, availability, generated logos, brand guides, and image paths. The remaining competition milestone is to expose the working catalog and shared build state through WebMCP tools for search, product lookup, build changes, and compatibility checks.
 
 What we learned is that an agent experience needs explicit actions and stable data boundaries. A tool should return structured product records and clear compatibility reasons, not force an agent to scrape visual labels from cards. The main challenge is making technical constraints understandable without hiding the underlying facts.
 
@@ -37,13 +37,13 @@ The person gets plain-language explanations beside the technical facts. The agen
 
 ### How it was built
 
-The data layer is local and self-contained. `products.json` is the canonical frontend source; `products.db` is retained as a SQLite copy for inspection and future server-side use. Product images, generated fictional logos, and brand guides are served from the repository without external product APIs or downloaded branded imagery.
+The application and data layer are local and self-contained. The React UI provides catalog browsing, filters, product detail, a nine-part PC builder, compatibility checks, a persistent build summary, cart, and checkout. The active build has one state owner, so visible UI and future WebMCP tools can share the same deterministic data boundary. `products.json` is the canonical frontend source; `products.db` is retained as a SQLite copy for inspection and future server-side use. Product images, generated fictional logos, and brand guides are served from the repository without external product APIs or downloaded branded imagery.
 
 ## Current milestone boundary
 
-The current repository contains the data port only. It does not yet claim a working WebMCP-powered app. The catalog, UI, WebMCP registrations, deployment, and video must be completed and tested before submission.
+The current repository contains a working catalog and interactive UI. It does not yet claim a working WebMCP-powered app. WebMCP registrations, end-to-end agent testing, deployment, and the demo video must be completed before submission.
 
-Because the data port predates the final WebMCP implementation, the eventual submission should keep a dated commit trail that clearly distinguishes this data milestone from the new WebMCP work. The rules say pre-existing work is evaluated only on the meaningful WebMCP extension made during the Submission Period.
+Because the catalog and UI predate the final WebMCP implementation, the eventual submission should keep a dated commit trail that clearly distinguishes this data milestone from the new WebMCP work. The rules say pre-existing work is evaluated only on the meaningful WebMCP extension made during the Submission Period.
 
 ## Built with
 

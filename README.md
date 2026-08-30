@@ -1,21 +1,59 @@
-# Rigsmith data port
+# Rigsmith
 
-Rigsmith is a fictional electronics e-shop demo. This milestone ports the supplied product database and its local visual assets into a repository-ready layout. No UI has been created yet.
+Rigsmith is a fictional electronics shop and PC configurator built for a human-and-agent workflow. The app includes a 135-product local catalog, component selection, compatibility checks, a persistent build summary, and checkout screens.
 
-## Ported files
+All products, brands, logos, and product images are fictional. The application does not depend on an external catalog API.
 
-- `public/catalog/products.json` — canonical 135-product catalog.
-- `public/catalog/products.db` — SQLite copy of the catalog.
-- `public/catalog/images/` — supplied product images, preserving relative paths.
-- `public/catalog/logos/` — generated fictional brand logos.
-- `public/catalog/brand-guides/` — visual manuals for all 13 fictional brands.
+## Quick start
 
-Archived image directories were not imported. No external APIs or real-world product brands are used.
+1. Install Node.js 20 or newer.
+2. Run `npm install`.
+3. Run `npm run dev`.
+4. Open the local URL printed by Vite.
 
-## Validation
+## Commands
 
-Run the catalog checks with a TypeScript runner such as `npx tsx scripts/check-catalog.ts`. The checks cover product count, duplicate IDs, SQLite presence, image paths, brand coverage, and PC component categories.
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Start the Vite development server |
+| `npm run build` | Type-check and create a production build |
+| `npm run preview` | Preview the production build |
+| `npm run check:catalog` | Validate product IDs, category coverage, SQLite, brands, and image paths |
+| `npm run audit:prototype` | Validate the catalog adapter, routes, screens, and prototype CSS |
 
-## Next milestone
+## Product capabilities
 
-Build the catalog and PC configurator UI on top of these local files. The UI must treat `products.json` as the frontend source and preserve every product's original `id`, `image_path`, `image_url`, specifications, pricing, availability, and CPU/GPU `imageCategory` fields.
+- Browse 135 products across PC parts, phones, and consoles.
+- Filter by price, brand, availability, and technical specifications.
+- Build a nine-part PC from one shared application state.
+- Check socket, memory, case-clearance, cooling, and power compatibility.
+- Carry the same build into the floating summary, cart, and checkout.
+
+## Architecture
+
+`RigsmithApp` owns application lifecycle and the single active build. `app/buildContext.ts` calculates shared derived data once. Domain modules under `app/vals/` expose route-specific view-models to screens.
+
+```text
+src/library/
+  app/          application state, navigation, shared calculations, domain view-models
+  data/         canonical catalog adapter and compatibility calculations
+  screens/      route-level UI
+  shell/        top bar, navigation, catalog filters, and page shell
+  overlays/     floating build summary and toast
+```
+
+The canonical frontend catalog is `public/catalog/products.json`. Architectural decisions are recorded in `docs/decisions/`.
+
+## WebMCP Challenge status
+
+The interactive application and local catalog are working. WebMCP tool registration, deployment, public repository URL, and demo video are still pending. Planned tools are documented in `docs/hackathon-submission.md`; the repository does not claim they are implemented yet.
+
+## Data and licensing
+
+- `public/catalog/products.json` — canonical product catalog.
+- `public/catalog/products.db` — SQLite copy for inspection.
+- `public/catalog/images/` — local fictional product imagery.
+- `public/catalog/logos/` — fictional brand logos.
+- `public/catalog/brand-guides/` — fictional brand guides.
+
+The source code is licensed under the MIT License. See `LICENSE`.
