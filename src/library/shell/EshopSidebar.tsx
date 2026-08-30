@@ -65,7 +65,7 @@ export const EshopSidebar: React.FC<{ v: Vals }> = ({ v }) => {
                 <span className="ms">{dept.icon}</span><span>{dept.name}</span><b>{dept.count}</b><span className="ms rail-chevron">chevron_right</span>
               </button>;
             })}
-            {v.isHome && comingSoonCategories.map(category => <div key={category.name} className="eshop-placeholder-category" aria-disabled="true"><span className="ms">{category.icon}</span><span>{category.name}</span><small>Soon</small></div>)}
+            {comingSoonCategories.map(category => <div key={category.name} className="eshop-placeholder-category" aria-disabled="true"><span className="ms">{category.icon}</span><span>{category.name}</span><small>Soon</small></div>)}
           </nav>
           {v.isHome && <div className="eshop-audience-services" aria-label="Upcoming Rigsmith services">
             <div className="eshop-audience-service" aria-disabled="true"><span className="audience-icon is-student"><span className="ms">school</span></span><span><strong>Rigsmith for students</strong><small>Student pricing and study-ready tech</small></span><em>Soon</em></div>

@@ -1,4 +1,5 @@
 import type { AppState } from "./AppState";
+import { DEPTS } from "../data/catalog";
 import type { Slot } from "../types";
 
 const categorySlugs: Record<string, string> = {
@@ -20,8 +21,11 @@ export function stateFromLocation(): Partial<AppState> {
   if (segments[0] === "checkout") return { route: "checkout", step: 0 };
   if (segments[0] === "order-complete") return { route: "done" };
   const dept = segments[0] === "pc-parts" ? "pc" : segments[0] === "phones" ? "phone" : segments[0] === "gaming" ? "gaming" : null;
+  if (!dept) return { route: "home" };
+  const department = DEPTS.find(item => item.id === dept)!;
+  if (!segments[1]) return { route: "category", dept, openDept: dept, category: department.cats[0], productSlot: department.cats[0] };
   const slot = segments[1] ? slotForSlug(segments[1]) : null;
-  if (!dept || !slot) return { route: "home" };
+  if (!slot) return { route: "home" };
   if (segments[2]) return { route: "product", dept, openDept: null, category: slot, productSlot: slot, productId: segments[2] };
   return { route: "category", dept, openDept: null, category: slot, productSlot: slot };
 }
@@ -38,6 +42,7 @@ export function urlForState(state: AppState): string {
   const productDept = slot === "phones" ? "phone" : slot === "consoles" ? "gaming" : "pc";
   const baseDept = state.route === "product" ? productDept : state.dept;
   const base = baseDept === "phone" ? "/phones" : baseDept === "gaming" ? "/gaming" : "/pc-parts";
+  if (state.route === "category" && state.openDept) return base;
   const category = categorySlugs[slot] || categorySlugs.gpu;
   return `${base}/${category}${state.route === "product" ? `/${encodeURIComponent(state.productId)}` : ""}`;
 }

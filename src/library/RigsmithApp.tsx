@@ -20,7 +20,7 @@ import type { PcSlot, Picks, Route } from "./types";
 export class RigsmithApp extends React.Component<{}, AppState> {
   state: AppState = {
     route: "home", pickerSlot: null, productId: DEFAULT_PICKS.gpu, category: "gpu", productSlot: "gpu",
-    catalogOpen: false, dept: "pc", openDept: "pc",
+    catalogOpen: false, dept: "pc", openDept: null,
     picks: { ...DEFAULT_PICKS },
     builderSlot: "gpu", builderSearch: "",
     gStep: 0, gDone: [], cornerMin: true, cornerX: null, cornerY: null,
@@ -45,7 +45,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     const next = stateFromLocation();
     if (next.route !== "home") {
       this.syncingFromUrl = true;
-      this.setState(next as any, () => { this.urlReady = true; });
+      this.setState(next as any, () => { this.syncingFromUrl = false; this.urlReady = true; });
     } else {
       this.urlReady = true;
     }
@@ -62,7 +62,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
       this.syncingFromUrl = false;
       return;
     }
-    const navigationChanged = prevState.route !== this.state.route || prevState.category !== this.state.category || prevState.productId !== this.state.productId || prevState.dept !== this.state.dept;
+    const navigationChanged = prevState.route !== this.state.route || prevState.category !== this.state.category || prevState.productId !== this.state.productId || prevState.dept !== this.state.dept || prevState.openDept !== this.state.openDept;
     if (navigationChanged) {
       const nextUrl = urlForState(this.state);
       if (nextUrl !== window.location.pathname) window.history.pushState({}, "", nextUrl);
