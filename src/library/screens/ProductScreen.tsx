@@ -2,6 +2,7 @@ import React from "react";
 import type { Vals } from "../sx";
 import "../responsive.css";
 import "../product.css";
+import { RatingLine, Stars } from "../shell/Stars";
 
 /**
  * Product detail laid out the way a large electronics retailer does it: the
@@ -37,7 +38,9 @@ export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => (
 
       <aside className="product-buy" aria-label="Purchase">
         <button type="button" className="product-buy__brand" onClick={v.pAllFromBrand}>All from {v.pBrand}</button>
-        <h1>{v.pBrand} {v.pModel}</h1>
+        <h1>{v.pTitle}</h1>
+        <RatingLine average={v.pRating.average} count={v.pRating.count} size={15}
+          onClick={() => document.getElementById("reviews")?.scrollIntoView({ behavior: "smooth" })} />
 
         <p className="product-buy__summary">{v.pBlurb}</p>
 
@@ -61,6 +64,10 @@ export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => (
             </button>
           )}
         </div>
+
+        <button type="button" className={`watch-button ${v.pWatched ? "is-on" : ""}`} onClick={v.pWatch} aria-pressed={v.pWatched}>
+          <span className="ms">sound_detection_dog_barking</span>{v.pWatchLabel}
+        </button>
 
         <div className="product-buy__fit" style={{ background: v.pFitBg, display: v.pFitShow }}>
           <span className="ms" style={{ color: v.pFitFg }}>{v.pFitIcon}</span>
@@ -90,6 +97,48 @@ export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => (
         <h2>At a glance</h2>
         <div>
           {v.pSpecs.map((spec: string, i: number) => <span key={i}>{spec}</span>)}
+        </div>
+      </div>
+    </section>
+
+    <section className="reviews" id="reviews" aria-label="Customer reviews">
+      <div>
+        <h2>Customer reviews</h2>
+        <div className="reviews__score">
+          <strong className="num">{v.pRating.average.toFixed(1)}</strong>
+          <Stars value={v.pRating.average} size={18} />
+          <small>{v.pRating.count} ratings</small>
+          <div className="reviews__bars">
+            {v.pRating.distribution.map((band: Vals) => (
+              <div key={band.stars} className="reviews__bar">
+                <span>{band.stars} ★</span>
+                <i><b style={{ width: `${band.percent}%` }} /></i>
+                <span className="num">{band.percent}%</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+      <div>
+        <h2>What buyers say</h2>
+        <div className="reviews__list">
+          {v.pReviews.map((review: Vals) => (
+            <article key={review.id} className="review">
+              <span className="review__avatar">{review.initials}</span>
+              <div>
+                <div className="review__head">
+                  <strong>{review.author}</strong>
+                  <Stars value={review.stars} size={12} />
+                  <time>{review.date}</time>
+                  {review.verified && (
+                    <span className="review__verified"><span className="ms">verified</span>Verified purchase</span>
+                  )}
+                </div>
+                <h3>{review.title}</h3>
+                <p>{review.body}</p>
+              </div>
+            </article>
+          ))}
         </div>
       </div>
     </section>
