@@ -39,7 +39,8 @@ describe("tool contract", () => {
   it("marks every tool that changes nothing as read only", () => {
     const writers = ["set_build_component", "add_to_cart", "add_build_to_cart", "create_watchdog",
       "recommend_build", "set_build_target", "undo_build_change", "show_in_catalog",
-      "update_cart_line", "start_checkout", "remove_watchdog"];
+      "update_cart_line", "start_checkout", "remove_watchdog",
+      "select_product_variant", "focus_builder_slot"];
     for (const tool of TOOLS) {
       const readOnly = tool.readOnlyHint === true && tool.annotations?.readOnlyHint === true;
       expect(readOnly, tool.name).toBe(!writers.includes(tool.name));
@@ -83,6 +84,56 @@ describe("results stay inside the output budget", () => {
 
   it("answers an unknown id with a reason instead of throwing", () => {
     expect(JSON.parse(call("get_product", { productId: "nope" })).error).toBe("product_not_found");
+  });
+});
+
+describe("search_products filters", () => {
+  it("applies a facet from list_filters and narrows the result", () => {
+    const facet = JSON.parse(call("list_filters", { category: "gpu" })).facets[0];
+    const all = JSON.parse(call("search_products", { category: "gpu", limit: 20 })).total;
+    const narrowed = JSON.parse(call("search_products", {
+      category: "gpu", limit: 20, filters: { [facet.id]: [facet.values[0]] },
+    }));
+    expect(narrowed.total).toBeGreaterThan(0);
+    expect(narrowed.total).toBeLessThanOrEqual(all);
+  });
+
+  it("names a filter the category does not have instead of ignoring it", () => {
+    const result = JSON.parse(call("search_products", { category: "gpu", filters: { "cpu-socket": ["AM5"] } }));
+    expect(result.error).toBe("unknown_filter");
+    expect(result.hint).toContain("cpu-socket");
+  });
+
+  it("refuses filters without a category, because facets are per category", () => {
+    expect(JSON.parse(call("search_products", { query: "rtx", filters: { "gpu-memory": ["16 GB"] } })).error)
+      .toBe("category_required");
+  });
+});
+
+describe("get_deals", () => {
+  it("returns only what the shop is flagging, with the kind on each", () => {
+    const sale = JSON.parse(call("get_deals", { kind: "sale", limit: 10 }));
+    expect(sale.items.length).toBeGreaterThan(0);
+    expect(sale.items.every((item: any) => item.kind === "sale")).toBe(true);
+  });
+});
+
+describe("list_brands", () => {
+  it("counts listings per brand and narrows to a category", () => {
+    const all = JSON.parse(call("list_brands"));
+    const gpu = JSON.parse(call("list_brands", { category: "gpu" }));
+    expect(all.brands.length).toBeGreaterThan(gpu.brands.length);
+    expect(gpu.brands.reduce((sum: number, b: any) => sum + b.count, 0)).toBe(CATALOG.gpu.length);
+  });
+});
+
+describe("get_checkout_fields", () => {
+  it("says what each step asks for and never carries a value", () => {
+    const tool = TOOLS.find(entry => entry.name === "get_checkout_fields")!;
+    expect(tool.readOnlyHint).toBe(true);
+    const body = JSON.stringify(tool.inputSchema);
+    expect(body).not.toContain("name");
+    expect(body).not.toContain("card");
   });
 });
 
