@@ -2,7 +2,7 @@
 
 ## Brand mark
 
-![Tailspin logo](../logos/generated/tailspin.png)
+![Tailspin logo](../logos/generated/tailspin.webp)
 
 ## Visual language
 

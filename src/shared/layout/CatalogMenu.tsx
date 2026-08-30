@@ -99,12 +99,12 @@ export const CatalogMenu: React.FC<{ v: Vals; variant?: "rail" | "bar" }> = ({ v
   )).map(brand => ({
     name: brand,
     slug: brand.toLowerCase().replace(/\s+/g, "-"),
-    logo: `/catalog/logos/${brand.toLowerCase().replace(/\s+/g, "-")}.png`,
+    logo: `/catalog/logos/${brand.toLowerCase().replace(/\s+/g, "-")}.webp`,
     count: catalogDept.cats.flatMap(slot => CATALOG[slot]).filter(part => part.brand === brand).length,
   })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)) : [];
 
   const groups: { title: string; hint: string; icon: string; image?: string; slot?: string; featured?: boolean }[] = activeDept ? [
-    ...(activeDept.name === "PC parts" ? [{ title: "Build a PC", hint: "Start a build · Check compatibility · Saved builds", icon: "construction", image: "/catalog/promos/rigsmith-configurator-promo.png", featured: true }] : []),
+    ...(activeDept.name === "PC parts" ? [{ title: "Build a PC", hint: "Start a build · Check compatibility · Saved builds", icon: "construction", image: "/catalog/promos/rigsmith-configurator-promo.webp", featured: true }] : []),
     ...(catalogDept?.cats.map(slot => ({ title: CAT_META[slot].name, hint: `${CAT_META[slot].count} products`, icon: CAT_ICON[slot], image: CATALOG[slot][0]?.imagePath, slot })) ?? []),
   ] : [];
 

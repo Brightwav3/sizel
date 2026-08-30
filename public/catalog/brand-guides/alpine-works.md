@@ -2,7 +2,7 @@
 
 ## Brand mark
 
-![Alpine Works logo](../logos/generated/alpine-works.png)
+![Alpine Works logo](../logos/generated/alpine-works.webp)
 
 ## Visual language
 

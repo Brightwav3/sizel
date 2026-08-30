@@ -2,7 +2,7 @@
 
 ## Brand mark
 
-![Litware logo](../logos/generated/litware.png)
+![Litware logo](../logos/generated/litware.webp)
 
 ## Visual language
 

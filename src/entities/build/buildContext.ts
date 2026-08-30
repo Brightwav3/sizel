@@ -134,7 +134,7 @@ export function createBuildContext(app: RigsmithApp) {
     const brandNames = Array.from(new Set(allProducts.map(product => product.brand).filter((brand): brand is string => Boolean(brand)))).sort();
     const brandRibbon = brandNames.map(brand => ({
       name: brand,
-      logo: "/catalog/logos/" + brand.toLowerCase().replace(/\s+/g, "-") + ".png",
+      logo: "/catalog/logos/" + brand.toLowerCase().replace(/\s+/g, "-") + ".webp",
       go: () => app.setState({ route: "category", dept: "pc", category: "gpu", brand, search: "" }),
     }));
     const homeDepartments = DEPTS.map(d => {

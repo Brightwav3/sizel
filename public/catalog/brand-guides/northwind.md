@@ -2,7 +2,7 @@
 
 ## Brand mark
 
-![Northwind logo](../logos/generated/northwind.png)
+![Northwind logo](../logos/generated/northwind.webp)
 
 ## Visual language
 

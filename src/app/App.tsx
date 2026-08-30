@@ -37,6 +37,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     budget: 1800, target: 144, res: "1440p", quiet: true,
     fitOnly: false, fastShip: false, minPrice: 0, maxPrice: 2200, useFilter: "any", brand: "any", facetFilters: {}, sort: "popular", stockOnly: false, onSale: false, search: "", recentSearches: ["quiet graphics card", "1 TB NVMe", "phone under $700"],
     lastChange: null, prev: null, cart: [], watchdogs: [], step: 0, toast: null, saved: 2,
+    ...stateFromLocation(),
   };
 
   private t?: number;
@@ -55,13 +56,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     syncWebmcpTools(this.state.route);
     window.addEventListener("resize", this.onResize);
     window.addEventListener("popstate", this.onPopState);
-    const next = stateFromLocation();
-    if (next.route !== "home") {
-      this.syncingFromUrl = true;
-      this.setState(next as any, () => { this.syncingFromUrl = false; this.urlReady = true; });
-    } else {
-      this.urlReady = true;
-    }
+    this.urlReady = true;
   }
   componentWillUnmount() {
     if (RigsmithApp.instance === this) RigsmithApp.instance = null;

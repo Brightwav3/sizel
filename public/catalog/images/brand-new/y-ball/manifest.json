@@ -2,10 +2,10 @@
   "brand": "Y-Ball",
   "image_directory": "images/brand-new/y-ball",
   "background": "#FFFFFF",
-  "logo_source": "logos/generated/y-ball.png",
+  "logo_source": "logos/generated/y-ball.webp",
   "logo_application": "Y-Ball logo physically printed on the retail box and console surfaces",
   "products": [
-    {"id":"y-ball-series-s","image_path":"images/brand-new/y-ball/y-ball-series-s.png","composition":"product + retail box"},
-    {"id":"y-ball-series-x","image_path":"images/brand-new/y-ball/y-ball-series-x.png","composition":"product + retail box"}
+    {"id":"y-ball-series-s","image_path":"images/brand-new/y-ball/y-ball-series-s.webp","composition":"product + retail box"},
+    {"id":"y-ball-series-x","image_path":"images/brand-new/y-ball/y-ball-series-x.webp","composition":"product + retail box"}
   ]
 }

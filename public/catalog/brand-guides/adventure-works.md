@@ -2,7 +2,7 @@
 
 ## Brand mark
 
-![Adventure Works logo](../logos/generated/adventure-works.png)
+![Adventure Works logo](../logos/generated/adventure-works.webp)
 
 ## Visual language
 

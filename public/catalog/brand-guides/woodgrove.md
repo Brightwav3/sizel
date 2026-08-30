@@ -2,7 +2,7 @@
 
 ## Brand mark
 
-![Woodgrove logo](../logos/generated/woodgrove.png)
+![Woodgrove logo](../logos/generated/woodgrove.webp)
 
 ## Visual language
 

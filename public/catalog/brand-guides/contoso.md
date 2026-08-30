@@ -2,7 +2,7 @@
 
 ## Brand mark
 
-![Contoso logo](../logos/generated/contoso.png)
+![Contoso logo](../logos/generated/contoso.webp)
 
 ## Visual language
 

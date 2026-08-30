@@ -2,11 +2,11 @@
   "brand": "Alpine Works",
   "image_directory": "images/brand-new/alpine-works",
   "background": "#FFFFFF",
-  "logo_source": "logos/generated/alpine-works.png",
+  "logo_source": "logos/generated/alpine-works.webp",
   "logo_application": "Alpine Works logo physically printed on the retail box and cooler surfaces",
   "products": [
-    {"id":"alpine-freezer-36","image_path":"images/brand-new/alpine-works/alpine-freezer-36.png","composition":"product + retail box"},
-    {"id":"alpine-liquid-240","image_path":"images/brand-new/alpine-works/alpine-liquid-240.png","composition":"product + retail box"},
-    {"id":"alpine-liquid-420","image_path":"images/brand-new/alpine-works/alpine-liquid-420.png","composition":"product + retail box"}
+    {"id":"alpine-freezer-36","image_path":"images/brand-new/alpine-works/alpine-freezer-36.webp","composition":"product + retail box"},
+    {"id":"alpine-liquid-240","image_path":"images/brand-new/alpine-works/alpine-liquid-240.webp","composition":"product + retail box"},
+    {"id":"alpine-liquid-420","image_path":"images/brand-new/alpine-works/alpine-liquid-420.webp","composition":"product + retail box"}
   ]
 }
