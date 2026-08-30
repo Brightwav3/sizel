@@ -42,15 +42,24 @@
 @media(max-width:980px){.forge-layout{display:block;padding-right:0}.forge-review{border-right:0;border-left:0}.forge-review-list{grid-template-columns:1fr 1fr}}
 
 /* Product actions mirror the shop card: a price box beside a compact action box. */
-.forge-product{grid-template-columns:var(--space-12) minmax(0,1fr) minmax(92px,112px) 78px}
-.forge-product-price{align-items:center;justify-content:center;height:44px;padding:0;background:transparent;border:0;border-radius:var(--radius-nav);overflow:hidden;text-align:center}
-.forge-product-price strong{color:var(--danger);font-size:20px;line-height:1}
-.forge-product-price>span{width:100%;padding:3px var(--space-1);color:var(--text-primary);background:var(--amber-400);font-size:10px;font-weight:var(--weight-medium);letter-spacing:.4px;line-height:1;text-transform:uppercase;white-space:nowrap}
+.forge-product{grid-template-columns:var(--space-12) minmax(0,1fr) minmax(82px,96px) 92px}
+.forge-product-price{align-items:stretch;justify-content:flex-start;gap:0;height:36px;padding:0;background:transparent;border:0;border-radius:var(--radius-nav);overflow:hidden;text-align:center;font-variant-numeric:tabular-nums}
+.forge-product-price strong{display:flex;align-items:center;justify-content:center;flex:1;min-height:0;width:100%;padding:0 4px;color:var(--danger);font-size:16px;line-height:1}
+.forge-product-price>span{display:flex;align-items:center;justify-content:center;width:100%;height:14px;min-height:14px;padding:0 4px;color:var(--text-primary);background:var(--amber-400);font-size:9px;font-weight:var(--weight-medium);letter-spacing:.25px;line-height:1;text-transform:uppercase;white-space:nowrap}
 .forge-product-price.is-new{background:var(--accent-soft);border:1px solid var(--blue-100)}
 .forge-product-price.is-new>span{color:var(--text-inverse);background:var(--accent-active)}
 .forge-product-price.is-sale{background:var(--danger)}
-.forge-product-price.is-new strong,.forge-product-price.is-sale strong{padding:4px;color:var(--text-inverse)}
-.forge-select{grid-column:auto;justify-self:stretch;width:100%;height:44px;min-height:44px;padding:0 var(--space-2);color:var(--text-primary)!important;background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-nav);font-size:var(--text-xs)}
+.forge-product-price.is-new strong{color:var(--accent-active)}.forge-product-price.is-sale strong{color:var(--text-inverse)}
+.forge-select{grid-column:auto;align-self:center;justify-self:end;width:64px;height:28px;min-height:28px;padding:0 var(--space-2);color:var(--text-primary)!important;background:var(--surface-card);border:1px solid var(--border-default);border-radius:var(--radius-xs);font-size:11px}
 .forge-product.is-installed .forge-select{color:var(--text-secondary)!important;background:var(--surface-sunken);border-color:var(--border-default);opacity:1}
-@media(max-width:1400px){.forge-product{grid-template-columns:var(--space-12) minmax(0,1fr) minmax(88px,104px) 74px}.forge-select{grid-column:auto;justify-self:stretch}}
-@media(max-width:760px){.forge-product{grid-template-columns:var(--space-12) minmax(0,1fr) 84px 70px}.forge-product-price,.forge-select{grid-column:auto}}
+.forge-product.is-incompatible{background:var(--surface-sunken)}
+.forge-product.is-incompatible .forge-product-image,.forge-product.is-incompatible .forge-product-price{filter:grayscale(1);opacity:.45}
+.forge-product.is-incompatible .forge-product-copy{color:var(--text-tertiary)}
+.forge-product.is-incompatible .forge-product-copy p{color:var(--text-tertiary)}
+.forge-product.is-incompatible .forge-select{color:var(--text-tertiary)!important;background:var(--surface-active);border-color:var(--border-subtle);opacity:1}
+.forge-product.is-incompatible .forge-select,.forge-product.is-unavailable .forge-select{width:88px;font-size:10px}
+.forge-installed.is-empty{border-style:dashed;background:var(--surface-sunken)}
+.forge-installed.is-empty>span,.forge-installed.is-empty>strong,.forge-installed.is-empty>small{color:var(--text-tertiary)}
+.forge-toolbar-actions{margin-left:auto}.forge-toolbar-actions .forge-small{height:28px;min-height:28px;padding:0 var(--space-3);border-radius:var(--radius-xs);font-size:11px}.forge-toolbar-actions .forge-secondary:disabled{cursor:default;opacity:.45}
+@media(max-width:1400px){.forge-product{grid-template-columns:var(--space-12) minmax(0,1fr) 88px 92px}.forge-select{grid-column:auto;justify-self:end}}
+@media(max-width:760px){.forge-product{grid-template-columns:var(--space-12) minmax(0,1fr) 82px 88px}.forge-product-price,.forge-select{grid-column:auto}}

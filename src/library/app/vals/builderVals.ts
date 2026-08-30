@@ -1,81 +1,110 @@
 import React from "react";
-import { CATALOG, CAT_ICON, CAT_META, DEFAULT_PICKS, DEPTS, DESCS, GSTEP, GUIDED, ORDER, SPECS } from "../../data/catalog";
-import { RES, money } from "../../data/metrics";
-import type { PcSlot } from "../../types";
+import { CATALOG, DEFAULT_PICKS, ORDER } from "../../data/catalog";
+import { compatibilityIssues, money } from "../../data/metrics";
+import { FACETS } from "../catalogFacets";
+import { facetSummary, facetValues } from "../../domain/queries";
+import { RigsmithApp } from "../../RigsmithApp";
+import type { Part, PcSlot } from "../../types";
 import type { BuildContext } from "../buildContext";
 
 export function buildBuilderVals(context: BuildContext) {
-  const { app, s, m, route, on, sideStyle, shopping, dept, picked, depts, openDept, categories, spend, over, fpsOk, quietOk, rows, games, wantRes, allProducts, searchText, cat, catList, brandOf, brandLogo, facetDefinitions, facetValues, specFilters, fitFacetIds, fitFilters, technicalFilters, visible, hidden, pSlot, pick, buildableProduct, candidateBuild, pFits, pslot, cur, pool, ordered, mtx, rowDefs, fg, pickerRows, stepDefs, st, filtersOn, gSpent, valueGpu, quietGpu, featuredCpu, featuredCooler, featuredStorage, featuredPhone, featuredConsole, promoProduct, brandNames, brandRibbon, homeDepartments, homeCategorySlots, homeCategories } = context;
+  const { app, s, m, route, on, cat, facetValues } = context;
+  const builderPicks = app.chosenPicks();
+  const steps = RigsmithApp.BUILD_STEPS;
+  const selectedPart = (slot: PcSlot) => s.chosen.includes(slot) ? CATALOG[slot].find(part => part.id === s.picks[slot]) : undefined;
+  const selectedParts = steps.flatMap(slot => { const part = selectedPart(slot); return part ? [part] : []; });
+  const selectedCount = selectedParts.length;
+  const builderIssues = compatibilityIssues(builderPicks);
+  const builderPrice = selectedParts.reduce((total, part) => total + part.price, 0);
+  const builderGpu = selectedPart("gpu"), builderCpu = selectedPart("cpu"), builderPsu = selectedPart("psu");
+  const builderDraw = selectedCount ? (builderGpu?.watt ?? 0) + (builderCpu?.cpuPowerW ?? 0) + 80 : 0;
+  const builderComplete = selectedCount === steps.length;
+  const activeSlot = s.builderSlot;
+  const nextGap = steps.find(slot => !s.chosen.includes(slot));
+
+  /** The slot's parts before facet filtering — the pool the facet counts describe. */
+  const slotSearch = s.builderSearch.trim().toLowerCase();
+  const slotPool = CATALOG[activeSlot].filter(part =>
+    `${part.brand ?? ""} ${part.name} ${part.model ?? ""}`.toLowerCase().includes(slotSearch));
+  const reasonFor = (part: Part) => compatibilityIssues({ ...builderPicks, [activeSlot]: part.id })[0];
+  const compatiblePool = slotPool.filter(part => !reasonFor(part));
+  const facetPool = s.builderCompatibleOnly ? compatiblePool : slotPool;
+  const shownPool = facetPool.filter(part =>
+    (FACETS[activeSlot] || []).every(definition => {
+      const selected = s.builderFacets[definition.id] || [];
+      return selected.length === 0 || selected.some(value => facetValues(definition, part).includes(value));
+    }));
+
   return {
-     buildSub: "9 parts chosen · " + (m.fits ? "everything fits" : "one thing does not fit"),
-      builderSlot: s.builderSlot,
-      builderCategory: (ORDER.find(item => item.slot === s.builderSlot) || ({} as any)).cat || s.builderSlot,
+      builderCategory: (ORDER.find(item => item.slot === activeSlot) || ({} as any)).cat || activeSlot,
       builderSearch: s.builderSearch,
       setBuilderSearch: (event: React.ChangeEvent<HTMLInputElement>) => app.setState({ builderSearch: event.target.value }),
       clearBuilderSearch: () => app.setState({ builderSearch: "" }),
-      builderInstalled: (() => { const part = app.part(s.builderSlot); return { name: part.name, specs: part.specs?.slice(0, 2).join(" · ") }; })(),
-      builderRows: ORDER.map(item => { const part = app.part(item.slot); return { slot: item.slot, icon: item.icon, cat: item.cat, name: part.name, price: money(part.price), open: () => app.setState({ builderSlot: item.slot, builderSearch: "" }) }; }),
-      builderOptions: CATALOG[s.builderSlot].filter(part => `${part.brand ?? ""} ${part.name} ${part.model ?? ""}`.toLowerCase().includes(s.builderSearch.toLowerCase())).map(part => ({
-        id: part.id, brand: part.brand, name: part.name, image: part.imagePath, specs: part.specs?.slice(0, 3).join(" · "),
-        stock: part.stock === 0 ? "Unavailable" : `Ships in ${part.days} days`, price: money(part.price), priceKind: part.merchandising ?? "standard",
-        installed: s.picks[s.builderSlot] === part.id, disabled: s.picks[s.builderSlot] === part.id || part.stock === 0, select: () => app.set(s.builderSlot, part.id),
+
+      /** Build sheet: navigation and summary in one column. ADR 0002. */
+      builderRows: steps.map((slot, index) => {
+        const item = ORDER.find(entry => entry.slot === slot)!;
+        const part = selectedPart(slot);
+        const state = part ? "done" : slot === activeSlot ? "active" : slot === nextGap ? "next" : "todo";
+        return {
+          slot, icon: item.icon, cat: item.cat, step: index + 1, state,
+          name: part?.name ?? (slot === nextGap ? "Choose next" : "Not selected"),
+          price: part ? money(part.price) : "—",
+          selected: Boolean(part),
+          open: () => app.setState({ builderSlot: slot, builderSearch: "", builderFacets: {} }),
+        };
+      }),
+
+      /** Compatibility is stated on the row, not buried in the stock line. */
+      builderOptions: shownPool.map(part => {
+        const incompatibility = reasonFor(part);
+        const installed = s.chosen.includes(activeSlot) && s.picks[activeSlot] === part.id;
+        const unavailable = part.stock === 0;
+        return {
+          id: part.id, brand: part.brand, name: part.name, image: part.imagePath,
+          specs: part.specs?.slice(0, 3).join(" · "),
+          stock: unavailable ? "Out of stock" : `Ships in ${part.days} days`,
+          incompatibleReason: incompatibility ?? "",
+          price: money(part.price), priceKind: part.merchandising ?? "standard",
+          installed, incompatible: Boolean(incompatibility), unavailable,
+          disabled: installed || unavailable || Boolean(incompatibility),
+          actionLabel: installed ? "Selected" : incompatibility ? "Does not fit" : unavailable ? "Unavailable" : "Select",
+          select: () => app.setBuilderPart(activeSlot, part.id),
+          open: () => app.setState({ route: "product", productSlot: activeSlot, productId: part.id }),
+        };
+      }),
+
+      /** Same facets the shop uses, scoped to the slot being filled. */
+      builderFacets: facetSummary({ category: activeSlot, facets: s.builderFacets }, facetPool).map(facet => ({
+        id: facet.id,
+        label: facet.label,
+        options: facet.options.map(option => ({
+          label: option.value,
+          count: String(option.count),
+          mark: option.selected ? "check" : "",
+          go: () => app.toggleBuilderFacet(facet.id, option.value),
+        })),
       })),
-      builderIssues: m.issues, builderDraw: m.watt, builderHeadroom: Math.max(0, (app.part("psu").watt ?? 0) - m.watt),
-      addBuildLabel: s.inCart ? "In your cart" : "Add build to cart · " + money(m.price),
-      addBuildToCart: () => { app.setState({ inCart: true, route: "cart", toast: "Build added to cart" }); app.flash(); },
-      optimize: () => {
-        const picks: any = { ...s.picks };
-        if (m.fps < s.target) picks.gpu = CATALOG.gpu.slice().sort((a, b) => (b.fps ?? 0) - (a.fps ?? 0))[0].id;
-        if (s.quiet) picks.cooler = CATALOG.cooler.slice().sort((a, b) => (a.noise ?? 99) - (b.noise ?? 99))[0].id;
-        let after = app.metrics(picks);
-        if (after.price > s.budget) { picks.storage = CATALOG.storage.slice().sort((a, b) => a.price - b.price)[0].id; after = app.metrics(picks); }
-        app.setState({
-          picks, prev: s.picks, toast: "Adjusted your build to hit your targets",
-          lastChange: { icon: "auto_fix_high", title: "Adjusted parts to hit your targets", deltas: [
-            { k: "Frame rate", v: (after.fps - m.fps >= 0 ? "+" : "") + (after.fps - m.fps) + " fps", fg: "var(--green-600)" },
-            { k: "Price", v: (after.price - m.price >= 0 ? "+" : "-") + money(Math.abs(after.price - m.price)), fg: "var(--text-secondary)" },
-            { k: "Noise", v: app.noiseWord(after.noise), fg: "var(--text-secondary)" },
-          ] },
-        });
-        app.flash();
-      },
-      rows, games,
-      fpsNum: app.digits(m.fps + " fps"),
-      fpsLabelPlain: m.fps + " fps",
-      priceNum: app.digits(money(m.price)),
-      fpsFg: fpsOk ? "var(--green-600)" : "var(--amber-600)",
-      fpsNote: fpsOk ? "Smooth at " + s.res + ", high settings" : (s.target - m.fps) + " fps short of your goal",
-      noiseWord: app.noiseWord(m.noise),
-      noiseFg: quietOk ? "var(--text-tertiary)" : "var(--amber-600)",
-      noiseNote: quietOk ? "About as loud as a library" : "Louder than you asked for",
+      builderFacetsActive: Object.values(s.builderFacets).some(values => values.length > 0),
+      clearBuilderFacets: () => app.setState({ builderFacets: {} }),
+      builderCompatibleOnly: s.builderCompatibleOnly,
+      builderCompatibleCount: `${compatiblePool.length} of ${slotPool.length} fit`,
+      toggleCompatibleOnly: () => app.setState({ builderCompatibleOnly: !s.builderCompatibleOnly, builderFacets: {} }),
+      builderOptionCount: `${shownPool.length} option${shownPool.length === 1 ? "" : "s"}`,
+
+      builderIssues, builderDraw, builderHeadroom: builderPsu ? Math.max(0, (builderPsu.watt ?? 0) - builderDraw) : null,
+      builderSelectedCount: selectedCount,
+      builderComplete,
+      builderTotalLabel: money(builderPrice),
+      builderStatusLabel: builderIssues.length ? `${builderIssues.length} issues` : builderComplete ? "All clear" : `${selectedCount}/${ORDER.length} selected`,
+      resetBuild: () => app.setState({ picks: { ...DEFAULT_PICKS }, chosen: [], builderSearch: "", lastChange: null, toast: "Build reset" }, () => app.flash()),
+      /** A disabled button has to say what is missing. */
+      addBuildLabel: s.cart.some(line => line.kind === "build") ? "In your cart" : "Add build to cart · " + money(builderPrice),
+      addBuildDisabled: !builderComplete || builderIssues.length > 0,
+      addBuildReason: builderIssues.length
+        ? `${builderIssues.length} part${builderIssues.length === 1 ? "" : "s"} do not fit`
+        : builderComplete ? "" : `${steps.length - selectedCount} part${steps.length - selectedCount === 1 ? "" : "s"} still missing`,
+      addBuildToCart: () => app.addBuildToCart(),
       shipLabel: app.shipDate(m.days),
-      powerLabel: m.watt + " W estimated",
-      budget: s.budget, budgetLabel: money(s.budget),
-      setBudget: (e: any) => app.setState({ budget: +e.target.value }),
-      spendPct: spend + "%", spendFg: over ? "var(--amber-600)" : "var(--green-600)",
-      headroomLabel: over ? money(m.price - s.budget) + " over budget" : money(s.budget - m.price) + " left over",
-      target: s.target, targetLabel: s.target + " fps",
-      setTarget: (e: any) => app.setState({ target: +e.target.value }),
-      resLabel: s.res,
-      resOptions: Object.keys(RES).map(r => ({
-        label: r, go: () => app.setState({ res: r as any }),
-        bg: s.res === r ? "#fff" : "transparent",
-        fg: s.res === r ? "var(--text-primary)" : "var(--text-secondary)",
-        fw: s.res === r ? 500 : 400,
-        sh: s.res === r ? "0 1px 3px rgba(41,41,41,.10)" : "none",
-      })),
-      toggleQuiet: () => app.setState({ quiet: !s.quiet }),
-      quietBg: s.quiet ? "var(--gray-900)" : "var(--gray-300)", quietX: s.quiet ? "16px" : "2px",
-      changeOpen: s.lastChange ? "true" : "false",
-      changeIcon: s.lastChange ? s.lastChange.icon : "build",
-      changeTitle: s.lastChange ? s.lastChange.title : "",
-      changeDeltas: s.lastChange ? s.lastChange.deltas : [],
-      undo: () => { app.setState({ picks: s.prev || s.picks, lastChange: null, toast: "Change undone" }); app.flash(); },
-      keep: () => app.setState({ lastChange: null }),
-      compatIcon: m.fits ? "check_circle" : "error",
-      compatFg: m.fits ? "var(--success)" : "var(--danger)",
-      compatText: m.fits ? "We checked fit, power, and cooling for all 9 parts. Nothing to worry about."
-        : "Your graphics card is too long for this case. Pick a shorter card or a bigger case.",
   };
 }
-
