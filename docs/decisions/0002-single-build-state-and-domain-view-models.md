@@ -34,11 +34,11 @@ The application previously had two independent PC builds. `RigsmithApp` owned th
 
 ## Enforced in
 
-- `src/library/app/AppState.ts`
-- `src/library/RigsmithApp.tsx`
-- `src/library/screens/BuilderScreen.tsx`
-- `src/library/app/buildContext.ts`
-- `src/library/app/buildVals.ts`
+- `src/app/state/AppState.ts`
+- `src/app/App.tsx`
+- `src/features/pc-builder/BuilderScreen.tsx`
+- `src/entities/build/buildContext.ts`
+- `src/entities/build/buildVals.ts`
 
 ## Explicit non-decisions
 

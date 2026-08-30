@@ -43,16 +43,16 @@ Storefront stock is deterministic presentation data derived from category, produ
 
 ## Enforced in
 
-- `src/library/data/storageVariants.ts`
-- `src/library/data/colorways.ts`
-- `src/library/data/listingStock.ts`
-- `src/library/data/realCatalog.ts`
-- `src/library/app/AppState.ts`
-- `src/library/app/navigation.ts`
-- `src/library/app/vals/catalogVals.ts`
-- `src/library/app/vals/productVals.ts`
-- `src/library/shell/OptionPicker.tsx`
-- `src/library/shell/ColorPicker.tsx`
+- `src/data/catalog/storageVariants.ts`
+- `src/data/catalog/colorways.ts`
+- `src/data/catalog/listingStock.ts`
+- `src/data/catalog/realCatalog.ts`
+- `src/app/state/AppState.ts`
+- `src/app/routes.ts`
+- `src/features/catalog/catalogVals.ts`
+- `src/features/product/productVals.ts`
+- `src/shared/ui/OptionPicker.tsx`
+- `src/features/product/ColorPicker.tsx`
 
 ## Explicit non-decisions
 

@@ -6,7 +6,7 @@
 
 ## Context
 
-The React app in `src/library` is a port of an HTML prototype that styled every element with an inline CSS declaration string and a `style-hover="…"` attribute. `sx()` parsed one of those strings into the object React wants, and `useHover()` reproduced the hover attribute in React state.
+The React app was originally a port of an HTML prototype that styled every element with an inline CSS declaration string and a `style-hover="…"` attribute. `sx()` parsed one of those strings into the object React wants, and `useHover()` reproduced the hover attribute in React state.
 
 Keeping the strings verbatim — byte for byte — was what made the port reviewable: any component could be diffed against the prototype it came from, and a visual regression could be traced to a single changed declaration. Retyping several hundred declarations as camelCase objects would have lost that, exactly when the port was least trustworthy.
 
@@ -51,7 +51,7 @@ Selectors that override `.card` or `.ph` from `styles.css` are compounded (`.car
 
 ## Enforced in
 
-- `src/library/shell/topbar.css`, `src/library/shell/app-shell.css`
-- `src/library/catalog.css`, `src/library/checkout.css`
-- `src/library/home.css`, `src/library/responsive.css`
-- `src/library/overlays/floating-build-card.css`
+- `src/shared/layout/topbar.css`, `src/shared/layout/app-shell.css`
+- `src/features/catalog/catalog.css`, `src/features/checkout/checkout.css`
+- `src/features/catalog/home/home.css`, `src/shared/styles/responsive.css`
+- `src/features/pc-builder/floating-build-card.css`

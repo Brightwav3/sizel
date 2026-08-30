@@ -2,11 +2,11 @@ import fs from "node:fs";
 import path from "node:path";
 
 const root = process.cwd();
-const libraryRoot = path.join(root, "src/library");
+const sourceRoot = path.join(root, "src");
 const products = JSON.parse(fs.readFileSync(path.join(root, "public/catalog/products.json"), "utf8"));
-const adapter = fs.readFileSync(path.join(libraryRoot, "data/realCatalog.ts"), "utf8");
-const catalog = fs.readFileSync(path.join(libraryRoot, "data/catalog.ts"), "utf8");
-const types = fs.readFileSync(path.join(libraryRoot, "types.ts"), "utf8");
+const adapter = fs.readFileSync(path.join(sourceRoot, "data/catalog/realCatalog.ts"), "utf8");
+const catalog = fs.readFileSync(path.join(sourceRoot, "data/catalog/catalog.ts"), "utf8");
+const types = fs.readFileSync(path.join(sourceRoot, "shared/lib/types.ts"), "utf8");
 const routeUnion = types.match(/export type Route =([\s\S]*?);/)?.[1] ?? "";
 const routeValues = [...routeUnion.matchAll(/["']([a-z]+)["']/g)].map(match => match[1]);
 const check = [];
@@ -30,19 +30,19 @@ pass("default picks are derived from canonical parts", ["defaultCpu.id", "defaul
 pass("ORDER has nine prototype slots", (adapter.match(/\{ slot: "[a-z]+"/g) ?? []).length === 9);
 // The guided walkthrough was replaced by the configurator; its recommended
 // order now lives on the controller as RigsmithApp.BUILD_STEPS.
-pass("build order has nine slots", (fs.readFileSync(path.join(libraryRoot, "RigsmithApp.tsx"), "utf8").match(/BUILD_STEPS: PcSlot\[\] = \[[^\]]+\]/)?.[0].match(/"[a-z]+"/g) ?? []).length === 9);
+pass("build order has nine slots", (fs.readFileSync(path.join(sourceRoot, "app/App.tsx"), "utf8").match(/BUILD_STEPS: PcSlot\[\] = \[[^\]]+\]/)?.[0].match(/"[a-z]+"/g) ?? []).length === 9);
 // Every route the union names must have a screen wired to it in the view.
-const view = fs.readFileSync(path.join(libraryRoot, "app/RigsmithView.tsx"), "utf8");
+const view = fs.readFileSync(path.join(sourceRoot, "app/RigsmithView.tsx"), "utf8");
 const routeFlags = routeValues.map(route => `is${route[0].toUpperCase()}${route.slice(1)}`);
 pass("every route has a screen", routeFlags.every(flag => view.includes(`v.${flag}`)), routeValues.join(", "));
 
 const viewFiles = {
-  AppShell: "shell/AppShell.tsx", TopBar: "shell/TopBar.tsx", EshopSidebar: "shell/EshopSidebar.tsx",
-  HomeScreen: "screens/HomeScreen.tsx", CategoryScreen: "screens/CategoryScreen.tsx", ProductScreen: "screens/ProductScreen.tsx",
-  BuilderScreen: "screens/BuilderScreen.tsx", CartScreen: "screens/CheckoutScreens.tsx",
-  CheckoutScreen: "screens/CheckoutScreens.tsx", DoneScreen: "screens/CheckoutScreens.tsx",
-  FloatingBuildCard: "overlays/FloatingBuildCard.tsx", Toast: "overlays/FloatingBuildCard.tsx",
+  AppShell: "shared/layout/AppShell.tsx", TopBar: "shared/layout/TopBar.tsx", EshopSidebar: "shared/layout/EshopSidebar.tsx",
+  HomeScreen: "features/catalog/home/HomeScreen.tsx", CategoryScreen: "features/catalog/CategoryScreen.tsx", ProductScreen: "features/product/ProductScreen.tsx",
+  BuilderScreen: "features/pc-builder/BuilderScreen.tsx", CartScreen: "features/cart/CartScreen.tsx",
+  CheckoutScreen: "features/checkout/CheckoutScreens.tsx", DoneScreen: "features/checkout/CheckoutScreens.tsx",
+  FloatingBuildCard: "features/pc-builder/FloatingBuildCard.tsx", Toast: "features/pc-builder/FloatingBuildCard.tsx",
 };
-for (const [view, file] of Object.entries(viewFiles)) pass(`view exists: ${view}`, fs.existsSync(path.join(libraryRoot, file)));
+for (const [view, file] of Object.entries(viewFiles)) pass(`view exists: ${view}`, fs.existsSync(path.join(sourceRoot, file)));
 for (const result of check) console.log(`${result.ok ? "PASS" : "FAIL"} ${result.label}${result.detail ? ` — ${result.detail}` : ""}`);
 if (check.some(result => !result.ok)) process.exit(1);
