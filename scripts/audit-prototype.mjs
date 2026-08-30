@@ -38,7 +38,7 @@ pass("GUIDED has nine prototype slots", (adapter.match(/export const GUIDED: PcS
 pass("route union covers prototype routes", routes.every(route => routeValues.includes(route)), `${routes.join(", ")} / ${routeValues.join(", ")}`);
 
 const viewFiles = {
-  AppShell: "shell/AppShell.tsx", TopBar: "shell/TopBar.tsx", Sidebar: "shell/Sidebar.tsx",
+  AppShell: "shell/AppShell.tsx", TopBar: "shell/TopBar.tsx", EshopSidebar: "shell/EshopSidebar.tsx",
   HomeScreen: "screens/HomeScreen.tsx", CategoryScreen: "screens/CategoryScreen.tsx", ProductScreen: "screens/ProductScreen.tsx",
   BuilderScreen: "screens/BuilderScreen.tsx", PickerScreen: "screens/PickerScreen.tsx", CartScreen: "screens/CheckoutScreens.tsx",
   CheckoutScreen: "screens/CheckoutScreens.tsx", DoneScreen: "screens/CheckoutScreens.tsx", GuidedScreen: "screens/GuidedScreen.tsx",
