@@ -1,0 +1,128 @@
+/**
+ * Floating build card and toast (ADR 0004 migration).
+ *
+ * `transform` on the card and `opacity` on the toast stay inline in the
+ * component: motion.css sets both from `.t-panel-slide[data-open="true"]` and
+ * `.t-toast.is-open`, which outrank a single class. They are per-instance
+ * values anyway — the drag position and the fade — which is what inline style
+ * is for. Everything below is fixed.
+ */
+
+.build-card {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 25;
+}
+
+/* Collapsed bubble ------------------------------------------------------- */
+.build-card__bubble {
+  position: relative;
+  display: flex;
+  width: 52px;
+  height: 52px;
+  align-items: center;
+  justify-content: center;
+  background: var(--gray-900);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 8px 24px rgba(41, 41, 41, .22);
+  color: #fff;
+  cursor: grab;
+}
+.build-card__bubble .ms { font-size: 20px; }
+.build-card__bubble-count {
+  position: absolute;
+  top: -2px;
+  right: -4px;
+  display: flex;
+  min-width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 5px;
+  background: #fff;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-pill);
+  color: var(--gray-900);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+
+/* Expanded panel --------------------------------------------------------- */
+.build-card__panel {
+  width: 296px;
+  overflow: hidden;
+  border-color: var(--border-default);
+  box-shadow: 0 8px 24px rgba(41, 41, 41, .12);
+}
+
+.build-card__head {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-3) 14px;
+  border-bottom: 1px solid var(--border-subtle);
+  cursor: grab;
+  user-select: none;
+}
+.build-card__grip { font-size: var(--text-base); color: var(--gray-400); }
+.build-card__title { flex: 1; font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.build-card__count { font-size: var(--text-xs); color: var(--text-tertiary); }
+.build-card__head-action {
+  font-size: var(--text-base);
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+
+.build-card__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  padding: 10px 14px;
+}
+/* Each row is coloured by whether the slot is chosen, defaulted or missing. */
+.build-card__row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--row-fg);
+  font-size: var(--text-sm);
+}
+.build-card__row .ms { font-size: var(--text-base); color: var(--row-icon); }
+.build-card__row-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.build-card__row-price { font-size: var(--text-xs); color: var(--text-secondary); }
+/* Aligned under the row names, past the icon column. */
+.build-card__rest { padding-left: 22px; font-size: var(--text-xs); color: var(--text-tertiary); }
+
+.build-card__foot {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: 10px 14px var(--space-3);
+  border-top: 1px solid var(--border-subtle);
+}
+.build-card__totals { flex: 1; }
+.build-card__spent { font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.build-card__left { font-size: var(--text-xs); color: var(--text-secondary); }
+.build-card__cta { height: 28px; padding: 0 var(--space-3); font-size: var(--text-xs); }
+
+/* Toast ------------------------------------------------------------------ */
+.build-toast {
+  position: fixed;
+  bottom: var(--space-6);
+  left: 50%;
+  z-index: 20;
+  display: flex;
+  width: 264px;
+  justify-content: center;
+  margin-left: -132px;
+  padding: 11px 18px;
+  background: var(--gray-900);
+  border-radius: var(--radius-pill);
+  box-shadow: 0 8px 24px rgba(41, 41, 41, .24);
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  pointer-events: none;
+}
