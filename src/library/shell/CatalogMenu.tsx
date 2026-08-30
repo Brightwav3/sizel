@@ -151,7 +151,7 @@ export const CatalogMenu: React.FC<{ v: Vals; variant?: "rail" | "bar" }> = ({ v
         >
           <header>
             <div><span className="eyebrow">Browse</span><h2>{activeDept?.name ?? "Catalog"}</h2></div>
-            <button onClick={close} aria-label="Close menu"><span className="ms">close</span></button>
+            <button onClick={close} aria-label="Close menu" data-tip="Close menu" data-tip-align="end"><span className="ms">close</span></button>
           </header>
           <div className="eshop-flyout-grid">
             {groups.map(group => (

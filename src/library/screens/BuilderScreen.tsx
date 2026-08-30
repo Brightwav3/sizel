@@ -146,7 +146,7 @@ function FacetMenu({ facet }: { facet: Vals }) {
 function ProductRow({ part }: { part: Vals }) {
   return (
     <article className={`forge-product ${part.installed ? "is-installed" : ""} ${part.incompatible ? "is-incompatible" : ""} ${part.unavailable ? "is-unavailable" : ""}`}>
-      <button type="button" className="forge-product-image" onClick={part.open} aria-label={`Open ${part.name}`}>
+      <button type="button" className="forge-product-image" onClick={part.open} aria-label={`Open ${part.name}`} data-tip={`Open ${part.name}`}>
         <img src={part.image} alt="" />
       </button>
       <div className="forge-product-copy">

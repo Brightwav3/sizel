@@ -42,9 +42,9 @@ export const CartScreen: React.FC<{ v: Vals }> = ({ v }) => (
               <div className="cart-line__qty">
                 {line.editable ? (
                   <div className="qty-stepper">
-                    <button type="button" onClick={line.dec} aria-label="Decrease quantity"><span className="ms">remove</span></button>
+                    <button type="button" onClick={line.dec} aria-label="Decrease quantity" data-tip="One fewer"><span className="ms">remove</span></button>
                     <span className="num">{line.qty}</span>
-                    <button type="button" onClick={line.inc} aria-label="Increase quantity"><span className="ms">add</span></button>
+                    <button type="button" onClick={line.inc} aria-label="Increase quantity" data-tip="One more"><span className="ms">add</span></button>
                   </div>
                 ) : <span className="cart-line__single">1 unit</span>}
                 <button type="button" className="cart-line__remove" onClick={line.remove}>Remove</button>
