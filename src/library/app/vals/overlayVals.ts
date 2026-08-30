@@ -1,3 +1,4 @@
+import type React from "react";
 import { CATALOG, ORDER } from "../../data/catalog";
 import { money } from "../../data/metrics";
 import { RigsmithApp } from "../../RigsmithApp";
@@ -27,6 +28,13 @@ export function buildOverlayVals(context: BuildContext) {
       cornerExpanded: !s.cornerMin, cornerCollapsed: s.cornerMin,
       cornerToggle: () => app.setState({ cornerMin: !s.cornerMin }),
       cornerDrag: app.cornerDrag,
+      /** Collapsed, the card is one control: press to open, drag to move. */
+      cornerPress: (event: React.PointerEvent) =>
+        app.cornerDrag(event, () => app.setState({ cornerMin: false })),
+      /** How much of the machine is picked, as a width for the progress bar. */
+      cornerProgress: Math.round((s.chosen.length / steps.length) * 100) + "%",
+      cornerSpentShort: money(spent),
+      cornerRemaining: `${steps.length - s.chosen.length} to go`,
       cornerTitle: started ? "Build in progress" : s.chosen.length ? "Your build" : "Start a build",
       cornerCount: `${s.chosen.length} / ${steps.length}`,
       cornerRows: steps.slice(0, 3).map(slot => {

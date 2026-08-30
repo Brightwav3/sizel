@@ -97,7 +97,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
 
   dockPoint() {
     const w = window.innerWidth || 1280, h = window.innerHeight || 800;
-    const box = this.state.cornerMin ? { w: 52, h: 52 } : { w: 296, h: 232 };
+    const box = this.state.cornerMin ? { w: 168, h: 44 } : { w: 296, h: 232 };
     const x = this.state.cornerX === null ? w - box.w - 24 : this.state.cornerX;
     const y = this.state.cornerY === null ? h - box.h - 24 : this.state.cornerY;
     return {
@@ -254,13 +254,24 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     this.flash();
   }
 
-  cornerDrag = (e: React.PointerEvent) => {
+  /**
+   * Drag the floating card, and tell a tap apart from a drag.
+   *
+   * The collapsed card is one control that has to do both, so a press that
+   * never travels more than a few pixels is a click on it, not a nudge. That
+   * is what lets the pill open on a single tap; it used to need a double
+   * click, with a single click landing on a badge small enough to miss.
+   */
+  cornerDrag = (e: React.PointerEvent, onTap?: () => void) => {
     e.preventDefault();
     const startX = e.clientX, startY = e.clientY;
     const box = (e.currentTarget as HTMLElement).closest("[data-corner]") as HTMLElement;
     const r = box.getBoundingClientRect();
     const x0 = r.left, y0 = r.top;
+    let dragged = false;
     const move = (ev: PointerEvent) => {
+      if (Math.abs(ev.clientX - startX) > 3 || Math.abs(ev.clientY - startY) > 3) dragged = true;
+      if (!dragged) return;
       const w = box.offsetWidth, h = box.offsetHeight;
       this.setState({
         cornerX: Math.max(8, Math.min(window.innerWidth - w - 8, x0 + ev.clientX - startX)),
@@ -270,6 +281,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     const up = () => {
       window.removeEventListener("pointermove", move);
       window.removeEventListener("pointerup", up);
+      if (!dragged) onTap?.();
     };
     window.addEventListener("pointermove", move);
     window.addEventListener("pointerup", up);

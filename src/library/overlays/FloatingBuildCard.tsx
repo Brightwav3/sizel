@@ -13,10 +13,23 @@ export const FloatingBuildCard: React.FC<{ v: Vals }> = ({ v }) => (
     style={{ transform: v.cornerTransform }}
   >
     {v.cornerCollapsed && (
-      <div className="build-card__bubble" onPointerDown={v.cornerDrag} onDoubleClick={v.cornerToggle} data-tip="Your build: drag to move, double-click to open" data-tip-place="top">
-        <span className="ms">construction</span>
-        <span className="num build-card__bubble-count" onClick={v.cornerToggle}>{v.cornerCount}</span>
-      </div>
+      <button
+        type="button"
+        className="build-card__pill"
+        onPointerDown={v.cornerPress}
+        data-tip="Open your build — drag to move it"
+        data-tip-place="top"
+        aria-label={`Your build, ${v.cornerCount} parts chosen, ${v.cornerSpentShort} so far. Open it.`}
+      >
+        <span className="ms" aria-hidden="true">construction</span>
+        <span className="num build-card__pill-count">{v.cornerCount}</span>
+        <span className="num build-card__pill-spent">{v.cornerSpentShort}</span>
+        <span
+          className="build-card__pill-bar"
+          aria-hidden="true"
+          style={{ "--corner-progress": v.cornerProgress } as React.CSSProperties}
+        />
+      </button>
     )}
     {v.cornerExpanded && (
       <div className="card build-card__panel">
