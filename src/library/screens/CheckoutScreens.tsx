@@ -1,6 +1,7 @@
 import React from "react";
-import { sx, type Vals } from "../sx";
+import type { Vals } from "../types";
 import "../cart.css";
+import "../checkout.css";
 
 /**
  * Cart: line items on the left, the order summary pinned on the right — the
@@ -37,7 +38,7 @@ export const CartScreen: React.FC<{ v: Vals }> = ({ v }) => (
                 <small>{line.brand}</small>
                 <button type="button" className="cart-line__name" onClick={line.open}>{line.name}</button>
                 <p>{line.note}</p>
-                <span style={sx(`color:${line.stockFg}`)}>{line.stock}</span>
+                <span className="cart-line__stock" style={{ color: line.stockFg }}>{line.stock}</span>
               </div>
               <div className="cart-line__qty">
                 {line.editable ? (
@@ -80,37 +81,47 @@ export const CartScreen: React.FC<{ v: Vals }> = ({ v }) => (
 
 /** Three steps in one card, with the order summary pinned alongside. */
 export const CheckoutScreen: React.FC<{ v: Vals }> = ({ v }) => (
-  <div className="t-page" style={sx("padding:32px 36px 40px;max-width:960px;display:flex;flex-direction:column;gap:18px")}>
-    <div style={sx("display:flex;align-items:center;gap:16px")}>
-      <div style={sx("font-size:24px;font-weight:500")}>Checkout</div>
-      <div style={sx("flex:1")}></div>
-      <div style={sx("display:flex;align-items:center;gap:4px;padding:3px;background:var(--gray-100);border-radius:99px")}>
+  <div className="t-page checkout-page">
+    <header className="checkout-head">
+      <h1>Checkout</h1>
+      <div className="checkout-head__spacer" />
+      <div className="checkout-steps">
         {v.steps.map((s: Vals, i: number) => (
-          <span key={i} style={sx(`font-size:13px;padding:5px 12px;border-radius:99px;color:${s.fg};font-weight:${s.fw};background:${s.bg};box-shadow:${s.sh};transition:background 200ms var(--page-slide-ease),color 200ms var(--page-slide-ease)`)}>{s.label}</span>
+          <span
+            key={i}
+            className="checkout-steps__step"
+            style={{ "--step-bg": s.bg, "--step-fg": s.fg, "--step-weight": s.fw, "--step-shadow": s.sh } as React.CSSProperties}
+          >{s.label}</span>
         ))}
       </div>
-    </div>
-    <div style={sx("display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start")}>
-      <div className="card" style={sx("padding:20px;display:flex;flex-direction:column;gap:14px")}>
-        <div style={sx("font-size:14px;font-weight:500")}>{v.stepTitle}</div>
-        <div style={sx("display:grid;grid-template-columns:1fr 1fr;gap:10px")}>
+    </header>
+    <div className="checkout-layout">
+      <div className="card checkout-form">
+        <div className="checkout-form__title">{v.stepTitle}</div>
+        <div className="checkout-fields">
           {v.stepFields.map((f: Vals, i: number) => (
-            <div key={i} style={sx(`grid-column:${f.span};height:36px;border:1px solid var(--border-default);border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:13px;color:var(--text-tertiary);transition:border-color 140ms ease`)}>{f.label}</div>
+            <div key={i} className="checkout-field" style={{ "--field-span": f.span } as React.CSSProperties}>{f.label}</div>
           ))}
         </div>
-        <div style={sx("display:flex;gap:8px;margin-top:2px")}>
+        <div className="checkout-actions">
           <div className="pill ghostb" onClick={v.stepBack}>Back</div>
           <div className="pill dark" onClick={v.stepNext}>{v.stepCta}</div>
         </div>
       </div>
-      <div className="card" style={sx("padding:16px;display:flex;flex-direction:column;gap:10px")}>
-        <div style={sx("display:flex;gap:12px")}>
-          <div className="ph" style={sx("width:56px;height:56px")}>{v.buildImage ? <img className="catalog-image" src={v.buildImage} alt="Selected graphics card" /> : <span className="ms" style={sx("font-size:20px")}>image</span>}</div>
-          <div style={sx("font-size:13px")}><div style={sx("font-weight:500")}>Quiet 1440p gaming PC</div><div style={sx("color:var(--text-secondary)")}>9 parts</div></div>
+      <div className="card checkout-summary">
+        <div className="checkout-summary__build">
+          <div className="ph">{v.buildImage ? <img className="catalog-image" src={v.buildImage} alt="Selected graphics card" /> : <span className="ms">image</span>}</div>
+          <div className="checkout-summary__copy">
+            <div className="checkout-summary__name">Quiet 1440p gaming PC</div>
+            <div className="checkout-summary__parts">9 parts</div>
+          </div>
         </div>
-        <div style={sx("height:1px;background:var(--border-subtle)")}></div>
-        <div style={sx("display:flex;justify-content:space-between;align-items:baseline")}><span style={sx("font-size:14px;font-weight:500")}>Total</span><span className="num" style={sx("font-size:24px;font-weight:500")}>{v.totalLabel}</span></div>
-        <div style={sx("font-size:12px;color:var(--text-tertiary);line-height:1.5")}>Arrives {v.shipLabel}. Free returns within 30 days.</div>
+        <div className="checkout-summary__rule" />
+        <div className="checkout-summary__total">
+          <span>Total</span>
+          <span className="num checkout-summary__amount">{v.totalLabel}</span>
+        </div>
+        <div className="checkout-summary__note">Arrives {v.shipLabel}. Free returns within 30 days.</div>
       </div>
     </div>
   </div>
@@ -118,11 +129,11 @@ export const CheckoutScreen: React.FC<{ v: Vals }> = ({ v }) => (
 
 /** Order confirmation. */
 export const DoneScreen: React.FC<{ v: Vals }> = ({ v }) => (
-  <div className="t-page" style={sx("padding:100px 36px;display:flex;flex-direction:column;align-items:center;gap:14px")}>
-    <span className="ms" style={sx("font-size:20px;color:var(--success)")}>check_circle</span>
-    <div style={sx("font-size:24px;font-weight:500")}>Your PC is on the way</div>
-    <div style={sx("font-size:13px;color:var(--text-secondary)")}>Order 48-2291 · arrives {v.shipLabel} · {v.totalLabel}</div>
-    <div style={sx("display:flex;gap:8px;margin-top:6px")}>
+  <div className="t-page done-page">
+    <span className="ms done-page__tick">check_circle</span>
+    <h1>Your PC is on the way</h1>
+    <div className="done-page__meta">Order 48-2291 · arrives {v.shipLabel} · {v.totalLabel}</div>
+    <div className="done-page__actions">
       <div className="pill ghostb" onClick={v.goHome}>Back to shop</div>
       <div className="pill dark" onClick={v.restart}>Start another build</div>
     </div>

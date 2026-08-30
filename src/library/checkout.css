@@ -1,0 +1,122 @@
+/**
+ * Checkout and order confirmation (ADR 0004 migration).
+ *
+ * The cart itself lives in cart.css; these are the two screens after it.
+ */
+
+.checkout-page {
+  display: flex;
+  max-width: 960px;
+  flex-direction: column;
+  gap: 18px;
+  padding: var(--space-8) 36px var(--space-10);
+}
+
+.checkout-head { display: flex; align-items: center; gap: var(--space-4); }
+.checkout-head h1 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-medium);
+}
+.checkout-head__spacer { flex: 1; }
+
+/* Step pills ------------------------------------------------------------- */
+.checkout-steps {
+  display: flex;
+  align-items: center;
+  gap: var(--gap-nav);
+  padding: 3px;
+  background: var(--gray-100);
+  border-radius: var(--radius-pill);
+}
+/* The active step is the filled one; colours come from the view-model. */
+.checkout-steps__step {
+  padding: 5px var(--space-3);
+  background: var(--step-bg);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--step-shadow);
+  color: var(--step-fg);
+  font-size: var(--text-sm);
+  font-weight: var(--step-weight);
+  transition:
+    background 200ms var(--page-slide-ease),
+    color 200ms var(--page-slide-ease);
+}
+
+/* Body ------------------------------------------------------------------- */
+.checkout-layout {
+  display: grid;
+  align-items: start;
+  grid-template-columns: minmax(0, 1fr) 300px;
+  gap: var(--space-4);
+}
+
+.checkout-form {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: var(--space-5);
+}
+.checkout-form__title { font-size: var(--text-base); font-weight: var(--weight-medium); }
+.checkout-fields { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+/* A field spans one or both columns depending on how much it has to hold. */
+.checkout-field {
+  display: flex;
+  height: 36px;
+  align-items: center;
+  grid-column: var(--field-span);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-nav);
+  color: var(--text-tertiary);
+  font-size: var(--text-sm);
+  transition: border-color 140ms ease;
+}
+.checkout-actions { display: flex; gap: var(--space-2); margin-top: 2px; }
+
+/* Order summary ---------------------------------------------------------- */
+.checkout-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: var(--space-4);
+}
+.checkout-summary__build { display: flex; gap: var(--space-3); }
+.checkout-summary__build .ph { width: 56px; height: 56px; }
+.checkout-summary__build .ph .ms { font-size: 20px; }
+.checkout-summary__copy { font-size: var(--text-sm); }
+.checkout-summary__name { font-weight: var(--weight-medium); }
+.checkout-summary__parts { color: var(--text-secondary); }
+.checkout-summary__rule { height: 1px; background: var(--border-subtle); }
+.checkout-summary__total {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+.checkout-summary__total span:first-child {
+  font-size: var(--text-base);
+  font-weight: var(--weight-medium);
+}
+.checkout-summary__amount { font-size: var(--text-2xl); font-weight: var(--weight-medium); }
+.checkout-summary__note {
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+  line-height: var(--leading-normal);
+}
+
+/* Confirmation ----------------------------------------------------------- */
+.done-page {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 14px;
+  padding: 100px 36px;
+}
+.done-page__tick { font-size: 20px; color: var(--success); }
+.done-page h1 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-medium);
+}
+.done-page__meta { color: var(--text-secondary); font-size: var(--text-sm); }
+.done-page__actions { display: flex; gap: var(--space-2); margin-top: 6px; }
