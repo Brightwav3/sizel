@@ -1,11 +1,11 @@
 import React from "react";
-import { CATALOG, CAT_ICON, CAT_META, DEFAULT_PICKS, DEPTS, DESCS, GSTEP, GUIDED, ORDER, SPECS } from "../../data/catalog";
-import { RES, money } from "../../data/metrics";
+import { CAT_META, SPECS } from "../../data/catalog";
+import { money } from "../../data/metrics";
 import type { PcSlot } from "../../types";
 import type { BuildContext } from "../buildContext";
 
 export function buildProductVals(context: BuildContext) {
-  const { app, s, m, route, on, sideStyle, shopping, dept, picked, depts, openDept, categories, spend, over, fpsOk, quietOk, rows, games, wantRes, allProducts, searchText, cat, catList, brandOf, brandLogo, facetDefinitions, facetValues, specFilters, fitFacetIds, fitFilters, technicalFilters, visible, hidden, pSlot, pick, buildableProduct, candidateBuild, pFits, pslot, cur, pool, ordered, mtx, rowDefs, fg, pickerRows, stepDefs, st, filtersOn, gSpent, valueGpu, quietGpu, featuredCpu, featuredCooler, featuredStorage, featuredPhone, featuredConsole, promoProduct, brandNames, brandRibbon, homeDepartments, homeCategorySlots, homeCategories } = context;
+  const { app, route, openDept, pSlot, pick, buildableProduct, candidateBuild, pFits } = context;
   return {
       pImage: pick.imagePath,
       pName: pick.name,
@@ -34,16 +34,25 @@ export function buildProductVals(context: BuildContext) {
         { k: "Delivery", v: pick.days <= 2 ? "1–2 days" : pick.days + " days" },
         { k: "Availability", v: pick.stock === 0 ? "Out of stock" : "In stock" },
       ],
+      // The compatibility box is only meaningful for a part that goes into a
+      // build; a phone has nothing to be compatible with.
+      pFitShow: buildableProduct ? "grid" : "none",
       pFitBg: pFits ? "var(--success-soft)" : "var(--danger-soft)",
       pFitFg: pFits ? "var(--success)" : "var(--danger)",
       pFitIcon: pFits ? "check_circle" : "error",
-      pFitText: !buildableProduct ? "Verified against the canonical Rigsmith product catalog."
-        : pFits ? "Compatible with your current build based on the product specifications."
+      pFitText: !buildableProduct ? ""
+        : pFits ? "Fits the PC build you are putting together."
         : (candidateBuild?.issues || ["This product is not compatible with your current build."]).join(" "),
-      pActionLabel: buildableProduct ? "Put this in my build" : "Add to cart",
-      pAddToBuild: () => buildableProduct
-        ? app.set(pSlot as PcSlot, pick.id)
-        : app.setState({ inCart: true, toast: pick.name + " added to cart" }, () => app.flash()),
+      // Buying comes first; the configurator is one service the shop offers,
+      // so slotting a part into a build is the secondary action.
+      pActionLabel: "Add to cart",
+      pDelivery: pick.days <= 2 ? "Delivery tomorrow" : `Delivery in ${pick.days} days`,
+      pPriceExVat: money(Math.round(pick.price / 1.21)),
+      pAllFromBrand: () => app.setState({ route: "category", category: pSlot, productSlot: pSlot, brand: pick.brand ?? "any", openDept: null }),
+      pAddToCart: () => app.addToCart(pSlot, pick.id),
+      pBuildActionShow: buildableProduct ? "flex" : "none",
+      pBuildActionLabel: "Add to my PC build",
+      pAddToBuild: () => app.set(pSlot as PcSlot, pick.id),
   };
 }
 

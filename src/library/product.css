@@ -1,0 +1,102 @@
+/**
+ * Product page.
+ *
+ * Full width, no sidebar: the gallery on the left, a buy box on the right that
+ * answers the buying question in one column, and the long detail below. The
+ * shape a large electronics retailer uses, because it is the shape that works.
+ */
+.product-page { display: flex; flex-direction: column; gap: var(--space-6); width: 100%; max-width: 1400px; margin: 0 auto; padding: var(--space-5) var(--space-6) var(--space-12); }
+
+.product-grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(340px, 420px); gap: var(--space-8); align-items: start; }
+@media (max-width: 1000px) { .product-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); } }
+
+/* Gallery ----------------------------------------------------------------- */
+.product-gallery { display: flex; min-width: 0; flex-direction: column; gap: var(--space-3); }
+/* Flex, not grid: a grid row sizes to its content, so a tall image ignores
+   `max-height: 100%` and spills out of the frame. */
+.product-gallery__main { display: flex; align-items: center; justify-content: center; height: clamp(320px, 40vw, 520px); overflow: hidden; padding: var(--space-6); background: var(--gray-0); border: 1px solid var(--border-subtle); border-radius: var(--radius-card); }
+.product-gallery__main img { width: 100%; height: 100%; object-fit: contain; }
+.product-gallery__main .ms { font-size: var(--text-2xl); color: var(--text-tertiary); }
+.product-gallery__thumbs { display: flex; gap: var(--space-2); }
+.product-gallery__thumbs button { display: grid; place-items: center; width: 64px; height: 64px; padding: var(--space-1); background: var(--gray-0); border: 1px solid var(--border-subtle); border-radius: var(--radius-nav); cursor: pointer; }
+.product-gallery__thumbs button.is-active { border-color: var(--accent); }
+.product-gallery__thumbs img { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+.product-panel { display: flex; flex-direction: column; gap: var(--space-3); margin-top: var(--space-3); padding: var(--space-5); background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-card); }
+.product-panel__head { display: flex; align-items: baseline; gap: var(--space-2); }
+.product-panel__head strong { font-size: var(--text-base); font-weight: var(--weight-medium); }
+.product-panel__head small { color: var(--text-tertiary); font-size: var(--text-xs); }
+.product-panel p { margin: 0; color: var(--text-tertiary); font-size: var(--text-xs); }
+.product-fps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+.product-fps__card { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-4); background: var(--surface-sunken); border-radius: var(--radius-nav); }
+.product-fps__card span { color: var(--text-tertiary); font-size: var(--text-xs); }
+.product-fps__card strong { font-size: var(--text-2xl); font-weight: var(--weight-medium); }
+@media (max-width: 620px) { .product-fps { gap: var(--space-2); } .product-fps__card { padding: var(--space-3); } .product-fps__card strong { font-size: 20px; } }
+
+/* Buy box ----------------------------------------------------------------- */
+.product-buy { position: sticky; top: 72px; display: flex; min-width: 0; flex-direction: column; gap: var(--space-3); padding: var(--space-5); background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-card); }
+@media (max-width: 1000px) { .product-buy { position: static; } }
+.product-buy__brand { align-self: flex-start; padding: 0; color: var(--text-accent); background: transparent; border: 0; font: inherit; font-size: var(--text-sm); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.product-buy h1 { margin: 0; font-size: 22px; font-weight: var(--weight-medium); line-height: var(--leading-tight); }
+.product-buy__summary { margin: 0; color: var(--text-secondary); font-size: var(--text-sm); line-height: var(--leading-normal); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+
+.product-buy__stock { display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-3); background: var(--surface-sunken); border-radius: var(--radius-nav); font-size: var(--text-sm); }
+.product-buy__stock strong { font-weight: var(--weight-medium); }
+.product-buy__stock span { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--text-secondary); font-size: var(--text-xs); }
+.product-buy__stock .ms { font-size: var(--text-base); color: var(--text-tertiary); }
+
+.product-buy__price { display: flex; flex-direction: column; gap: 2px; padding-top: var(--space-2); }
+.product-buy__price strong { color: var(--danger); font-size: 30px; font-weight: var(--weight-medium); line-height: 1.1; }
+.product-buy__price small { color: var(--text-tertiary); font-size: var(--text-xs); }
+
+.product-buy__actions { display: flex; flex-direction: column; gap: var(--space-2); }
+.product-buy__cta,
+.product-buy__alt { display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2); width: 100%; min-height: 46px; border-radius: var(--radius-nav); font: inherit; font-size: var(--text-base); font-weight: var(--weight-medium); cursor: pointer; }
+.product-buy__cta { color: var(--text-inverse); background: var(--gray-900); border: 1px solid var(--gray-900); }
+.product-buy__cta:hover { background: var(--gray-800, #333); }
+.product-buy__alt { min-height: 40px; color: var(--text-primary); background: var(--surface-card); border: 1px solid var(--border-default); font-size: var(--text-sm); }
+.product-buy__alt:hover { background: var(--surface-hover); }
+.product-buy__cta .ms, .product-buy__alt .ms { font-size: var(--text-base); }
+
+.product-buy__fit { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: var(--space-2); padding: var(--space-3); border: 1px solid var(--border-subtle); border-radius: var(--radius-nav); }
+.product-buy__fit .ms { font-size: var(--text-xl, 20px); }
+.product-buy__fit p { margin: 0; color: var(--text-secondary); font-size: var(--text-xs); line-height: var(--leading-normal); }
+
+.product-buy__facts { display: flex; flex-direction: column; gap: var(--space-2); margin: 0; padding: var(--space-3) 0 0; border-top: 1px solid var(--border-subtle); list-style: none; }
+.product-buy__facts li { display: flex; align-items: center; gap: var(--space-2); color: var(--text-secondary); font-size: var(--text-xs); }
+.product-buy__facts .ms { font-size: var(--text-base); color: var(--text-tertiary); }
+
+/* Long detail ------------------------------------------------------------- */
+.product-detail { display: grid; grid-template-columns: minmax(0, 1fr) minmax(280px, 360px); gap: var(--space-8); padding-top: var(--space-6); border-top: 1px solid var(--border-subtle); }
+@media (max-width: 1000px) { .product-detail { grid-template-columns: minmax(0, 1fr); gap: var(--space-5); } }
+.product-detail h2 { margin: 0 0 var(--space-3); font-size: var(--text-base); font-weight: var(--weight-medium); }
+.product-detail__main > h2 + p { margin: 0 0 var(--space-6); color: var(--text-secondary); font-size: var(--text-sm); line-height: var(--leading-normal); }
+.product-specs { display: flex; flex-direction: column; margin: 0; }
+.product-specs > div { display: grid; grid-template-columns: minmax(0, 200px) minmax(0, 1fr); gap: var(--space-4); padding: var(--space-2) 0; border-bottom: 1px solid var(--border-subtle); font-size: var(--text-sm); }
+.product-specs dt { color: var(--text-secondary); }
+.product-specs dd { margin: 0; font-weight: var(--weight-medium); }
+.product-detail__tags > div { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+.product-detail__tags span { display: inline-flex; align-items: center; min-height: 26px; padding: 0 var(--space-3); background: var(--surface-sunken); border-radius: var(--radius-pill); color: var(--text-secondary); font-size: var(--text-xs); }
+
+/* Catalog bar ------------------------------------------------------------- */
+/* Scrolls away with the page and passes beneath the sticky top bar, so it is
+   below it in the stack rather than pinned. */
+.catalog-bar { position: relative; z-index: 10; display: flex; align-items: center; gap: var(--space-4); padding: var(--space-2) var(--space-6); background: var(--surface-card); border-bottom: 1px solid var(--border-subtle); }
+.catalog-bar__crumbs { display: flex; align-items: center; gap: var(--space-2); min-width: 0; overflow: hidden; color: var(--text-tertiary); font-size: var(--text-xs); }
+.catalog-bar__crumbs button { padding: 0; color: var(--text-accent); background: transparent; border: 0; font: inherit; text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+.catalog-bar__crumbs button .ms { font-size: var(--text-sm); }
+.catalog-bar__crumbs > span:last-child { overflow: hidden; color: var(--text-primary); text-overflow: ellipsis; white-space: nowrap; }
+@media (max-width: 620px) { .catalog-bar { padding: var(--space-2) var(--space-4); } .catalog-bar__crumbs { font-size: 11px; } }
+
+/* The bar variant drops its menu downward and spans the page. */
+.eshop-catalog--bar { flex: 0 0 auto; }
+.eshop-catalog--bar .eshop-catalog-toggle { min-width: 190px; }
+.eshop-catalog--bar .eshop-catalog-panel { width: 268px; }
+/* The department list keeps the left; the flyout opens beside it, not under. */
+.eshop-catalog--bar .eshop-flyout { top: calc(100% + 4px); left: 268px; width: min(1040px, calc(100vw - 312px)); max-height: calc(100vh - 130px); overflow-y: auto; }
+@media (max-width: 900px) {
+  .eshop-catalog--bar .eshop-flyout { left: 0; width: min(680px, calc(100vw - var(--space-8))); }
+}
+
+/* The gallery holds a single catalog image, so it needs no thumbnail strip. */
+.product-gallery__main { height: clamp(320px, 44vw, 560px); }
