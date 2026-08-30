@@ -1,4 +1,4 @@
-import type { Vals } from "../sx";
+import type { Vals } from "../types";
 import type { RigsmithApp } from "../RigsmithApp";
 import { createBuildContext } from "./buildContext";
 import { buildShellVals } from "./vals/shellVals";

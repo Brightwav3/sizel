@@ -1,5 +1,5 @@
 import React, { useEffect, useLayoutEffect, useRef, useState } from "react";
-import type { Vals } from "../sx";
+import type { Vals } from "../types";
 import { CATALOG, CAT_ICON, CAT_META, DEPTS } from "../data/realCatalog";
 import "./eshop-sidebar.css";
 

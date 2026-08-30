@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import type { Vals } from "../sx";
+import type { Vals } from "../types";
 import "../configurator.css";
 import "../configurator-layout.css";
 

@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import type { Vals } from "../sx";
+import type { Vals } from "../types";
 import { FilterPanel } from "./EshopFilters";
 import { CatalogMenu } from "./CatalogMenu";
 import { CATALOG, CAT_ICON, CAT_META, DEPTS } from "../data/realCatalog";
