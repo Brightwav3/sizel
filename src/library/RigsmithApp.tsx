@@ -1,42 +1,21 @@
 import React from "react";
 import "./styles.css";
-import type { Vals } from "./sx";
 import { FIXED } from "./app/catalogFacets";
 import { buildVals } from "./app/buildVals";
-import { AppShell } from "./shell/AppShell";
-import { HomeScreen } from "./screens/HomeScreen";
-import { CategoryScreen } from "./screens/CategoryScreen";
-import { ProductScreen } from "./screens/ProductScreen";
-import { BuilderScreen } from "./screens/BuilderScreen";
-import { PickerScreen } from "./screens/PickerScreen";
-import { CartScreen, CheckoutScreen, DoneScreen } from "./screens/CheckoutScreens";
-import { GuidedScreen } from "./screens/GuidedScreen";
-import { FloatingBuildCard, Toast } from "./overlays/FloatingBuildCard";
+import { RigsmithView } from "./app/RigsmithView";
+import type { AppState } from "./app/AppState";
 import {
-  CATALOG, CAT_ICON, CAT_META, DEFAULT_PICKS, DEPTS, DESCS, GAMES, GSTEP, GUIDED, ORDER, SPECS,
+  CATALOG, DEFAULT_PICKS, GUIDED, ORDER,
 } from "./data/catalog";
 import { RES, compatibilityIssues, money, noiseWord, shipDate } from "./data/metrics";
-import type { Part, PcSlot, Picks, Route, Slot } from "./types";
-
-interface State {
-  route: Route; pickerSlot: PcSlot | null; productId: string; category: Slot; productSlot: Slot;
-  catalogOpen: boolean; dept: string; openDept: string | null;
-  picks: Picks; gStep: number; gDone: PcSlot[];
-  cornerMin: boolean; cornerX: number | null; cornerY: number | null;
-  budget: number; target: number; res: keyof typeof RES; quiet: boolean;
-  fitOnly: boolean; minPrice: number; maxPrice: number; useFilter: string; brand: string;
-  facetFilters: Record<string, string[]>;
-  sort: string; stockOnly: boolean; onSale: boolean; search: string;
-  lastChange: { icon: string; title: string; deltas: { k: string; v: string; fg: string }[] } | null;
-  prev: Picks | null; inCart: boolean; step: number; toast: string | null; saved: number; scrolled: boolean;
-}
+import type { PcSlot, Picks, Route, Slot } from "./types";
 
 /**
  * The whole shop. State, the metrics model, and the derived value bag are the
  * prototype's logic class; every screen below renders it.
  */
-export class RigsmithApp extends React.Component<{}, State> {
-  state: State = {
+export class RigsmithApp extends React.Component<{}, AppState> {
+  state: AppState = {
     route: "home", pickerSlot: null, productId: DEFAULT_PICKS.gpu, category: "gpu", productSlot: "gpu",
     catalogOpen: false, dept: "pc", openDept: "pc",
     picks: { ...DEFAULT_PICKS },
@@ -83,7 +62,7 @@ export class RigsmithApp extends React.Component<{}, State> {
     return (Object.keys(this.categorySlugs) as Slot[]).find(slot => this.categorySlugs[slot] === slug) || null;
   }
 
-  private stateFromLocation(): Partial<State> {
+  private stateFromLocation(): Partial<AppState> {
     const segments = window.location.pathname.split("/").filter(Boolean).map(segment => decodeURIComponent(segment));
     if (segments.length === 0) return { route: "home" };
     if (segments[0] === "pc-builder") return { route: "builder" };
@@ -99,7 +78,7 @@ export class RigsmithApp extends React.Component<{}, State> {
     return { route: "category", dept, openDept: dept, category: slot, productSlot: slot };
   }
 
-  private urlForState(state: State): string {
+  private urlForState(state: AppState): string {
     if (state.route === "home") return "/";
     if (state.route === "builder") return "/pc-builder";
     if (state.route === "guided") return "/build";
@@ -115,7 +94,7 @@ export class RigsmithApp extends React.Component<{}, State> {
     return `${base}/${category}${state.route === "product" ? `/${encodeURIComponent(state.productId)}` : ""}`;
   }
 
-  componentDidUpdate(prevProps: {}, prevState: State) {
+  componentDidUpdate(prevProps: {}, prevState: AppState) {
     if (!this.urlReady) return;
     if (this.syncingFromUrl) {
       this.syncingFromUrl = false;
@@ -245,25 +224,8 @@ export class RigsmithApp extends React.Component<{}, State> {
   }
 
   /** Everything the screens read. One place, so no screen computes its own numbers. */
-  vals(): Vals { return buildVals(this); }
+  vals() { return buildVals(this); }
   render() {
-    const v = this.vals();
-    return (
-      <>
-        <AppShell v={v}>
-          {v.isHome && <HomeScreen v={v} />}
-          {v.isCategory && <CategoryScreen v={v} />}
-          {v.isProduct && <ProductScreen v={v} />}
-          {v.isBuilder && <BuilderScreen v={v} />}
-          {v.isGuided && <GuidedScreen v={v} />}
-          {v.isPicker && <PickerScreen v={v} />}
-          {v.isCart && <CartScreen v={v} />}
-          {v.isCheckout && <CheckoutScreen v={v} />}
-          {v.isDone && <DoneScreen v={v} />}
-        </AppShell>
-        {!v.isBuilder && !v.isGuided && <FloatingBuildCard v={v} />}
-        <Toast v={v} />
-      </>
-    );
+    return <RigsmithView v={this.vals()} />;
   }
 }
