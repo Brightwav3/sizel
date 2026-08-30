@@ -4,11 +4,12 @@ import { FIXED } from "./app/catalogFacets";
 import { buildVals } from "./app/buildVals";
 import { RigsmithView } from "./app/RigsmithView";
 import type { AppState } from "./app/AppState";
+import { stateFromLocation, urlForState } from "./app/navigation";
 import {
   CATALOG, DEFAULT_PICKS, GUIDED, ORDER,
 } from "./data/catalog";
 import { RES, compatibilityIssues, money, noiseWord, shipDate } from "./data/metrics";
-import type { PcSlot, Picks, Route, Slot } from "./types";
+import type { PcSlot, Picks, Route } from "./types";
 
 /**
  * The whole shop. State, the metrics model, and the derived value bag are the
@@ -30,7 +31,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   private syncingFromUrl = false;
   private onResize = () => this.forceUpdate();
   private onPopState = () => {
-    const next = this.stateFromLocation();
+    const next = stateFromLocation();
     this.syncingFromUrl = true;
     this.setState(next as any);
   };
@@ -38,7 +39,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   componentDidMount() {
     window.addEventListener("resize", this.onResize);
     window.addEventListener("popstate", this.onPopState);
-    const next = this.stateFromLocation();
+    const next = stateFromLocation();
     if (next.route !== "home") {
       this.syncingFromUrl = true;
       this.setState(next as any, () => { this.urlReady = true; });
@@ -52,48 +53,6 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     clearTimeout(this.t);
   }
 
-  private categorySlugs: Record<string, string> = {
-    gpu: "graphic-cards", cpu: "processors", board: "motherboards", ram: "memory",
-    cooler: "cpu-coolers", psu: "power-supplies", storage: "storage", case: "pc-cases",
-    phones: "smartphones", consoles: "consoles",
-  };
-
-  private slotForSlug(slug: string): Slot | null {
-    return (Object.keys(this.categorySlugs) as Slot[]).find(slot => this.categorySlugs[slot] === slug) || null;
-  }
-
-  private stateFromLocation(): Partial<AppState> {
-    const segments = window.location.pathname.split("/").filter(Boolean).map(segment => decodeURIComponent(segment));
-    if (segments.length === 0) return { route: "home" };
-    if (segments[0] === "pc-builder") return { route: "builder" };
-    if (segments[0] === "build") return { route: "guided", gStep: 0, gDone: [] };
-    if (segments[0] === "compare") return { route: "picker", pickerSlot: "gpu" };
-    if (segments[0] === "cart") return { route: "cart" };
-    if (segments[0] === "checkout") return { route: "checkout", step: 0 };
-    if (segments[0] === "order-complete") return { route: "done" };
-    const dept = segments[0] === "pc-parts" ? "pc" : segments[0] === "phones" ? "phone" : segments[0] === "gaming" ? "gaming" : null;
-    const slot = segments[1] ? this.slotForSlug(segments[1]) : null;
-    if (!dept || !slot) return { route: "home" };
-    if (segments[2]) return { route: "product", dept, openDept: dept, category: slot, productSlot: slot, productId: segments[2] };
-    return { route: "category", dept, openDept: dept, category: slot, productSlot: slot };
-  }
-
-  private urlForState(state: AppState): string {
-    if (state.route === "home") return "/";
-    if (state.route === "builder") return "/pc-builder";
-    if (state.route === "guided") return "/build";
-    if (state.route === "picker") return "/compare";
-    if (state.route === "cart") return "/cart";
-    if (state.route === "checkout") return "/checkout";
-    if (state.route === "done") return "/order-complete";
-    const slot = state.route === "product" ? state.productSlot : state.category;
-    const productDept = slot === "phones" ? "phone" : slot === "consoles" ? "gaming" : "pc";
-    const baseDept = state.route === "product" ? productDept : state.dept;
-    const base = baseDept === "phone" ? "/phones" : baseDept === "gaming" ? "/gaming" : "/pc-parts";
-    const category = this.categorySlugs[slot] || this.categorySlugs.gpu;
-    return `${base}/${category}${state.route === "product" ? `/${encodeURIComponent(state.productId)}` : ""}`;
-  }
-
   componentDidUpdate(prevProps: {}, prevState: AppState) {
     if (!this.urlReady) return;
     if (this.syncingFromUrl) {
@@ -102,7 +61,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     }
     const navigationChanged = prevState.route !== this.state.route || prevState.category !== this.state.category || prevState.productId !== this.state.productId || prevState.dept !== this.state.dept;
     if (navigationChanged) {
-      const nextUrl = this.urlForState(this.state);
+      const nextUrl = urlForState(this.state);
       if (nextUrl !== window.location.pathname) window.history.pushState({}, "", nextUrl);
     }
   }
