@@ -108,11 +108,14 @@
 --------------------------------------------------------------------------- */
 .hero { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--space-4); align-items: stretch; }
 
-.hero-banner { position: relative; overflow: hidden; height: 396px; border: 1px solid var(--border-subtle); border-radius: var(--radius-card); background: linear-gradient(115deg, #f7f8fa 0%, #eef2f8 52%, #e6ecf6 100%); }
+.hero-banner { position: relative; overflow: hidden; min-height: 396px; border: 1px solid var(--border-subtle); border-radius: var(--radius-card); background: linear-gradient(115deg, #f7f8fa 0%, #eef2f8 52%, #e6ecf6 100%); }
 /* The offers sit side by side on one track; changing offer slides the track,
    so the banner physically moves the way a swipe would move it. */
-.hero-banner__track { display: flex; height: 396px; will-change: transform; transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1); }
-.hero-banner__slide { display: grid; flex: 0 0 100%; grid-template-columns: minmax(0, 1fr) minmax(0, 46%); align-items: center; gap: var(--space-6); box-sizing: border-box; min-width: 0; height: 396px; padding: var(--space-8) var(--space-8) var(--space-10); }
+/* Height is a floor, not a cap. The longest headline wraps to three lines and
+   its stats row to two, which a fixed 396px clipped — the slides share one
+   flex row, so the tallest sets the height and the banner never jumps. */
+.hero-banner__track { display: flex; align-items: stretch; min-height: 396px; will-change: transform; transition: transform 560ms cubic-bezier(0.22, 1, 0.36, 1); }
+.hero-banner__slide { display: grid; flex: 0 0 100%; grid-template-columns: minmax(0, 1fr) minmax(0, 46%); align-items: center; gap: var(--space-6); box-sizing: border-box; min-width: 0; min-height: 396px; padding: var(--space-8) var(--space-8) var(--space-10); }
 .hero-banner__slide[aria-hidden="true"] { opacity: 0.35; transition: opacity 400ms ease; }
 
 .hero-banner__copy { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); justify-content: center; min-width: 0; }
@@ -178,7 +181,7 @@
 }
 
 @media (max-width: 760px) {
-  .hero-banner, .hero-banner__track, .hero-banner__slide { height: 620px; }
+  .hero-banner, .hero-banner__track, .hero-banner__slide { min-height: 620px; }
   .hero-banner__slide { grid-template-columns: minmax(0, 1fr); padding: var(--space-6) var(--space-5) var(--space-10); }
   .hero-banner h1 { font-size: 28px; }
   .hero-banner__art { order: -1; }
