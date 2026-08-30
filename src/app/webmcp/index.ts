@@ -7,7 +7,15 @@
  * that edits a build it cannot see, and a smaller tool set is a clearer one,
  * so every route change registers what the screen supports and drops the rest.
  *
+ * A tool is dropped by aborting the `AbortSignal` it was registered with,
+ * which is the only way the specification offers — there is no
+ * `unregisterTool`. That matters here: `registerTool` rejects when a name is
+ * already taken, so a registration that could not be withdrawn would make
+ * every later route change fail.
+ *
  * Nothing here assumes WebMCP exists: without it the shop runs unchanged.
+ *
+ * https://webmachinelearning.github.io/webmcp/
  */
 import type { Route } from "../../shared/lib/types";
 import { toolsForRoute } from "./tools";
@@ -15,7 +23,8 @@ import { fail } from "./toolResult";
 import { modelContext } from "./webmcpApi";
 import type { ToolCallResult } from "./webmcpApi";
 
-const registered = new Map<string, void>();
+/** Live registrations, each with the controller that withdraws it. */
+const registered = new Map<string, AbortController>();
 /** Registrations are serialised: two route changes must not interleave. */
 let queue: Promise<void> = Promise.resolve();
 
@@ -43,23 +52,44 @@ const guard = (
     }
   };
 
+function drop(name: string) {
+  registered.get(name)?.abort();
+  registered.delete(name);
+}
+
 async function apply(route: Route) {
   const context = modelContext();
   if (!context) return;
   const wanted = new Map(toolsForRoute(route).map(tool => [tool.name, tool]));
 
   for (const name of Array.from(registered.keys())) {
-    if (wanted.has(name)) continue;
-    await context.unregisterTool?.(name);
-    registered.delete(name);
+    if (!wanted.has(name)) drop(name);
   }
   for (const [name, tool] of wanted) {
     if (registered.has(name)) continue;
-    const { routes, execute, ...descriptor } = tool;
+    const { routes, execute, readOnlyHint, untrustedContentHint, ...rest } = tool;
     void routes;
+    const controller = new AbortController();
     const required = ((tool.inputSchema as any).required ?? []) as string[];
-    await context.registerTool({ ...descriptor, execute: guard(name, required, execute) });
-    registered.set(name, undefined);
+    try {
+      /**
+       * The hints go in `annotations`, which is where the specification puts
+       * them. They are mirrored at the top level as well because Chrome's
+       * origin-trial build reads them from there, and a dictionary member it
+       * does not know is ignored rather than rejected.
+       */
+      await context.registerTool({
+        ...rest,
+        readOnlyHint,
+        untrustedContentHint,
+        annotations: { readOnlyHint: readOnlyHint === true, untrustedContentHint: untrustedContentHint === true },
+        execute: guard(name, required, execute),
+      }, { signal: controller.signal });
+      registered.set(name, controller);
+    } catch (error) {
+      // One tool refused must not cost the screen the rest of its set.
+      console.error(`[webmcp] could not register ${name}`, error);
+    }
   }
 }
 
@@ -70,12 +100,8 @@ export function syncWebmcpTools(route: Route): void {
 
 /** Drop every registration — the app is unmounting. */
 export function stopWebmcpTools(): void {
-  queue = queue.then(async () => {
-    const context = modelContext();
-    for (const name of Array.from(registered.keys())) {
-      await context?.unregisterTool?.(name);
-      registered.delete(name);
-    }
+  queue = queue.then(() => {
+    for (const name of Array.from(registered.keys())) drop(name);
   }).catch(error => console.error("[webmcp] teardown failed", error));
 }
 

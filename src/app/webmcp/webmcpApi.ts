@@ -9,7 +9,11 @@
 export interface ToolTextContent { type: "text"; text: string }
 export interface ToolCallResult { content: ToolTextContent[]; isError?: boolean }
 
-/** MCP tool annotations. Chrome reads them top level; MCP nests them. */
+/**
+ * Tool annotations, as `ToolAnnotations` in the specification. They belong
+ * under `annotations`; Chrome's origin-trial build also reads them from the
+ * top level, so registration sends both.
+ */
 export interface ToolAnnotations {
   /** The tool never changes state, so an agent may call it without asking. */
   readOnlyHint?: boolean;
@@ -19,15 +23,25 @@ export interface ToolAnnotations {
 
 export interface ToolDescriptor extends ToolAnnotations {
   name: string;
+  /** Shown in the agent's own UI. May be rendered natively. */
+  title?: string;
   description: string;
   inputSchema: Record<string, unknown>;
+  /** Where the specification puts the hints. */
   annotations?: ToolAnnotations;
   execute(args: Record<string, any>): Promise<ToolCallResult> | ToolCallResult;
 }
 
+/**
+ * `registerTool` is the whole surface this app needs. There is no
+ * `unregisterTool` in the specification: a registration is withdrawn by
+ * aborting the `AbortSignal` passed in `options`.
+ */
 interface ModelContext {
-  registerTool(descriptor: ToolDescriptor, options?: { exposedTo?: string[] }): Promise<unknown> | unknown;
-  unregisterTool?(name: string): Promise<unknown> | unknown;
+  registerTool(
+    descriptor: ToolDescriptor,
+    options?: { exposedTo?: string[]; signal?: AbortSignal },
+  ): Promise<unknown> | unknown;
 }
 
 /** The live model context, or null when the browser has no WebMCP. */

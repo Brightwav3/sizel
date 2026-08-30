@@ -2,7 +2,8 @@ import { describe, expect, it } from "vitest";
 import { CATALOG, DEFAULT_PICKS } from "../../data/catalog/catalog";
 import { compatibilityIssues, metrics } from "../../entities/build/metrics";
 import type { PcSlot, Picks } from "../../shared/lib/types";
-import { bottleneck, fixOptions, powerReport, recommendBuild } from "./buildAdvisor";
+import { BUDGET_TOLERANCE, bottleneck, cheapestBuild, fixOptions, powerReport, recommendBuild } from "./buildAdvisor";
+import { part } from "../../entities/build/metrics";
 import { OUTPUT_BUDGET, ok } from "./toolResult";
 import { TOOLS, toolsForRoute } from "./tools";
 
@@ -82,6 +83,24 @@ describe("results stay inside the output budget", () => {
     for (const body of calls) expect(body.length).toBeLessThanOrEqual(OUTPUT_BUDGET);
   });
 
+  it("drops a note about rows the shortening removed", () => {
+    const items = Array.from({ length: 60 }, (_, index) => ({
+      id: `p${index}`, name: "A long product name here", ...(index > 40 ? { concern: "out_of_stock" } : {}),
+    }));
+    const body = JSON.parse(text(ok({ items }, "items", shown =>
+      shown.some((item: any) => item.concern) ? { hint: "some are out of stock" } : {})));
+    expect(body.omitted).toBeGreaterThan(0);
+    expect(body.items.some((item: any) => item.concern)).toBe(false);
+    expect(body.hint).toBeUndefined();
+  });
+
+  it("keeps the note when a row it describes survives", () => {
+    const items = Array.from({ length: 3 }, (_, index) => ({ id: `p${index}`, concern: "out_of_stock" }));
+    const body = JSON.parse(text(ok({ items }, "items", shown =>
+      shown.some((item: any) => item.concern) ? { hint: "some are out of stock" } : {})));
+    expect(body.hint).toBe("some are out of stock");
+  });
+
   it("answers an unknown id with a reason instead of throwing", () => {
     expect(JSON.parse(call("get_product", { productId: "nope" })).error).toBe("product_not_found");
   });
@@ -142,6 +161,62 @@ describe("recommend_build", () => {
     const proposal = recommendBuild(budget);
     expect(compatibilityIssues(proposal.picks)).toEqual([]);
     expect(proposal.issues).toEqual([]);
+  });
+
+  const BUDGETS = [800, 1000, 1200, 1600, 2000, 2400, 3500, 5000];
+
+  it.each(BUDGETS)("keeps $%i inside the ten per cent it promises", budget => {
+    const proposal = recommendBuild(budget);
+    expect(proposal.price).toBeLessThanOrEqual(budget * (1 + BUDGET_TOLERANCE));
+    expect(proposal.withinBudget).toBe(true);
+  });
+
+  it("says so plainly when the budget is below what any machine costs", () => {
+    const floor = cheapestBuild().price;
+    const proposal = recommendBuild(Math.round(floor * 0.8));
+    expect(proposal.withinBudget).toBe(false);
+    expect(proposal.cheapestPossible).toBe(floor);
+  });
+
+  it.each(BUDGETS)("sizes the power supply to the draw at $%i, not to the wallet", budget => {
+    const report = powerReport(recommendBuild(budget).picks);
+    expect(report.ok).toBe(true);
+    // Enough headroom to be legal, not so much that the shopper paid for air.
+    expect(report.psuW).toBeLessThan(report.requiredW * 1.6);
+  });
+
+  it("buys the cheapest board and case that fit, since neither moves a number", () => {
+    const rich = recommendBuild(5000);
+    for (const slot of ["board", "case"] as const) {
+      const chosen = part(rich.picks, slot);
+      const fitting = CATALOG[slot].filter(item =>
+        compatibilityIssues({ ...rich.picks, [slot]: item.id }).length === 0);
+      const cheapest = Math.min(...fitting.map(item => item.price));
+      expect(chosen.price, slot).toBe(cheapest);
+    }
+  });
+
+  it("stops early at 1080p and keeps spending at 4K for the same target", () => {
+    const low = recommendBuild(2400, "1080p", false, 144);
+    const high = recommendBuild(2400, "4K", false, 144);
+    expect(low.price).toBeLessThan(high.price);
+    expect(low.fps).toBeGreaterThanOrEqual(144);
+  });
+
+  it("leaves the rest of the budget alone once the target is met", () => {
+    const capped = recommendBuild(3500, "1440p", false, 120);
+    const uncapped = recommendBuild(3500, "1440p");
+    expect(capped.price).toBeLessThan(uncapped.price);
+    expect(capped.fps).toBeGreaterThanOrEqual(120);
+  });
+
+  it("never pays for a part that adds no frame rate", () => {
+    const proposal = recommendBuild(2400);
+    const cheaperCpu = CATALOG.cpu.find(item =>
+      item.price < part(proposal.picks, "cpu").price
+      && compatibilityIssues({ ...proposal.picks, cpu: item.id }).length === 0
+      && metrics({ ...proposal.picks, cpu: item.id }).fps >= metrics(proposal.picks).fps);
+    expect(cheaperCpu, cheaperCpu?.name).toBeUndefined();
   });
 
   it("spends more of a larger budget and gains frame rate for it", () => {
