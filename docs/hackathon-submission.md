@@ -69,20 +69,22 @@ WebMCP, React, TypeScript, Vite, local JSON catalog, SQLite, CSS, fictional prod
 
 ## Media plan
 
-The final submission should show:
+The shot list, with the words to say and the tool each one should reach, is in
+[demo-script.md](demo-script.md). In short:
 
-1. Catalog search and filtering.
-2. An agent calling `search_products`.
-3. A product being added to the visible build.
-4. A deliberate incompatibility and the plain-language explanation.
-5. A compatible replacement and updated power/price totals.
+1. A machine assembled for a budget, appearing slot by slot on screen.
+2. A deliberate incompatibility, and the plain-language explanation.
+3. `fix_build_issue` offering the swaps that clear it, one of them cheaper.
+4. An out-of-stock part raised rather than silently substituted, and watched.
+5. The build against a console, with the estimate labelled as an estimate.
+6. Checkout opened and handed back — no order placed, no details filled in.
 
 The video must be public on YouTube, include audio, and stay under three minutes. All demo brands and products will remain fictional.
 
 ## Submission checklist
 
 - [ ] Working live URL accessible in ChatGPT’s in-app browser or Chrome with WebMCP enabled.
-- [ ] Public repository with all source, assets, instructions, and an open-source license.
+- [x] Public repository with all source, assets, instructions, and an open-source license.
 - [x] Repository contains `document.modelContext.registerTool({ ... })` registrations.
 - [ ] English project description submitted.
 - [ ] Public YouTube demo under three minutes with audio.

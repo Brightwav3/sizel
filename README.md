@@ -4,6 +4,28 @@ Rigsmith is a fictional electronics shop and PC configurator built for a human-a
 
 All products, brands, logos, and product images are fictional. The application does not depend on an external catalog API.
 
+## Start here
+
+PC building is a constraint-solving task wearing a product catalog's clothes. A
+person knows the performance they want; the shop asks them to reason about
+sockets, memory standards, case clearance and power headroom at the same time.
+WebMCP lets an agent do that reasoning against structured tools while the
+person watches it happen on the page and keeps the final say.
+
+Two things this shop can answer that clicking cannot:
+
+- **`fix_build_issue`** — a compatibility message states a conflict but never
+  names the part to change. This returns the swaps that clear it, smallest
+  price change first, with what each does to the frame rate.
+- **`explain_build_bottleneck`** — the frame-rate model knows which component
+  caps the graphics card. No screen has ever shown that.
+
+| If you have | Read |
+| --- | --- |
+| Three minutes | [docs/demo-script.md](docs/demo-script.md) — what to say to an agent, and what should happen |
+| Ten minutes | [docs/webmcp-architecture.md](docs/webmcp-architecture.md) — how the layer is built and what it guarantees |
+| A terminal | `npm install && npm test` — 107 tests, including the tool contract |
+
 ## Project origin
 
 The project started on 29 August 2026 by importing a design of my own from Claude
@@ -125,6 +147,7 @@ not: `add_build_to_cart` refuses outright while a conflict is open, and
 | [docs/webmcp-tools.md](docs/webmcp-tools.md) | Every tool: parameters, results, screens, error codes |
 | [docs/webmcp-architecture.md](docs/webmcp-architecture.md) | How the layer works, budgets, safety posture, performance, testing |
 | [docs/build-recommendation.md](docs/build-recommendation.md) | How `recommend_build` decides, measured, with its known limits |
+| [docs/demo-script.md](docs/demo-script.md) | What to say to an agent, and which tool each line reaches |
 | [docs/decisions/](docs/decisions/) | Architectural decision records |
 
 ### Running the tools locally
