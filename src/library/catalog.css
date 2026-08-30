@@ -1,0 +1,350 @@
+/**
+ * Category listing and the product card (ADR 0004 migration).
+ *
+ * The card is the most repeated element in the shop — a listing page renders
+ * dozens — so this is where moving out of inline strings pays most: the hover
+ * on the add button was React state, which re-rendered a card per pointer
+ * move; here it is a pseudo-class.
+ *
+ * Values that genuinely vary per listing (stock colours, the dim on a sold-out
+ * card, price panel styling) arrive as custom properties set on the element.
+ *
+ * Selectors overriding `.card` or `.ph` from styles.css are compounded so they
+ * win on specificity rather than on import order.
+ */
+
+.category-page {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: var(--space-5) var(--space-6) 96px;
+}
+
+/* Header ----------------------------------------------------------------- */
+.category-head { display: flex; align-items: flex-end; gap: var(--space-4); }
+.category-head__spacer { flex: 1; }
+.category-crumbs {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: var(--space-1);
+  color: var(--text-tertiary);
+  font-size: var(--text-xs);
+}
+.category-crumbs button {
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--text-tertiary);
+  font: inherit;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: pointer;
+}
+/* The page you are on is the last crumb, and is not a link back to itself. */
+.category-crumbs button[aria-current="page"] {
+  color: var(--text-primary);
+  text-decoration: none;
+}
+.category-title { font-size: 20px; font-weight: var(--weight-medium); }
+.category-sub {
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: var(--text-sm);
+}
+
+/* Section rules ---------------------------------------------------------- */
+.category-rule { display: flex; align-items: center; gap: 10px; }
+.category-rule__line { flex: 1; height: 1px; background: var(--border-strong); }
+.category-rule__count { color: var(--text-tertiary); font-size: var(--text-xs); }
+
+/* Brand tiles ------------------------------------------------------------ */
+.brand-row { display: flex; flex-direction: column; gap: var(--space-2); }
+.brand-row[data-show="none"] { display: none; }
+.brand-row__tiles { display: flex; flex-wrap: wrap; gap: var(--space-2); }
+
+.card.brand-tile {
+  display: flex;
+  min-width: 156px;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-3);
+  background: var(--tile-bg);
+  border-color: var(--tile-border);
+}
+.brand-tile__copy { display: flex; flex-direction: column; gap: 1px; }
+.brand-tile__name {
+  color: var(--tile-fg);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+}
+.brand-tile__count { color: var(--text-tertiary); font-size: var(--text-xs); }
+
+.brand-back { display: flex; align-items: center; gap: var(--space-2); }
+.brand-back[data-show="none"] { display: none; }
+.brand-back__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-accent);
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  cursor: pointer;
+}
+.brand-back__link .ms { font-size: var(--text-base); }
+
+/* Sorts and chips -------------------------------------------------------- */
+.category-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+.category-controls__spacer { flex: 1; }
+.category-controls__divider { width: 1px; height: var(--space-6); background: var(--border-strong); }
+
+.sort-group {
+  display: flex;
+  gap: 3px;
+  padding: 3px;
+  background: var(--gray-100);
+  border-radius: var(--radius-pill);
+}
+.sort-group__option {
+  padding: 5px 13px;
+  background: var(--option-bg);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--option-shadow);
+  color: var(--option-fg);
+  font-size: var(--text-sm);
+  font-weight: var(--option-weight);
+  cursor: pointer;
+  transition:
+    background 200ms var(--page-slide-ease),
+    color 200ms var(--page-slide-ease);
+}
+
+.filter-chip {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 13px;
+  background: var(--chip-bg);
+  border: 1px solid var(--chip-border);
+  border-radius: var(--radius-pill);
+  color: var(--chip-fg);
+  font-size: var(--text-sm);
+  font-weight: var(--chip-weight);
+  cursor: pointer;
+  transition: background 140ms ease, border-color 140ms ease;
+}
+/* The tick only shows on a chip that is on. */
+.filter-chip .ms { display: var(--chip-icon-display); font-size: var(--text-base); }
+
+.clear-filters { color: var(--text-accent); font-size: var(--text-sm); cursor: pointer; }
+
+/* "Some listings are hidden" note ---------------------------------------- */
+.card.hidden-note {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  padding: 14px var(--space-4);
+  background: var(--gray-50);
+}
+.hidden-note .ms { font-size: 20px; color: var(--text-tertiary); }
+.hidden-note__copy { color: var(--text-secondary); font-size: var(--text-sm); }
+.hidden-note__spacer { flex: 1; }
+
+/* Department overview ---------------------------------------------------- */
+.department-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-8);
+  padding: var(--space-8) 36px 160px;
+}
+.department-page h1 {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-2xl);
+  font-weight: var(--weight-medium);
+}
+
+/* Product card ----------------------------------------------------------- */
+.card.product-card {
+  display: flex;
+  min-width: 0;
+  height: 100%;
+  flex-direction: column;
+  overflow: hidden;
+  border-color: var(--card-border);
+  border-radius: var(--radius-nav);
+}
+.product-card__frame { position: relative; }
+/* A sold-out listing is dimmed rather than hidden. */
+.product-card .ph {
+  aspect-ratio: 16 / 10;
+  background: var(--surface-card);
+  border: none;
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+  opacity: var(--card-dim);
+}
+.product-card .ph .ms { font-size: 20px; }
+.product-card__state {
+  position: absolute;
+  top: var(--space-2);
+  left: var(--space-2);
+  display: var(--state-display);
+  align-items: center;
+  padding: 2px var(--space-2);
+  background: var(--state-bg);
+  border-radius: var(--radius-xs);
+  color: var(--text-inverse);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: .4px;
+  text-transform: uppercase;
+}
+
+.product-card__body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: 10px;
+  opacity: var(--card-dim);
+}
+.product-card__rating {
+  display: flex;
+  min-height: 16px;
+  align-items: center;
+  gap: 6px;
+}
+.product-card__spacer { flex: 1; }
+
+.product-card__watch {
+  display: inline-flex;
+  padding: 0;
+  background: transparent;
+  border: 0;
+  color: var(--text-tertiary);
+  cursor: pointer;
+}
+.product-card__watch[aria-pressed="true"] { color: var(--accent-active); }
+.product-card__watch .ms { font-size: 16px; }
+
+.product-card__name {
+  font-size: var(--text-sm);
+  font-weight: var(--weight-medium);
+  line-height: 1.35;
+}
+.product-card__in-build {
+  color: var(--accent-active);
+  font-size: 11px;
+  font-weight: var(--weight-medium);
+}
+.product-card__desc {
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+  line-height: 1.4;
+}
+.product-card__specs { display: flex; flex-wrap: wrap; gap: var(--space-1); }
+.product-card__spec {
+  padding: 1px 7px;
+  background: var(--surface-sunken);
+  border-radius: var(--radius-xs);
+  color: var(--text-secondary);
+  font-size: var(--text-xs);
+}
+
+/* Price, add button, stock line ------------------------------------------ */
+.product-card__buy {
+  display: grid;
+  align-items: stretch;
+  grid-template-columns: minmax(88px, 1fr) minmax(84px, 1fr);
+  gap: var(--space-1);
+  padding: 0 10px 10px;
+}
+.product-card__price-panel {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  flex-direction: column;
+  align-items: stretch;
+  overflow: hidden;
+  background: var(--price-panel-bg);
+  border: var(--price-panel-border);
+  border-radius: var(--radius-nav);
+  font-variant-numeric: tabular-nums;
+}
+/* Only a sale or a new arrival carries a banner above the price. */
+.product-card__price-header {
+  display: flex;
+  width: 100%;
+  height: 18px;
+  min-height: 18px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  background: var(--price-header-bg);
+  color: var(--price-header-fg);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  letter-spacing: .35px;
+  line-height: 1;
+  text-align: center;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.product-card__price {
+  display: flex;
+  width: 100%;
+  flex: 1;
+  min-height: 0;
+  align-items: center;
+  justify-content: center;
+  padding: 0 6px;
+  color: var(--price-fg);
+  font-size: 19px;
+  font-weight: var(--weight-medium);
+  line-height: 1;
+  text-align: center;
+  white-space: nowrap;
+}
+
+.product-card__add {
+  display: flex;
+  width: 100%;
+  min-width: 0;
+  height: 44px;
+  min-height: 44px;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0 var(--space-2);
+  background: var(--add-bg);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-nav);
+  color: var(--add-fg);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  text-align: center;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: background 140ms ease;
+}
+.product-card__add:hover { background: var(--surface-hover); }
+.product-card__add .ms { font-size: 16px; }
+
+.product-card__stock {
+  grid-column: 1 / -1;
+  padding-top: 2px;
+  color: var(--stock-fg);
+  font-size: var(--text-xs);
+  font-weight: var(--weight-medium);
+  text-align: center;
+}
