@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { sx, type Vals } from "../sx";
-import { FilterPanel } from "./Sidebar";
+import { FilterPanel } from "./EshopFilters";
 import { CATALOG, CAT_ICON, CAT_META, DEPTS } from "../data/realCatalog";
 import "./eshop-sidebar.css";
 

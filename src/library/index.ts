@@ -14,7 +14,7 @@ export type { Resolution } from "./data/metrics";
 
 export { AppShell } from "./shell/AppShell";
 export { TopBar } from "./shell/TopBar";
-export { Sidebar, FilterPanel } from "./shell/Sidebar";
+export { FilterPanel } from "./shell/EshopFilters";
 
 export { HomeScreen } from "./screens/HomeScreen";
 export { CategoryScreen, ProductCard } from "./screens/CategoryScreen";
