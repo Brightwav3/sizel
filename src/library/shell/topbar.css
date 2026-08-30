@@ -76,19 +76,38 @@
 .topbar__action--icon { width: 36px; }
 .topbar__action--cart { gap: 6px; padding: 0 10px; }
 
+/**
+ * The flag of the shop's locale, drawn rather than shipped as an image: at
+ * 20x14 an asset would be a blurry sprite, and this scales with the box.
+ *
+ * Thirteen stripes and a canton over seven of them, in the official colours.
+ * The stars are left out — at this size they would be noise, not stars.
+ */
 .topbar__flag {
-  display: flex;
+  position: relative;
+  display: block;
+  box-sizing: border-box;
   width: 20px;
   height: 14px;
-  flex-direction: column;
   overflow: hidden;
   border: 1px solid var(--border-subtle);
   border-radius: 2px;
+  background: repeating-linear-gradient(
+    #B22234 0,
+    #B22234 7.6923%,
+    #fff 7.6923%,
+    #fff 15.3846%
+  );
 }
-.topbar__flag span { flex: 1; }
-.topbar__flag span:nth-child(1) { background: #fff; }
-.topbar__flag span:nth-child(2) { background: #2C6EF5; }
-.topbar__flag span:nth-child(3) { background: #DC3B3B; }
+.topbar__flag::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 40%;
+  height: 53.846%;
+  background: #3C3B6E;
+}
 
 /* Colours vary with whether the cart has anything in it. */
 .topbar__cart-count {

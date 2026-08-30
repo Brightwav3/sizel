@@ -57,11 +57,7 @@ export const TopBar: React.FC<{ v: Vals }> = ({ v }) => (
         <span className="ms">account_circle</span>
       </div>
       <div className="topbar__action topbar__action--icon" data-tip="Language and currency" role="button" tabIndex={0}>
-        <span className="topbar__flag">
-          <span></span>
-          <span></span>
-          <span></span>
-        </span>
+        <span className="topbar__flag" role="img" aria-label="United States" />
       </div>
       <div className="topbar__action topbar__action--cart" onClick={v.goCart} data-tip="Your cart" data-tip-align="end" role="button" tabIndex={0}>
         <span className="ms">shopping_bag</span>
