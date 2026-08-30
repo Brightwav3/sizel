@@ -1,97 +1,97 @@
 import React from "react";
-import { sx, type Vals } from "../sx";
+import type { Vals } from "../sx";
+import "../responsive.css";
+import "../product.css";
 
-/** Universal product detail: the gallery stays calm while the purchase decision gets richer. */
+/**
+ * Product detail laid out the way a large electronics retailer does it: the
+ * gallery on the left, and on the right a buy box that answers the buying
+ * question in one column — brand, name, short description, stock, delivery,
+ * price, action. Everything that is not part of that decision sits below.
+ */
 export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => (
-  <div className="t-page" style={sx("padding:var(--space-8) var(--space-8) var(--space-16);display:flex;flex-direction:column;gap:var(--space-6);max-width:1280px;width:100%;margin:0 auto")}>
-    <div style={sx("display:flex;align-items:center;gap:var(--space-2);font-size:var(--text-xs);color:var(--text-tertiary)")}>
-      <span onClick={v.goCategory} style={sx("cursor:pointer;color:var(--text-accent)")}>{v.pCatName}</span>
-      <span aria-hidden="true">/</span>
-      <span style={sx("overflow:hidden;text-overflow:ellipsis;white-space:nowrap")}>{v.pName}</span>
-    </div>
-
-    <div style={sx("display:grid;grid-template-columns:minmax(0,1.15fr) minmax(320px,0.85fr);gap:var(--space-8);align-items:start")}>
-      <section style={sx("display:flex;flex-direction:column;gap:var(--space-4);min-width:0")}>
-        <div className="card" style={sx("padding:var(--space-4);background:var(--surface-sunken);box-shadow:var(--shadow-card);border-color:var(--border-subtle)")}>
-          <div className="ph" style={sx("height:clamp(320px,42vw,520px);background:var(--gray-0);border:1px solid var(--border-subtle);border-radius:var(--radius-nav);overflow:hidden")}>
-            {v.pImage ? <img className="catalog-image" src={v.pImage} alt={v.pName} /> : <span className="ms" style={sx("font-size:var(--text-2xl)")}>image</span>}
-          </div>
+  <div className="t-page product-page">
+    <div className="product-grid">
+      <section className="product-gallery">
+        <div className="product-gallery__main">
+          {v.pImage ? <img src={v.pImage} alt={v.pName} /> : <span className="ms">image</span>}
         </div>
-        <div style={sx("display:flex;gap:var(--space-2);align-items:center")}>
-          {[1, 2, 3].map(index => (
-            <div key={index} className="card" style={sx("width:var(--space-16);height:var(--space-16);padding:var(--space-1);background:var(--gray-0);border-color:var(--border-default);overflow:hidden")}>
-              {v.pImage ? <img className="catalog-image" src={v.pImage} alt={`${v.pName} view ${index}`} /> : <span className="ms" style={sx("font-size:var(--text-base);color:var(--text-tertiary)")}>image</span>}
-            </div>
-          ))}
-          <span style={sx("font-size:var(--text-xs);color:var(--text-tertiary);margin-left:var(--space-2)")}>Product photography from the Rigsmith catalog</span>
-        </div>
-
         {v.pIsGpu && (
-          <div className="card" style={sx("padding:var(--space-5);display:flex;flex-direction:column;gap:var(--space-4);background:var(--surface-card)")}>
-            <div style={sx("display:flex;align-items:baseline;gap:var(--space-2)")}>
-              <div style={sx("font-size:var(--text-base);font-weight:var(--weight-medium)")}>Expected frame rates</div>
-              <div style={sx("font-size:var(--text-xs);color:var(--text-tertiary)")}>estimated from catalog specs</div>
+          <div className="product-panel">
+            <div className="product-panel__head">
+              <strong>How well will it play?</strong>
+              <small>estimated from catalog specs</small>
             </div>
-            <div style={sx("display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-3)")}>
+            <div className="product-fps">
               {v.pFpsCards.map((f: Vals, i: number) => (
-                <div key={i} style={sx("padding:var(--space-4);background:var(--surface-sunken);border-radius:var(--radius-nav)")}>
-                  <div style={sx("font-size:var(--text-xs);color:var(--text-tertiary)")}>{f.res}</div>
-                  <div className="num" style={sx("font-size:var(--text-2xl);font-weight:var(--weight-medium);margin-top:var(--space-1)")}>{f.fps}</div>
+                <div key={i} className="product-fps__card">
+                  <span>{f.res}</span>
+                  <strong className="num">{f.fps}</strong>
                 </div>
               ))}
             </div>
-            <div style={sx("font-size:var(--text-xs);color:var(--text-tertiary)")}>Averages across the current Rigsmith performance model.</div>
+            <p>Averages across the current Rigsmith performance model.</p>
           </div>
         )}
       </section>
 
-      <section style={sx("display:flex;flex-direction:column;gap:var(--space-5);min-width:0")}>
-        <div style={sx("display:flex;flex-direction:column;gap:var(--space-2)")}>
-          <div style={sx("font-size:var(--text-sm);color:var(--text-secondary)")}>{v.pBrand}</div>
-          <h1 style={sx("font-size:var(--text-2xl);font-weight:var(--weight-medium);line-height:var(--leading-tight);letter-spacing:var(--tracking);margin:0")}>{v.pModel}</h1>
-          <div style={sx("display:flex;align-items:center;gap:var(--space-2);font-size:var(--text-xs);color:var(--text-tertiary)")}>
-            <span className="ms" style={sx("font-size:var(--text-sm);color:var(--success)")}>verified</span>
-            <span>Canonical catalog product</span>
-            <span aria-hidden="true">·</span>
-            <span className="num">SKU {v.pSku}</span>
-          </div>
+      <aside className="product-buy" aria-label="Purchase">
+        <button type="button" className="product-buy__brand" onClick={v.pAllFromBrand}>All from {v.pBrand}</button>
+        <h1>{v.pBrand} {v.pModel}</h1>
+
+        <p className="product-buy__summary">{v.pBlurb}</p>
+
+        <div className="product-buy__stock">
+          <strong style={{ color: v.pStockFg }}>{v.pStock}</strong>
+          <span><span className="ms">local_shipping</span>{v.pDelivery}</span>
         </div>
 
-        <div style={sx("display:flex;align-items:baseline;gap:var(--space-3);padding-bottom:var(--space-4);border-bottom:1px solid var(--border-subtle)")}>
-          <span className="num" style={sx("font-size:32px;font-weight:var(--weight-medium);line-height:var(--leading-tight)")}>{v.pPrice}</span>
-          <span style={sx(`display:inline-flex;align-items:center;gap:var(--space-1);font-size:var(--text-sm);color:${v.pStockFg}`)}><span style={sx(`width:var(--space-1);height:var(--space-1);border-radius:var(--radius-pill);background:${v.pStockFg}`)}></span>{v.pStock}</span>
+        <div className="product-buy__price">
+          <strong className="num">{v.pPrice}</strong>
+          <small>Includes VAT · <span className="num">{v.pPriceExVat}</span> excl. VAT</small>
         </div>
 
-        <div style={sx("display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:1px;background:var(--border-subtle);border:1px solid var(--border-subtle);border-radius:var(--radius-nav);overflow:hidden")}>
-          {v.pFacts.map((f: Vals, i: number) => (
-            <div key={i} style={sx("padding:var(--space-3) var(--space-4);display:flex;flex-direction:column;gap:var(--space-1);background:var(--surface-card);min-width:0")}>
-              <span style={sx("font-size:var(--text-xs);color:var(--text-tertiary)")}>{f.k}</span>
-              <span style={sx("font-size:var(--text-sm);font-weight:var(--weight-medium);overflow:hidden;text-overflow:ellipsis")}>{f.v}</span>
-            </div>
-          ))}
+        <div className="product-buy__actions">
+          <button type="button" className="product-buy__cta" onClick={v.pAddToCart}>
+            <span className="ms">shopping_bag</span>{v.pActionLabel}
+          </button>
+          {v.pBuildActionShow !== "none" && (
+            <button type="button" className="product-buy__alt" onClick={v.pAddToBuild}>
+              <span className="ms">construction</span>{v.pBuildActionLabel}
+            </button>
+          )}
         </div>
 
-        <div style={sx("display:flex;flex-wrap:wrap;gap:var(--space-2)")}>
-          {v.pSpecs.map((spec: string, i: number) => (
-            <span key={i} style={sx("display:inline-flex;align-items:center;min-height:var(--space-6);padding:0 var(--space-3);border-radius:var(--radius-pill);background:var(--surface-sunken);color:var(--text-secondary);font-size:var(--text-xs)")}>{spec}</span>
-          ))}
+        <div className="product-buy__fit" style={{ background: v.pFitBg, display: v.pFitShow }}>
+          <span className="ms" style={{ color: v.pFitFg }}>{v.pFitIcon}</span>
+          <p>{v.pFitText}</p>
         </div>
 
-        <div style={sx("display:flex;flex-direction:column;gap:var(--space-2)")}>
-          <div className="pill dark" onClick={v.pAddToBuild} style={sx("height:48px;width:100%;font-size:var(--text-base)")}>{v.pActionLabel}</div>
-          <div className="pill ghostb" onClick={v.goCategory} style={sx("height:44px;width:100%;font-size:var(--text-base)")}>Keep looking</div>
-        </div>
-
-        <div className="card" style={sx(`padding:var(--space-4);display:flex;gap:var(--space-3);background:${v.pFitBg};border-color:var(--border-subtle)`)}>
-          <span className="ms" style={sx(`font-size:var(--text-2xl);color:${v.pFitFg};flex-shrink:0`)}>{v.pFitIcon}</span>
-          <div style={sx("font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--leading-normal)")}>{v.pFitText}</div>
-        </div>
-
-        <div style={sx("display:flex;flex-direction:column;gap:var(--space-2);font-size:var(--text-sm);color:var(--text-secondary);line-height:var(--leading-normal)")}>
-          <div style={sx("font-weight:var(--weight-medium);color:var(--text-primary)")}>About this product</div>
-          <div>{v.pBlurb}</div>
-        </div>
-      </section>
+        <ul className="product-buy__facts">
+          <li><span className="ms">qr_code_2</span>Code <span className="num">{v.pSku}</span></li>
+          <li><span className="ms">assignment_return</span>30-day returns</li>
+          <li><span className="ms">verified_user</span>2-year warranty</li>
+        </ul>
+      </aside>
     </div>
+
+    <section className="product-detail">
+      <div className="product-detail__main">
+        <h2>About this product</h2>
+        <p>{v.pBlurb}</p>
+        <h2>Specifications</h2>
+        <dl className="product-specs">
+          {v.pFacts.map((f: Vals, i: number) => (
+            <div key={i}><dt>{f.k}</dt><dd>{f.v}</dd></div>
+          ))}
+        </dl>
+      </div>
+      <div className="product-detail__tags">
+        <h2>At a glance</h2>
+        <div>
+          {v.pSpecs.map((spec: string, i: number) => <span key={i}>{spec}</span>)}
+        </div>
+      </div>
+    </section>
   </div>
 );
