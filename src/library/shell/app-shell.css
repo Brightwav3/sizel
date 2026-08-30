@@ -1,0 +1,10 @@
+/* Page frame (ADR 0004 migration). Column widths reflow in responsive.css. */
+
+.app-shell { min-height: 100vh; background: #fff; }
+
+.app-shell__main {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+}
