@@ -8,7 +8,7 @@ import {
   CATALOG, DEFAULT_PICKS, ORDER,
 } from "./data/catalog";
 import { metrics, money, noiseWord, shipDate } from "./data/metrics";
-import type { CartLine, PcSlot, Picks, Route, Slot } from "./types";
+import type { CartLine, PcSlot, Picks, Route, Slot, Watchdog } from "./types";
 
 /**
  * The whole shop. State, the metrics model, and the derived value bag are the
@@ -34,7 +34,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     cornerMin: true, cornerX: null, cornerY: null,
     budget: 1800, target: 144, res: "1440p", quiet: true,
     fitOnly: false, fastShip: false, minPrice: 0, maxPrice: 2200, useFilter: "any", brand: "any", facetFilters: {}, sort: "popular", stockOnly: false, onSale: false, search: "",
-    lastChange: null, prev: null, cart: [], step: 0, toast: null, saved: 2,
+    lastChange: null, prev: null, cart: [], watchdogs: [], step: 0, toast: null, saved: 2,
   };
 
   private t?: number;
@@ -127,6 +127,26 @@ export class RigsmithApp extends React.Component<{}, AppState> {
 
   removeCartLine(index: number) {
     this.setState({ cart: this.state.cart.filter((_, at) => at !== index), toast: "Removed from cart" }, () => this.flash());
+  }
+
+  // Watchdogs -----------------------------------------------------------
+  /** Start or stop watching a product. Everything stays on this device. */
+  toggleWatchdog(slot: Slot, id: string, kind: Watchdog["kind"] = "availability") {
+    const at = this.state.watchdogs.findIndex(watch => watch.productId === id && watch.kind === kind);
+    if (at >= 0) {
+      this.setState({ watchdogs: this.state.watchdogs.filter((_, index) => index !== at), toast: "Watch removed" }, () => this.flash());
+      return;
+    }
+    const part = CATALOG[slot].find(item => item.id === id);
+    const watch: Watchdog = { productId: id, slot, kind, priceAtWatch: part?.price ?? 0 };
+    this.setState({
+      watchdogs: [...this.state.watchdogs, watch],
+      toast: kind === "price" ? "We will tell you if the price drops" : "We will tell you when it is back",
+    }, () => this.flash());
+  }
+
+  isWatched(id: string, kind: Watchdog["kind"] = "availability") {
+    return this.state.watchdogs.some(watch => watch.productId === id && watch.kind === kind);
   }
 
   shipDate(days: number) { return shipDate(days); }
