@@ -64,6 +64,15 @@ export interface Part {
   cpuPowerW?: number;
 }
 
+/** One line in the cart: a catalog product, or the assembled PC as a unit. */
+export interface CartLine {
+  kind: "product" | "build";
+  /** Product id, or "build" for the assembled machine. */
+  id: string;
+  slot?: Slot;
+  qty: number;
+}
+
 export type Catalog = Record<Slot, Part[]>;
 export type Picks = Record<PcSlot, string>;
 
@@ -85,4 +94,4 @@ export interface Metrics {
 
 export type Route =
   | "home" | "category" | "product" | "builder"
-  | "picker" | "guided" | "cart" | "checkout" | "done";
+  | "cart" | "checkout" | "done";
