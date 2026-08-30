@@ -65,14 +65,17 @@ export const EshopSidebar: React.FC<{ v: Vals }> = ({ v }) => {
                 <span className="ms">{dept.icon}</span><span>{dept.name}</span><b>{dept.count}</b><span className="ms rail-chevron">chevron_right</span>
               </button>;
             })}
-            {comingSoonCategories.map(category => <div key={category.name} className="eshop-placeholder-category" aria-disabled="true"><span className="ms">{category.icon}</span><span>{category.name}</span><small>Soon</small></div>)}
+            {v.isHome && comingSoonCategories.map(category => <div key={category.name} className="eshop-placeholder-category" aria-disabled="true"><span className="ms">{category.icon}</span><span>{category.name}</span><small>Soon</small></div>)}
           </nav>
           {v.isHome && <div className="eshop-audience-services" aria-label="Upcoming Rigsmith services">
             <div className="eshop-audience-service" aria-disabled="true"><span className="audience-icon is-student"><span className="ms">school</span></span><span><strong>Rigsmith for students</strong><small>Student pricing and study-ready tech</small></span><em>Soon</em></div>
             <div className="eshop-audience-service" aria-disabled="true"><span className="audience-icon is-business"><span className="ms">business</span></span><span><strong>Rigsmith for firms</strong><small>Bulk orders and company hardware</small></span><em>Soon</em></div>
           </div>}
         </div>
-        {(v.isCategory || v.isProduct) && !v.departmentOverview && <div className="eshop-filter-wrap"><FilterPanel v={v} /></div>}
+        {!v.isHome && <div className="eshop-category-rail"><nav aria-label="Upcoming categories" className="eshop-rail-list">
+          {comingSoonCategories.map(category => <div key={category.name} className="eshop-placeholder-category" aria-disabled="true"><span className="ms">{category.icon}</span><span>{category.name}</span><small>Soon</small></div>)}
+        </nav></div>}
+        {(v.isCategory || v.isProduct) && <div className="eshop-filter-wrap"><FilterPanel v={v} /></div>}
       </div>
       {openDept && <div className="eshop-scrim" onMouseDown={() => setOpenDept(null)} aria-hidden="true" />}
       {openDept && <section className="eshop-flyout" aria-label={`${activeDept?.name ?? "Catalog"} menu`}>

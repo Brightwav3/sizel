@@ -12,8 +12,9 @@ export function buildCatalogVals(context: BuildContext) {
       catBlurb: s.search ? "Matches from all real products, models, and specifications." : CAT_META[cat].blurb,
       catIsGpu: cat === "gpu",
       compareShow: dept.id === "pc" ? "inline-flex" : "none",
-      gpuFilterDisplay: cat === "gpu" ? "flex" : "none",
-      fitFilterDisplay: fitFilters.length ? "flex" : "none",
+      gpuFilterDisplay: cat === "gpu" && !s.openDept ? "flex" : "none",
+      fitFilterDisplay: fitFilters.length && !s.openDept ? "flex" : "none",
+      specFilterDisplay: s.openDept ? "none" : "flex",
       catSub: visible.length + " shown of " + CAT_META[cat].count + " products",
       minPrice: s.minPrice, minPriceLabel: money(s.minPrice), maxPrice: s.maxPrice, maxPriceLabel: money(s.maxPrice),
       setMinPrice: (e: any) => app.setState({ minPrice: Math.min(+e.target.value, s.maxPrice - 20) }),
@@ -115,7 +116,13 @@ export function buildCatalogVals(context: BuildContext) {
           go: () => app.setState({ route: "product", productSlot: cat, productId: g.id }),
         };
       }),
-      departmentCards: dept.cats.flatMap(cardCategory => CATALOG[cardCategory].map(g => {
+      departmentCards: dept.cats.flatMap(cardCategory => CATALOG[cardCategory].filter(g =>
+        g.price >= s.minPrice && g.price <= s.maxPrice &&
+        (!s.stockOnly || (g.days <= 2 && g.stock !== 0)) &&
+        (!s.onSale || g.merchandising === "sale") &&
+        (s.brand === "any" || brandOf(g) === s.brand) &&
+        (!searchText || [g.name, g.model, g.description, JSON.stringify(g.specifications)].join(" ").toLowerCase().includes(searchText))
+      ).map(g => {
         const stockCount = g.stock ?? 0;
         const out = stockCount === 0;
         const sale = g.merchandising === "sale";
@@ -151,4 +158,3 @@ export function buildCatalogVals(context: BuildContext) {
       hiddenNote: hidden > 0 ? hidden + " products hidden by your filters." : null,
   };
 }
-

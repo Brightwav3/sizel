@@ -77,6 +77,7 @@ export function createBuildContext(app: RigsmithApp) {
     const cat = s.category;
     const catList = searchText
       ? allProducts.filter(product => [product.name, product.model, product.description, JSON.stringify(product.specifications)].join(" ").toLowerCase().includes(searchText))
+      : picked ? dept.cats.flatMap(category => CATALOG[category])
       : CATALOG[cat] || CATALOG.gpu;
     const brandOf = (p: any) => p.brand || p.name.split(" ")[0];
     const brandLogo = (brand: string) => "/catalog/logos/" + brand.toLowerCase().replace(/\s+/g, "-") + ".png";
