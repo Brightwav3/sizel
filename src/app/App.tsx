@@ -289,7 +289,8 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   /** Show the agent's own search on screen, so the shopper sees it happen. */
   showInCatalog(patch: Partial<Pick<AppState,
     "route" | "category" | "productSlot" | "dept" | "search" | "brand" | "facetFilters" |
-    "minPrice" | "maxPrice" | "sort" | "stockOnly" | "onSale" | "productId">>) {
+    "minPrice" | "maxPrice" | "sort" | "stockOnly" | "onSale" | "productId" |
+    "productColorId" | "builderSlot">>) {
     this.setState({ catalogOpen: false, ...patch } as Pick<AppState, "route">);
   }
 

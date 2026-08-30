@@ -1,6 +1,7 @@
 import type { RigsmithApp } from "../../app/App";
 import type { Vals } from "../../shared/lib/types";
 import { CATALOG, CAT_ICON, CAT_META, DEFAULT_PICKS, DEPTS } from "../../data/catalog/catalog";
+import { CHECKOUT_STEPS, checkoutStepAt } from "../checkout/checkoutSteps";
 import { compatibilityIssues, money } from "./metrics";
 import type { Part, PcSlot, Picks, Slot } from "../../shared/lib/types";
 import { FACETS, FIT_FACET_IDS } from "../../features/catalog/catalogFacets";
@@ -115,15 +116,7 @@ export function createBuildContext(app: RigsmithApp) {
       : [];
     const pFits = candidateIssues.length === 0;
 
-    const stepDefs = [
-      { title: "Where should it go?", cta: "Continue to payment",
-        fields: [{ label: "Full name", span: "auto" }, { label: "Phone", span: "auto" }, { label: "Street address", span: "1 / -1" }, { label: "City", span: "auto" }, { label: "Postcode", span: "auto" }] },
-      { title: "How would you like to pay?", cta: "Review order",
-        fields: [{ label: "Card number", span: "1 / -1" }, { label: "Expiry", span: "auto" }, { label: "Security code", span: "auto" }] },
-      { title: "Everything look right?", cta: "Place order",
-        fields: [{ label: "Quiet 1440p gaming PC, 9 parts", span: "1 / -1" }, { label: "Assembled and tested", span: "1 / -1" }] },
-    ];
-    const st = stepDefs[Math.min(s.step, 2)];
+    const st = checkoutStepAt(s.step);
     const filtersOn = route === "category" || route === "product";
     const valueGpu = CATALOG.gpu.filter(p => p.stock !== 0).slice().sort((a, b) => a.price - b.price)[0];
     const quietGpu = CATALOG.gpu.filter(p => p.stock !== 0).slice().sort((a, b) => (a.noise ?? 99) - (b.noise ?? 99))[0];
@@ -164,7 +157,7 @@ export function createBuildContext(app: RigsmithApp) {
       go: () => app.setState({ route: "category", dept: category === "phones" ? "phone" : category === "consoles" ? "gaming" : "pc", category, brand: "any", search: "" }),
     }));
 
-    return { app, s, m, route, on, sideStyle, shopping, dept, picked, depts, openDept, categories, spend, over, fpsOk, quietOk, allProducts, searchText, cat, catList, brandOf, brandLogo, facetValues, specFilters, fitFilters, visible, hidden, bounds, query, pSlot, pick, buildableProduct, chosenPicks, chosenCount, hasBuild, candidateIssues, pFits, stepDefs, st, filtersOn, valueGpu, quietGpu, featuredCpu, featuredCooler, featuredStorage, featuredPhone, featuredConsole, promoProduct, brandRibbon, homeDepartments, homeCategories };
+    return { app, s, m, route, on, sideStyle, shopping, dept, picked, depts, openDept, categories, spend, over, fpsOk, quietOk, allProducts, searchText, cat, catList, brandOf, brandLogo, facetValues, specFilters, fitFilters, visible, hidden, bounds, query, pSlot, pick, buildableProduct, chosenPicks, chosenCount, hasBuild, candidateIssues, pFits, stepDefs: CHECKOUT_STEPS, st, filtersOn, valueGpu, quietGpu, featuredCpu, featuredCooler, featuredStorage, featuredPhone, featuredConsole, promoProduct, brandRibbon, homeDepartments, homeCategories };
 }
 
 export type BuildContext = ReturnType<typeof createBuildContext>;

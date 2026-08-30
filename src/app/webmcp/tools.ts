@@ -19,6 +19,9 @@ import { colorwaysFor } from "../../data/catalog/colorways";
 import { siblingVariants } from "../../data/catalog/storageVariants";
 import { ratingFor, reviewsFor } from "../../data/catalog/reviews";
 import { FREE_SHIPPING_OVER, cartTotals } from "../../entities/cart/cartTotals";
+import { CHECKOUT_STEPS } from "../../entities/checkout/checkoutSteps";
+import { MERCHANDISING } from "../../data/catalog/merchandising";
+import { FACETS } from "../../features/catalog/catalogFacets";
 import { listingStock, stockLabel } from "../../data/catalog/listingStock";
 import { metrics, money, noiseWord, part, shipDate } from "../../entities/build/metrics";
 import type { Resolution } from "../../entities/build/metrics";
@@ -89,6 +92,30 @@ const locate = (productId: string) => {
 const resolutionOf = (value: unknown, fallback: Resolution): Resolution =>
   RESOLUTIONS.includes(value as Resolution) ? value as Resolution : fallback;
 
+/** A nested specification value from the canonical record. */
+const spec = (product: Part, ...path: string[]) => {
+  let value: any = product.specifications;
+  for (const key of path) value = value?.[key];
+  return value;
+};
+
+/** Facet ids a category understands, so a bad filter can be named as bad. */
+const facetIds = (category: Slot) => (FACETS[category] ?? []).map(definition => definition.id);
+
+/** Facet filters, checked against the category before the search runs. */
+const readFilters = (category: Slot | undefined, raw: unknown) => {
+  if (!raw || typeof raw !== "object") return { facets: undefined as Record<string, string[]> | undefined, unknown: [] as string[] };
+  const known = category ? facetIds(category) : [];
+  const facets: Record<string, string[]> = {};
+  const unknown: string[] = [];
+  for (const [id, value] of Object.entries(raw as Record<string, unknown>)) {
+    const values = (Array.isArray(value) ? value : [value]).map(String);
+    if (category && !known.includes(id)) { unknown.push(id); continue; }
+    facets[id] = values;
+  }
+  return { facets: Object.keys(facets).length ? facets : undefined, unknown };
+};
+
 // Tools ----------------------------------------------------------------
 export const TOOLS: RigsmithTool[] = [
   {
@@ -107,10 +134,20 @@ export const TOOLS: RigsmithTool[] = [
       inStockOnly: bool("In stock and shipping within two days."),
       onSale: bool("On sale only."),
       sort: str("'perf' is frame rate or benchmark score.", SORTS),
+      filters: {
+        type: "object",
+        additionalProperties: { type: "array", items: { type: "string" } },
+        description: "Facet id to values, from list_filters. Needs category.",
+      },
       limit: num("1 to 20, default 5."),
     }),
     execute(args) {
       const category = (args.category ?? undefined) as Slot | undefined;
+      const { facets, unknown } = readFilters(category, args.filters);
+      if (unknown.length) {
+        return fail("unknown_filter", `No ${category} filter named ${unknown.join(", ")}. Call list_filters.`);
+      }
+      if (args.filters && !category) return fail("category_required", "Filters apply within one category.");
       const result = searchProducts({
         search: args.query,
         category: category ?? (args.query ? undefined : "gpu"),
@@ -119,6 +156,7 @@ export const TOOLS: RigsmithTool[] = [
         maxPrice: args.maxPrice,
         stockOnly: args.inStockOnly,
         onSale: args.onSale,
+        facets,
         sort: args.sort as SortId | undefined,
       });
       const limit = Math.min(20, Math.max(1, Math.round(args.limit ?? 5)));
@@ -771,6 +809,184 @@ export const TOOLS: RigsmithTool[] = [
           categories: department.cats.map(slot => ({ id: slot, name: CAT_META[slot].name, count: CAT_META[slot].count })),
         })),
       }, "departments");
+    },
+  },
+  {
+    name: "list_brands",
+    description:
+      "Every brand the shop carries and how many listings each has, optionally within one category. Take the spelling from here before passing a brand to search_products.",
+    readOnlyHint: true,
+    annotations: { readOnlyHint: true },
+    routes: ["home", "category"],
+    inputSchema: schema({ category: str("Narrow to one category.", CATEGORIES) }),
+    execute(args) {
+      const pool = args.category ? CATALOG[args.category as Slot] : Object.values(CATALOG).flat();
+      const counts = new Map<string, number>();
+      for (const product of pool) counts.set(brandOf(product), (counts.get(brandOf(product)) ?? 0) + 1);
+      return ok({
+        category: args.category ?? "all",
+        brands: [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count })),
+      }, "brands");
+    },
+  },
+
+  {
+    name: "get_deals",
+    description:
+      "Listings the shop is currently flagging as on sale or newly arrived, newest and cheapest first. A sale listing shows what it was before.",
+    readOnlyHint: true,
+    annotations: { readOnlyHint: true },
+    routes: ["home", "category"],
+    inputSchema: schema({
+      kind: str("Default: both.", ["sale", "new"]),
+      category: str("Narrow to one category.", CATEGORIES),
+      limit: num("1 to 10, default 6."),
+    }),
+    execute(args) {
+      const limit = Math.min(10, Math.max(1, Math.round(args.limit ?? 6)));
+      const items = Object.entries(MERCHANDISING)
+        .filter(([, kind]) => !args.kind || kind === args.kind)
+        .flatMap(([id, kind]) => {
+          const found = locate(id);
+          return found ? [{ found, kind: kind as string }] : [];
+        })
+        .filter(entry => !args.category || entry.found.category === args.category)
+        .sort((a, b) => a.found.product.price - b.found.product.price)
+        .slice(0, limit)
+        .map(entry => ({
+          ...brief(entry.found.product, entry.found.category),
+          kind: entry.kind,
+          ...(entry.found.product.was ? { was: entry.found.product.was } : {}),
+        }));
+      return ok({ total: items.length, items }, "items");
+    },
+  },
+
+  {
+    name: "select_product_variant",
+    description:
+      "Open a particular storage tier or finish of a device on screen, so the shopper sees the one being discussed. Take the ids from get_product_variants. Selecting is not buying.",
+    routes: ["product"],
+    inputSchema: schema({
+      productId: str("Storage tier id from get_product_variants."),
+      finishId: str("Finish id from get_product_variants."),
+    }, ["productId"]),
+    execute(args) {
+      const found = locate(args.productId);
+      if (!found) return fail("product_not_found", "Call get_product_variants for the tier ids.");
+      const { product, category } = found;
+      const finishes = colorwaysFor(product, category);
+      if (args.finishId && !finishes.some(finish => finish.id === args.finishId)) {
+        return fail("no_such_finish", finishes.length ? `Offered: ${finishes.map(f => f.id).join(", ")}.` : "This product has one finish.");
+      }
+      app().showInCatalog({
+        route: "product", productId: product.id, productSlot: category, category,
+        productColorId: args.finishId ?? null,
+        dept: category === "phones" ? "phone" : category === "consoles" ? "gaming" : "pc",
+      });
+      return ok({
+        shown: product.id,
+        name: productTitle(product, category),
+        price: product.price,
+        finish: args.finishId ?? null,
+      });
+    },
+  },
+
+  {
+    name: "focus_builder_slot",
+    description:
+      "Move the configurator to one slot, so the shopper is looking at the part being discussed. Shows the screen only; it fits nothing. Use set_build_component to choose.",
+    routes: ["builder", "product"],
+    inputSchema: schema({ slot: str("Slot to show.", PC_SLOTS) }, ["slot"]),
+    execute(args) {
+      const instance = app();
+      const slot = args.slot as PcSlot;
+      instance.showInCatalog({ route: "builder", builderSlot: slot });
+      return ok({
+        showing: slot,
+        slotName: slotName(slot),
+        fitted: part(instance.state.picks, slot).name,
+        chosenByShopper: instance.state.chosen.includes(slot),
+      });
+    },
+  },
+
+  {
+    name: "compare_build_to_product",
+    description:
+      "Set the PC on screen against a console or phone: price, delivery, and what each one states it can do. The catalog gives no frame rate for a console, so compare its stated output and say the numbers are not measured the same way.",
+    readOnlyHint: true,
+    annotations: { readOnlyHint: true },
+    routes: ["builder", "product"],
+    inputSchema: schema({
+      productId: str("A console or phone id."),
+      resolution: str("Default: the shopper's setting.", RESOLUTIONS),
+    }, ["productId"]),
+    execute(args) {
+      const instance = app();
+      const found = locate(args.productId);
+      if (!found) return fail("product_not_found", "Call search_products in the consoles or phones category.");
+      if (found.category !== "consoles" && found.category !== "phones") {
+        return fail("not_a_device", "This compares the build against a console or phone. Use compare_products for parts.");
+      }
+      const res = resolutionOf(args.resolution, instance.state.res as Resolution);
+      const model = metrics(instance.state.picks, res);
+      const device = found.product;
+      const output = found.category === "consoles"
+        ? {
+            maxResolution: spec(device, "output", "maxResolution"),
+            maxRefreshRateHz: spec(device, "output", "maxRefreshRateHz"),
+            rayTracing: spec(device, "output", "rayTracing"),
+            storageGB: spec(device, "hardware", "storageGB"),
+          }
+        : {
+            display: spec(device, "display", "type"),
+            refreshRateHz: spec(device, "display", "refreshRateHz"),
+            storageGB: spec(device, "storage", "capacityGB"),
+          };
+      return ok({
+        build: {
+          price: model.price,
+          fps: model.fps,
+          resolution: res,
+          noise: noiseWord(model.noise),
+          powerW: model.watt,
+          arrives: shipDate(model.days),
+          upgradeable: true,
+        },
+        device: {
+          id: device.id,
+          name: productTitle(device, found.category),
+          price: device.price,
+          arrives: shipDate(device.days),
+          stated: output,
+          upgradeable: false,
+        },
+        priceDifference: model.price - device.price,
+        note: "The build's frame rate is this shop's own estimate; the device figures are its stated capabilities. They are not measured the same way.",
+      });
+    },
+  },
+
+  {
+    name: "get_checkout_fields",
+    description:
+      "What checkout will ask the shopper for, step by step. Use it to tell them what to have ready. No tool fills these in: names, addresses and card details are the shopper's own to enter.",
+    readOnlyHint: true,
+    annotations: { readOnlyHint: true },
+    routes: ["cart", "checkout"],
+    inputSchema: NO_INPUT,
+    execute() {
+      return ok({
+        currentStep: CHECKOUT_STEPS[Math.min(app().state.step, CHECKOUT_STEPS.length - 1)].id,
+        steps: CHECKOUT_STEPS.map(step => ({
+          id: step.id,
+          asksFor: step.kind,
+          fields: step.kind === "confirmation" ? [] : step.fields.map(field => field.label),
+        })),
+        enteredBy: "shopper",
+      }, "steps");
     },
   },
 ];

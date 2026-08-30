@@ -56,10 +56,10 @@ The canonical frontend catalog is `public/catalog/products.json`. Architectural 
 
 The interactive application, the local catalog, and the WebMCP tool set are working. Deployment, the public repository URL, and the demo video are still pending.
 
-Twenty-seven tools are registered from `src/app/webmcp/`. They follow the
+Thirty-three tools are registered from `src/app/webmcp/`. They follow the
 screen: a route offers only the tools it can honour, so the cart never exposes
 a build editor and the checkout offers no catalog browsing. No screen presents
-more than eighteen. Every handler reads and writes the same state the shopper
+more than twenty. Every handler reads and writes the same state the shopper
 sees, and results are held inside Chrome's 1.5K character budget.
 
 | Tool | What it does |
@@ -68,6 +68,8 @@ sees, and results are held inside Chrome's 1.5K character budget.
 | `get_product` | One full record, with the facts compatibility checks use |
 | `get_current_build` | The nine slots on screen, with price, frame rate and power |
 | `list_filters` | The filters a category supports, so filter names are never guessed |
+| `list_brands` | Every brand and its listing count, for exact spelling |
+| `get_deals` | What the shop is flagging as on sale or newly arrived |
 | `compare_products` | Two to four listings, showing only where they differ |
 | `check_stock` | Stock on hand and the delivery date |
 | `show_in_catalog` | Put the agent's own search on the shopper's screen |
@@ -86,11 +88,15 @@ sees, and results are held inside Chrome's 1.5K character budget.
 | `list_categories` | The departments and categories, with listing counts |
 | `get_product_variants` | The storage tiers and finishes one device is sold in |
 | `get_reviews` | Rating and recent reviews, labelled as untrusted content |
+| `select_product_variant` | Open one storage tier or finish on screen |
+| `focus_builder_slot` | Move the configurator to the part being discussed |
+| `compare_build_to_product` | The build against a console or phone |
 | `add_to_cart` | Add one product to the cart |
 | `add_build_to_cart` | Add the assembled PC, refusing while it does not fit |
 | `get_cart` | Every cart line, subtotal, shipping, total and delivery |
 | `update_cart_line` | Change a line's quantity, or remove it |
 | `start_checkout` | Open the checkout; it never fills in the shopper's details |
+| `get_checkout_fields` | What checkout will ask for, so the shopper can have it ready |
 
 Read-only tools carry `readOnlyHint`, so an agent can tell which calls are
 safe to make without asking. The ones that spend money or change the build do
