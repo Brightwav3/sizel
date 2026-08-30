@@ -137,7 +137,7 @@ export function buildCatalogVals(context: BuildContext) {
           addBg: out ? "var(--surface-sunken)" : "var(--surface-card)",
           addFg: out ? "var(--text-tertiary)" : "var(--text-primary)",
           name: productTitle(g, cat), brand: brandOf(g), image: g.imagePath,
-          rating: ratingFor(g), inBuild: g.id === (s.picks as any)[cat],
+          rating: ratingFor(g), inBuild: s.chosen.includes(cat as PcSlot) && g.id === (s.picks as any)[cat],
           watched: app.isWatched(g.id, g.stock === 0 ? "availability" : "price"),
           watch: () => app.toggleWatchdog(cat, g.id, g.stock === 0 ? "availability" : "price"),
           desc: (DESCS[cat] || (() => CAT_META[cat].blurb))(g),
@@ -146,7 +146,7 @@ export function buildCatalogVals(context: BuildContext) {
           add: () => out ? app.setState({ toast: "We'll email you when it's back" }, () => app.flash())
             : app.addToCart(cat, g.id),
           good: g.good || g.note || g.meaning || CAT_META[cat].blurb, price: money(g.price),
-          tag: g.id === (s.picks as any)[cat] ? "In your build" : g.tag,
+          tag: s.chosen.includes(cat as PcSlot) && g.id === (s.picks as any)[cat] ? "In your build" : g.tag,
           tagFg: g.id === (s.picks as any)[cat] ? "var(--accent-active)" : g.tag === "Best value" ? "var(--green-600)" : "var(--text-tertiary)",
           bd: g.id === (s.picks as any)[cat] ? "var(--accent)" : "var(--border-subtle)",
           stock: out ? "Out of stock" : g.days <= 2 ? (stockCount > 5 ? "In stock · > 5 pcs" : `In stock · ${stockCount} pcs`) : "Ships in " + g.days + " days",
