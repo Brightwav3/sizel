@@ -109,3 +109,52 @@
 .range-slider input:focus-visible::-moz-range-thumb {
   box-shadow: var(--ring);
 }
+
+/* Filter panel ------------------------------------------------------------
+   Modelled on a working retail sidebar: dense 26px rows, groups always open,
+   a count on every option, long lists trimmed with a "more" link. */
+.filter-panel { display: flex; flex-direction: column; flex-shrink: 0; padding-bottom: var(--space-4); font-size: var(--text-sm); }
+.filter-panel__head { display: flex; align-items: baseline; justify-content: space-between; gap: var(--space-2); padding: var(--space-3); color: var(--text-primary); background: var(--surface-sunken); border-top: 1px solid var(--border-strong); border-bottom: 1px solid var(--border-subtle); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.filter-panel__head .num { color: var(--text-tertiary); font-size: var(--text-xs); font-weight: var(--weight-regular); }
+
+.filter-active { display: flex; flex-wrap: wrap; gap: 4px; padding: var(--space-2) var(--space-3); border-bottom: 1px solid var(--border-subtle); }
+.filter-chip { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; padding: 2px 4px 2px 8px; color: var(--text-primary); background: var(--surface-active); border: 0; border-radius: var(--radius-pill); font: inherit; font-size: var(--text-xs); cursor: pointer; }
+.filter-chip .ms { font-size: 13px; color: var(--text-tertiary); }
+.filter-chip:hover { background: var(--surface-hover); }
+.filter-chip:hover .ms { color: var(--text-primary); }
+
+.filter-group { padding: var(--space-3) var(--space-3) var(--space-2); border-bottom: 1px solid var(--border-subtle); }
+.filter-group__head { margin-bottom: 4px; color: var(--text-primary); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.filter-group__body { display: flex; flex-direction: column; }
+
+.filter-check { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); width: 100%; min-height: 26px; padding: 1px 2px; color: var(--text-secondary); background: transparent; border: 0; border-radius: var(--radius-xs); font: inherit; font-size: var(--text-sm); text-align: left; cursor: pointer; }
+.filter-check:hover:not(:disabled) { color: var(--text-primary); }
+.filter-check.is-on { color: var(--text-primary); }
+.filter-check:disabled { color: var(--text-tertiary); cursor: default; opacity: .5; }
+.filter-check__box { display: inline-flex; align-items: center; justify-content: center; width: 14px; height: 14px; background: var(--gray-0); border: 1px solid var(--border-default); border-radius: var(--radius-xs); color: var(--text-inverse); font-size: 11px; transition: background 120ms ease, border-color 120ms ease; }
+.filter-check:hover:not(:disabled) .filter-check__box { border-color: var(--text-tertiary); }
+.filter-check.is-on .filter-check__box { background: var(--gray-900); border-color: var(--gray-900); }
+.filter-check__label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.filter-check__count { color: var(--text-tertiary); font-size: var(--text-xs); }
+
+.filter-more { align-self: flex-start; margin-top: 2px; padding: 2px; color: var(--text-accent); background: transparent; border: 0; font: inherit; font-size: var(--text-xs); cursor: pointer; }
+.filter-more:hover { text-decoration: underline; text-underline-offset: 2px; }
+
+.filter-price { padding: var(--space-2) 2px var(--space-3); }
+.filter-price__fields { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr); align-items: center; gap: var(--space-2); margin-top: var(--space-3); }
+.filter-price__fields .num { padding: 4px var(--space-2); color: var(--text-primary); background: var(--gray-0); border: 1px solid var(--border-default); border-radius: var(--radius-xs); font-size: var(--text-xs); text-align: center; }
+.filter-price__fields em { color: var(--text-tertiary); font-style: normal; }
+
+.filter-fit { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); width: 100%; padding: var(--space-2); background: var(--surface-sunken); border: 1px solid var(--border-subtle); border-radius: var(--radius-nav); text-align: left; cursor: pointer; }
+.filter-fit.is-on { background: var(--blue-50); border-color: var(--accent); }
+.filter-fit > .ms { font-size: var(--text-base); color: var(--text-secondary); }
+.filter-fit > span:nth-child(2) { display: flex; min-width: 0; flex-direction: column; }
+.filter-fit strong { font-size: var(--text-xs); font-weight: var(--weight-medium); }
+.filter-fit small { color: var(--text-tertiary); font-size: 11px; }
+.filter-switch { position: relative; width: 28px; height: 16px; flex: 0 0 28px; background: var(--gray-300); border-radius: var(--radius-pill); transition: background 140ms ease; }
+.filter-switch.is-on { background: var(--gray-900); }
+.filter-switch i { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; background: var(--gray-0); border-radius: var(--radius-pill); transition: left 160ms var(--page-slide-ease); }
+.filter-switch.is-on i { left: 14px; }
+
+.filter-reset { align-self: center; margin-top: var(--space-3); padding: 2px; color: var(--text-secondary); background: transparent; border: 0; font: inherit; font-size: var(--text-xs); text-decoration: underline; text-underline-offset: 2px; cursor: pointer; }
+.filter-reset:hover { color: var(--text-primary); }
