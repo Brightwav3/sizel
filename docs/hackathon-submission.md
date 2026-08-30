@@ -22,7 +22,7 @@ What we learned is that an agent experience needs explicit actions and stable da
 
 PC configuration is a high-friction task for browser agents: it involves searching, selecting across categories, preserving context, and validating relationships between products. WebMCP can expose these operations directly as structured tools instead of making an agent guess which UI controls to click.
 
-Nineteen tools are registered, listed in full in the README. The four that
+Twenty-seven tools are registered, listed in full in the README. The four that
 carry the story are:
 
 - `search_products` — find products by category, brand, price, availability, or specification.

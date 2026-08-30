@@ -59,6 +59,38 @@ export function compatibilityIssues(picks: Partial<Picks>): string[] {
 }
 
 /**
+ * Does this build hold together? The same seven rules as
+ * `compatibilityIssues`, answered without writing the sentences.
+ *
+ * Callers that only branch on the answer — filtering a catalog for parts that
+ * fit, testing a candidate swap — ask thousands of times per tool call and
+ * throw every sentence away. This stops at the first conflict and allocates
+ * nothing. Any rule added above must be added here too, which the tests check.
+ */
+export function buildFits(picks: Partial<Picks>): boolean {
+  const selected = (slot: PcSlot) => partIn(slot, picks[slot]);
+  const cpu = selected("cpu"), board = selected("board"), ram = selected("ram");
+  const cs = selected("case"), gpu = selected("gpu");
+
+  if (cpu?.socket && board?.socket && cpu.socket !== board.socket) return false;
+  if (ram?.memoryType && board?.memoryType && ram.memoryType !== board.memoryType) return false;
+  if (board?.formFactor && cs?.supportedMotherboards?.length && !cs.supportedMotherboards.includes(board.formFactor)) return false;
+  if (gpu?.len && cs?.clearance && gpu.len > cs.clearance) return false;
+
+  const psu = selected("psu");
+  if (psu?.watt && psu.watt < powerDraw(picks) * 1.15) return false;
+
+  const cooler = selected("cooler");
+  if (cpu?.socket && cooler?.supportedSockets?.length && !cooler.supportedSockets.includes(cpu.socket)) return false;
+
+  const storage = selected("storage");
+  if (storage?.storageInterface && board?.storageInterfaces?.length
+    && !board.storageInterfaces.some(type => storage.storageInterface?.includes(type))) return false;
+
+  return true;
+}
+
+/**
  * Deterministic validation — the single source for every number on screen and
  * in every tool result. `RigsmithApp.metrics` delegates here; nothing else
  * recomputes price, frame rate, noise or power.
@@ -74,20 +106,37 @@ export interface BuildMetrics {
   gpu: Part; cpu: Part; ram: Part; storage: Part; cooler: Part;
 }
 
-export function metrics(picks: Picks, res: Resolution = "1440p"): BuildMetrics {
-  const chosen = BUILD_SLOTS.map(s => part(picks, s));
+/** The numbers, without asking whether the build holds together. */
+export type BuildNumbers = Omit<BuildMetrics, "fits" | "issues">;
+
+/**
+ * Price, frame rate, noise, delivery and power for a build.
+ *
+ * Split out of `metrics` for the callers that have already established the
+ * build fits: comparing candidate swaps that all passed `buildFits` would
+ * otherwise re-derive the same conflicts once per candidate.
+ */
+export function buildNumbers(picks: Picks, res: Resolution = "1440p"): BuildNumbers {
+  let price = 0, days = 0;
+  for (const slot of BUILD_SLOTS) {
+    const item = part(picks, slot);
+    price += item.price;
+    if (item.days > days) days = item.days;
+  }
   const gpu = part(picks, "gpu"), cpu = part(picks, "cpu"), ram = part(picks, "ram");
   const storage = part(picks, "storage"), cooler = part(picks, "cooler");
   const fans = part(picks, "fans");
 
-  const price = chosen.reduce((a, p) => a + p.price, 0);
   const factor = Math.min(1, (cpu.score ?? 100) / 100) * Math.min(1, (ram.score ?? 100) / 100);
   const fps = Math.round((gpu.fps ?? 0) * factor * RES[res]);
   const noise = Math.max(gpu.noise ?? 0, cooler.noise ?? 0) + (fans.id === "f6" ? 1.2 : 0);
-  const days = Math.max(...chosen.map(p => p.days));
-  const issues = compatibilityIssues(picks);
 
-  return { price, fps, noise, days, watt: powerDraw(picks), fits: issues.length === 0, issues, gpu, cpu, ram, storage, cooler };
+  return { price, fps, noise, days, watt: powerDraw(picks), gpu, cpu, ram, storage, cooler };
+}
+
+export function metrics(picks: Picks, res: Resolution = "1440p"): BuildMetrics {
+  const issues = compatibilityIssues(picks);
+  return { ...buildNumbers(picks, res), fits: issues.length === 0, issues };
 }
 
 export function shipDate(days: number, from = new Date(2026, 7, 29)) {

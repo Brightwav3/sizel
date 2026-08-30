@@ -1,7 +1,7 @@
 import React from "react";
 import { CATALOG } from "../../data/catalog/catalog";
 import { money } from "../../entities/build/metrics";
-import { productTitle } from "../../entities/product/queries";
+import { FREE_SHIPPING_OVER, cartTotals } from "../../entities/cart/cartTotals";
 import type { PcSlot } from "../../shared/lib/types";
 import type { BuildContext } from "../../entities/build/buildContext";
 
@@ -10,25 +10,29 @@ export function buildCheckoutVals(context: BuildContext) {
   const findPart = (line: { id: string; slot?: any }) =>
     line.slot ? CATALOG[line.slot as keyof typeof CATALOG]?.find(part => part.id === line.id) : undefined;
 
+  /** Prices come from the cart entity, so this screen and the tools agree. */
+  const totals = cartTotals(s.cart, m);
+
   /** One row per cart line. A build is priced and shipped as a single unit. */
-  const cartLines = s.cart.map((line, index) => {
+  const cartLines = totals.rows.map((row) => {
+    const index = row.index;
+    const line = s.cart[index];
     const part = line.kind === "product" ? findPart(line) : undefined;
-    const unit = line.kind === "build" ? m.price : part?.price ?? 0;
-    const days = line.kind === "build" ? m.days : part?.days ?? 0;
-    const out = line.kind === "product" && part?.stock === 0;
+    const days = row.days;
+    const out = row.outOfStock;
     return {
       index,
       kind: line.kind,
       // A phone in the cart has to say which storage tier it is.
-      name: line.kind === "build" ? "Custom PC build" : part ? productTitle(part, line.slot) : "Product",
+      name: row.name,
       brand: line.kind === "build" ? "Rigsmith assembly service" : part?.brand ?? "",
       note: line.kind === "build"
         ? [m.cpu.name, m.gpu.name, m.ram.name].join(" · ") + " · 6 more"
         : (part?.specs ?? []).slice(0, 3).join(" · "),
       image: line.kind === "build" ? m.gpu.imagePath : part?.imagePath,
       qty: line.qty,
-      unitLabel: money(unit),
-      totalLabel: money(unit * line.qty),
+      unitLabel: money(row.unit),
+      totalLabel: money(row.total),
       stock: out ? "Out of stock" : days <= 2 ? "In stock · ships tomorrow" : `Ships in ${days} days`,
       stockFg: out ? "var(--danger)" : days <= 2 ? "var(--green-600)" : "var(--amber-600)",
       editable: line.kind === "product",
@@ -41,13 +45,7 @@ export function buildCheckoutVals(context: BuildContext) {
     };
   });
 
-  const itemCount = s.cart.reduce((total, line) => total + line.qty, 0);
-  const subtotal = cartLines.reduce((total, line) => total + Number(line.totalLabel.replace(/[^0-9.]/g, "")), 0);
-  const shipping = subtotal >= 99 || subtotal === 0 ? 0 : 6;
-  const slowestLine = cartLines.length ? Math.max(...s.cart.map((line, index) => {
-    const part = line.kind === "product" ? findPart(line) : undefined;
-    return line.kind === "build" ? m.days : part?.days ?? 0;
-  })) : 0;
+  const { itemCount, subtotal, shipping, slowestDays: slowestLine } = totals;
 
   return {
       cartEmpty: s.cart.length === 0,

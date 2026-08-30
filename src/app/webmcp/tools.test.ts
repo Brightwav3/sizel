@@ -38,10 +38,18 @@ describe("tool contract", () => {
 
   it("marks every tool that changes nothing as read only", () => {
     const writers = ["set_build_component", "add_to_cart", "add_build_to_cart", "create_watchdog",
-      "recommend_build", "set_build_target", "undo_build_change", "show_in_catalog"];
+      "recommend_build", "set_build_target", "undo_build_change", "show_in_catalog",
+      "update_cart_line", "start_checkout", "remove_watchdog"];
     for (const tool of TOOLS) {
       const readOnly = tool.readOnlyHint === true && tool.annotations?.readOnlyHint === true;
       expect(readOnly, tool.name).toBe(!writers.includes(tool.name));
+    }
+  });
+
+  it("labels the one tool that returns shopper-written text as untrusted", () => {
+    for (const tool of TOOLS) {
+      const untrusted = tool.untrustedContentHint === true && tool.annotations?.untrustedContentHint === true;
+      expect(untrusted, tool.name).toBe(tool.name === "get_reviews");
     }
   });
 
