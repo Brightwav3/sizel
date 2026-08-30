@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc -b && vite build",
-    "audit:prototype": "node scripts/audit-prototype.mjs",
+    "audit:catalog": "node scripts/audit-catalog.mjs",
     "preview": "vite preview",
     "check:catalog": "tsx scripts/check-catalog.ts"
   },
