@@ -28,6 +28,6 @@ export { getRigsmithApp } from "./app/appInstance";
 
 export {
   allProducts, applyProductFilters, brandLogo, brandOf, candidatePool, facetSummary,
-  facetValues, findProduct, productSummary, searchProducts, sortProducts,
+  facetValues, findProduct, productSummary, productTitle, searchProducts, sortProducts,
 } from "./domain/queries";
 export type { FacetOption, FacetSummary, ProductQuery, ProductSearchResult, ProductSummary, SortId } from "./domain/queries";
