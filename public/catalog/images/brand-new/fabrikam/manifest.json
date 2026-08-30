@@ -1,0 +1,28 @@
+{
+  "brand": "Fabrikam",
+  "image_directory": "images/brand-new/fabrikam",
+  "background": "#FFFFFF",
+  "logo_source": "logos/generated/fabrikam.png",
+  "products": [
+    {"id":"fabrikam-r5-9600x","image_path":"images/brand-new/fabrikam/fabrikam-r5-9600x.png","composition":"product + retail box"},
+    {"id":"fabrikam-r7-9700x","image_path":"images/brand-new/fabrikam/fabrikam-r7-9700x.png","composition":"product + retail box"},
+    {"id":"fabrikam-r7-9800x3d","image_path":"images/brand-new/fabrikam/fabrikam-r7-9800x3d.png","composition":"product + retail box"},
+    {"id":"fabrikam-r9-9950x","image_path":"images/brand-new/fabrikam/fabrikam-r9-9950x.png","composition":"product + retail box"},
+    {"id":"fabrikam-r9-9950x3d","image_path":"images/brand-new/fabrikam/fabrikam-r9-9950x3d.png","composition":"product + retail box"},
+    {"id":"fabrikam-r5-8600x","image_path":"images/brand-new/fabrikam/fabrikam-r5-8600x.png","composition":"product + retail box"},
+    {"id":"fabrikam-r9-9900x","image_path":"images/brand-new/fabrikam/fabrikam-r9-9900x.png","composition":"product + retail box"},
+    {"id":"fabrikam-rx-9060","image_path":"images/brand-new/fabrikam/fabrikam-rx-9060.png","composition":"product + retail box"},
+    {"id":"fabrikam-rx-9060-xt","image_path":"images/brand-new/fabrikam/fabrikam-rx-9060-xt.png","composition":"product + retail box"},
+    {"id":"fabrikam-rx-9070","image_path":"images/brand-new/fabrikam/fabrikam-rx-9070.png","composition":"product + retail box"},
+    {"id":"fabrikam-rx-9070-xt","image_path":"images/brand-new/fabrikam/fabrikam-rx-9070-xt.png","composition":"product + retail box"},
+    {"id":"fabrikam-rx-9090-xtx","image_path":"images/brand-new/fabrikam/fabrikam-rx-9090-xtx.png","composition":"product + retail box"},
+    {"id":"fabrikam-rx-9080-xt","image_path":"images/brand-new/fabrikam/fabrikam-rx-9080-xt.png","composition":"product + retail box"},
+    {"id":"fabrikam-memory-16gb-ddr5-5600","image_path":"images/brand-new/fabrikam/fabrikam-memory-16gb-ddr5-5600.png","composition":"product + retail box"},
+    {"id":"fabrikam-memory-32gb-ddr5-6000","image_path":"images/brand-new/fabrikam/fabrikam-memory-32gb-ddr5-6000.png","composition":"product + retail box"},
+    {"id":"fabrikam-memory-64gb-ddr5-6000","image_path":"images/brand-new/fabrikam/fabrikam-memory-64gb-ddr5-6000.png","composition":"product only"},
+    {"id":"fabrikam-memory-pro-48gb-ddr5-6800","image_path":"images/brand-new/fabrikam/fabrikam-memory-pro-48gb-ddr5-6800.png","composition":"product only"},
+    {"id":"fabrikam-memory-pro-96gb-ddr5-6400","image_path":"images/brand-new/fabrikam/fabrikam-memory-pro-96gb-ddr5-6400.png","composition":"product only"},
+    {"id":"fabrikam-drive-p3-1tb","image_path":"images/brand-new/fabrikam/fabrikam-drive-p3-1tb.png","composition":"product + retail box"},
+    {"id":"fabrikam-drive-p5-2tb","image_path":"images/brand-new/fabrikam/fabrikam-drive-p5-2tb.png","composition":"product + retail box"}
+  ]
+}

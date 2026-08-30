@@ -1,0 +1,22 @@
+{
+  "brand": "Tailspin",
+  "image_directory": "images/brand-new/tailspin",
+  "background": "#FFFFFF",
+  "logo_source": "logos/generated/tailspin.png",
+  "products": [
+    {"id":"tailspin-whisper-120","image_path":"images/brand-new/tailspin/tailspin-whisper-120.png","composition":"product + retail box"},
+    {"id":"tailspin-tower-14","image_path":"images/brand-new/tailspin/tailspin-tower-14.png","composition":"product + retail box"},
+    {"id":"tailspin-tower-d15","image_path":"images/brand-new/tailspin/tailspin-tower-d15.png","composition":"product + retail box"},
+    {"id":"tailspin-passive-p1","image_path":"images/brand-new/tailspin/tailspin-passive-p1.png","composition":"product + retail box"},
+    {"id":"tailspin-tower-d15-black","image_path":"images/brand-new/tailspin/tailspin-tower-d15-black.png","composition":"product + retail box"},
+    {"id":"tailspin-power-550","image_path":"images/brand-new/tailspin/tailspin-power-550.png","composition":"product + retail box"},
+    {"id":"tailspin-power-650-gold","image_path":"images/brand-new/tailspin/tailspin-power-650-gold.png","composition":"box only"},
+    {"id":"tailspin-power-750-gold","image_path":"images/brand-new/tailspin/tailspin-power-750-gold.png","composition":"product + retail box"},
+    {"id":"tailspin-power-850-gold","image_path":"images/brand-new/tailspin/tailspin-power-850-gold.png","composition":"product only"},
+    {"id":"tailspin-power-1000-platinum","image_path":"images/brand-new/tailspin/tailspin-power-1000-platinum.png","composition":"product + retail box"},
+    {"id":"tailspin-power-1200-platinum","image_path":"images/brand-new/tailspin/tailspin-power-1200-platinum.png","composition":"product only"},
+    {"id":"tailspin-vent-200","image_path":"images/brand-new/tailspin/tailspin-vent-200.png","composition":"product + retail box"},
+    {"id":"tailspin-vent-400","image_path":"images/brand-new/tailspin/tailspin-vent-400.png","composition":"product only"},
+    {"id":"tailspin-vent-600","image_path":"images/brand-new/tailspin/tailspin-vent-600.png","composition":"product + retail box"}
+  ]
+}

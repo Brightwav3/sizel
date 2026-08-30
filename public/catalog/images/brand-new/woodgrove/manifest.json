@@ -1,0 +1,26 @@
+{
+  "brand": "Woodgrove",
+  "image_directory": "images/brand-new/woodgrove",
+  "background": "#FFFFFF",
+  "logo_source": "logos/generated/woodgrove.png",
+  "logo_application": "Exact supplied bitmap composited onto the physical product or retail box",
+  "products": [
+    {"id":"woodgrove-steel-b850m","image_path":"images/brand-new/woodgrove/woodgrove-steel-b850m.png","composition":"product + retail box"},
+    {"id":"woodgrove-steel-x870","image_path":"images/brand-new/woodgrove/woodgrove-steel-x870.png","composition":"product only"},
+    {"id":"woodgrove-phantom-z890","image_path":"images/brand-new/woodgrove/woodgrove-phantom-z890.png","composition":"product + retail box"},
+    {"id":"woodgrove-form-s","image_path":"images/brand-new/woodgrove/woodgrove-form-s.png","composition":"retail box only"},
+    {"id":"woodgrove-form-m","image_path":"images/brand-new/woodgrove/woodgrove-form-m.png","composition":"product + retail box"},
+    {"id":"woodgrove-form-one","image_path":"images/brand-new/woodgrove/woodgrove-form-one.png","composition":"product only"},
+    {"id":"woodgrove-form-studio","image_path":"images/brand-new/woodgrove/woodgrove-form-studio.png","composition":"product + retail box"},
+    {"id":"woodgrove-form-studio-titanium","image_path":"images/brand-new/woodgrove/woodgrove-form-studio-titanium.png","composition":"retail box only"},
+    {"id":"woodgrove-memory-32gb-ddr5-5200","image_path":"images/brand-new/woodgrove/woodgrove-memory-32gb-ddr5-5200.png","composition":"product + retail box"},
+    {"id":"woodgrove-memory-64gb-ddr5-5600","image_path":"images/brand-new/woodgrove/woodgrove-memory-64gb-ddr5-5600.png","composition":"product only"},
+    {"id":"woodgrove-blue-n500-1tb","image_path":"images/brand-new/woodgrove/woodgrove-blue-n500-1tb.png","composition":"product + retail box"},
+    {"id":"woodgrove-blue-n500-2tb","image_path":"images/brand-new/woodgrove/woodgrove-blue-n500-2tb.png","composition":"product only"},
+    {"id":"woodgrove-black-n800-2tb","image_path":"images/brand-new/woodgrove/woodgrove-black-n800-2tb.png","composition":"product + retail box"},
+    {"id":"woodgrove-black-n900-4tb","image_path":"images/brand-new/woodgrove/woodgrove-black-n900-4tb.png","composition":"product only"},
+    {"id":"woodgrove-blue-4tb","image_path":"images/brand-new/woodgrove/woodgrove-blue-4tb.png","composition":"retail box only"},
+    {"id":"woodgrove-red-8tb","image_path":"images/brand-new/woodgrove/woodgrove-red-8tb.png","composition":"product + retail box"},
+    {"id":"woodgrove-black-n900-8tb","image_path":"images/brand-new/woodgrove/woodgrove-black-n900-8tb.png","composition":"retail box only"}
+  ]
+}

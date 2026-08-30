@@ -1,0 +1,88 @@
+/** Build slots — the nine parts a PC is assembled from. */
+export type PcSlot =
+  | "board" | "cpu" | "gpu" | "cooler" | "ram" | "storage" | "psu" | "case" | "fans";
+
+/** Everything else the shop sells. */
+export type ConsumerSlot =
+  | "phones" | "consoles";
+
+export type Slot = PcSlot | ConsumerSlot;
+
+export type DeptId = "pc" | "phone" | "gaming";
+
+export interface Dept {
+  id: DeptId;
+  name: string;
+  icon: string;
+  cats: Slot[];
+}
+
+export interface Part {
+  id: string;
+  name: string;
+  price: number;
+  days: number;
+  tag: string;
+  model?: string;
+  brand?: string;
+  note?: string;
+  meaning?: string;
+  blurb?: string;
+  description?: string;
+  imagePath?: string;
+  realCategory?: string;
+  availability?: string;
+  specifications?: Record<string, unknown>;
+  /** struck-through former price — drives the "Sale" badge */
+  was?: number;
+  /** 0 means out of stock */
+  stock?: number;
+  /** units left — drives the "Only n left" badge */
+  low?: number;
+  /** presentation-only storefront treatment, never part of the catalog record */
+  merchandising?: "new" | "sale";
+  /** consumer categories carry their spec chips inline */
+  specs?: string[];
+  /** graphics cards */
+  fps?: number;
+  good?: string;
+  len?: number;
+  watt?: number;
+  noise?: number;
+  /** processors + memory */
+  score?: number;
+  /** cases */
+  clearance?: number;
+  /** compatibility facts derived from the canonical product specifications */
+  socket?: string;
+  memoryType?: string;
+  formFactor?: string;
+  supportedSockets?: string[];
+  supportedMotherboards?: string[];
+  storageInterfaces?: string[];
+  storageInterface?: string;
+  cpuPowerW?: number;
+}
+
+export type Catalog = Record<Slot, Part[]>;
+export type Picks = Record<PcSlot, string>;
+
+export interface CategoryMeta {
+  name: string;
+  count: number;
+  blurb: string;
+}
+
+export interface Metrics {
+  price: number;
+  fps: number;
+  noise: number;
+  days: number;
+  draw: number;
+  fits: boolean;
+  issues: string[];
+}
+
+export type Route =
+  | "home" | "category" | "product" | "builder"
+  | "picker" | "guided" | "cart" | "checkout" | "done";
