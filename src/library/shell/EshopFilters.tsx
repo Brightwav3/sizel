@@ -2,50 +2,6 @@ import React from "react";
 import { sx, type Vals } from "../sx";
 import "../sidebar.css";
 
-/** E-shop navigation: departments, the active department's categories, and filters. */
-export const Sidebar: React.FC<{ v: Vals }> = ({ v }) => (
-  <aside className="eshop-sidebar" style={sx("border-right:1px solid var(--border-subtle);padding:20px 16px 24px;display:flex;flex-direction:column;gap:20px;position:sticky;top:56px;height:calc(100vh - 56px);overflow-y:auto;min-height:0;background:var(--surface-card)")}>
-    <div style={sx("display:flex;flex-direction:column;gap:8px;flex-shrink:0")}>
-      <div className="sidebar-section-heading" style={sx("padding:0 10px;display:flex;align-items:baseline;gap:8px")}>
-        <div className="eyebrow">Shop</div>
-        <span style={sx("font-size:12px;color:var(--text-tertiary)")}>{v.catalogCount} products</span>
-      </div>
-      <div style={sx("display:flex;flex-direction:column;gap:2px")}>
-        {v.depts.map((d: Vals, i: number) => (
-          <div key={i} className="side sidebar-department" onClick={d.go} style={sx(`background:${d.bg};color:${d.fg};font-weight:${d.fw};border-color:${d.bd};max-height:${d.maxH};opacity:${d.op};overflow:hidden;padding-top:${d.padY};padding-bottom:${d.padY};transition:max-height 280ms var(--page-slide-ease),opacity 200ms var(--page-slide-ease),padding 280ms var(--page-slide-ease),background 140ms ease`)}>
-            <span className="ms" style={sx(`font-size:14px;color:${d.ic}`)}>{d.icon}</span>
-            <span style={sx("flex:1")}>{d.name}</span>
-            <span className="num" style={sx("font-size:12px;color:var(--text-tertiary)")}>{d.count}</span>
-            <span className="ms" style={sx(`font-size:14px;color:var(--text-tertiary);transform:rotate(${d.chevron});transition:transform 260ms var(--page-slide-ease)`)}>expand_more</span>
-          </div>
-        ))}
-      </div>
-    </div>
-
-    <div style={sx(`display:flex;flex-direction:column;gap:8px;flex-shrink:0;max-height:${v.catsMaxH};opacity:${v.catsOp};overflow:hidden;transition:max-height 300ms var(--page-slide-ease),opacity 220ms var(--page-slide-ease)`)}>
-      <div style={sx("height:1px;background:var(--border-subtle)")}></div>
-      <div className="sidebar-section-heading" style={sx("padding:0 10px;display:flex;align-items:baseline;gap:8px")}>
-        <div className="eyebrow">Categories</div>
-        <span style={sx("font-size:12px;color:var(--text-tertiary)")}>{v.deptName}</span>
-      </div>
-      <div style={sx("display:flex;flex-direction:column;gap:2px")}>
-        {v.catalog.map((c: Vals, i: number) => (
-          <div key={i} className="side" onClick={c.go} style={sx(`background:${c.bg};color:${c.fg};font-weight:${c.fw}`)}>
-            <span className="ms" style={sx(`font-size:14px;color:${c.ic}`)}>{c.icon}</span>
-            <span style={sx("flex:1")}>{c.name}</span>
-            <span className="num" style={sx("font-size:12px;color:var(--text-tertiary)")}>{c.count}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-
-    <FilterPanel v={v} />
-
-    <div style={sx("flex:1 0 8px")}></div>
-    <div style={sx("padding:0 10px;font-size:12px;color:var(--text-tertiary);line-height:1.5;flex-shrink:0")}>Free shipping over $99 · 30-day returns · 2-year warranty on assembled PCs</div>
-  </aside>
-);
-
 /** Compact, collapsible filter groups keep the listing sidebar usable at every viewport height. */
 export const FilterPanel: React.FC<{ v: Vals }> = ({ v }) => {
   const [open, setOpen] = React.useState({ use: false, price: true, brand: false, sort: false, options: true, fit: true, specs: true });
@@ -160,3 +116,5 @@ const FacetBlock: React.FC<{ facet: Vals }> = ({ facet }) => {
     </div>
   );
 };
+
+
