@@ -1,9 +1,9 @@
 import React from "react";
-import { sx, type Vals } from "../sx";
+import type { Vals } from "../types";
 import "../home.css";
 
 const CatalogImage: React.FC<{ src?: string; alt: string }> = ({ src, alt }) => (
-  src ? <img className="catalog-image" src={src} alt={alt} /> : <span className="ms" style={sx("font-size:var(--text-2xl);color:var(--text-tertiary)")}>image</span>
+  src ? <img className="catalog-image" src={src} alt={alt} /> : <span className="ms catalog-image-fallback">image</span>
 );
 
 /** The shop front: a catalog-led electronics store with the builder as its differentiator. */
@@ -28,7 +28,7 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
   const offer = offers[offerIndex % Math.max(offers.length, 1)] || v.heroProduct;
 
   return (
-  <div className="t-page" style={sx("padding:var(--space-6) var(--space-8) var(--space-16);display:flex;flex-direction:column;gap:var(--space-8)")}>
+  <div className="t-page home-page">
     <nav className="home-quick-categories" aria-label="Popular categories">
       {v.homeCategories.slice(0, 6).map((category: Vals) => (
         <button key={category.name} onClick={category.go}>
@@ -106,10 +106,10 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
       </aside>
     </section>
 
-    <section style={sx("display:flex;flex-direction:column;gap:var(--space-5)")}>
-      <div style={sx("display:flex;align-items:baseline;gap:var(--space-3)")}>
-        <h2 style={sx("margin:0;font-size:var(--text-2xl);font-weight:var(--weight-medium)")}>Brands in the catalog</h2>
-        <span style={sx("font-size:var(--text-sm);color:var(--text-secondary)")}>{v.catalogCount} products from {v.brandCount} fictional brands</span>
+    <section className="home-section">
+      <div className="home-section__head">
+        <h2>Brands in the catalog</h2>
+        <span className="home-section__note">{v.catalogCount} products from {v.brandCount} fictional brands</span>
       </div>
       <div className="brand-ribbon" aria-label="Rigsmith brands">
         <div className="brand-ribbon__track">
@@ -127,22 +127,22 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
       </div>
     </section>
 
-    <section style={sx("display:flex;flex-direction:column;gap:var(--space-5)")}>
-      <div style={sx("display:flex;align-items:baseline;gap:var(--space-3)")}>
-        <h2 style={sx("margin:0;font-size:var(--text-2xl);font-weight:var(--weight-medium)")}>Promotions and new arrivals</h2>
-        <span style={sx("font-size:var(--text-sm);color:var(--text-secondary)")}>A reason to look beyond PC parts</span>
+    <section className="home-section">
+      <div className="home-section__head">
+        <h2>Promotions and new arrivals</h2>
+        <span className="home-section__note">A reason to look beyond PC parts</span>
       </div>
       <div className="home-grid-3">
         {v.promotions.map((p: Vals, i: number) => (
-          <article key={i} className="card prod" onClick={p.go} style={sx("overflow:hidden;cursor:pointer;background:var(--gray-0)")}>
-            <div className="ph" style={sx("height:150px;border:none;border-radius:0;border-bottom:1px solid var(--border-subtle);background:var(--gray-0)")}><CatalogImage src={p.image} alt={p.name} /></div>
-            <div style={sx("padding:var(--space-5);display:flex;flex-direction:column;gap:var(--space-2)")}>
+          <article key={i} className="card prod promo-card" onClick={p.go}>
+            <div className="ph"><CatalogImage src={p.image} alt={p.name} /></div>
+            <div className="home-card__body">
               <div className="eyebrow">{p.label}</div>
-              <div style={sx("font-size:var(--text-base);font-weight:var(--weight-medium)")}>{p.name}</div>
-              <div style={sx("min-height:39px;font-size:var(--text-sm);line-height:var(--leading-normal);color:var(--text-secondary)")}>{p.copy}</div>
-              <div style={sx("display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);margin-top:var(--space-3)")}>
-                <span style={sx("font-size:var(--text-sm);color:var(--text-accent)")}>Shop {p.label.toLowerCase()} <span className="ms" style={sx("font-size:var(--text-sm);vertical-align:-2px")}>arrow_forward</span></span>
-                <span className="num" style={sx("font-size:var(--text-base);font-weight:var(--weight-medium)")}>{p.price}</span>
+              <div className="home-card__name">{p.name}</div>
+              <div className="promo-card__copy">{p.copy}</div>
+              <div className="home-card__foot">
+                <span className="promo-card__link">Shop {p.label.toLowerCase()} <span className="ms home-card__arrow">arrow_forward</span></span>
+                <span className="num home-card__price">{p.price}</span>
               </div>
             </div>
           </article>
@@ -150,43 +150,43 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
       </div>
     </section>
 
-    <section style={sx("display:flex;flex-direction:column;gap:var(--space-5)")}>
-      <div style={sx("display:flex;align-items:baseline;gap:var(--space-3)")}>
-        <h2 style={sx("margin:0;font-size:var(--text-2xl);font-weight:var(--weight-medium)")}>Shop by department</h2>
-        <span style={sx("font-size:var(--text-sm);color:var(--text-secondary)")}>Start with what you need</span>
+    <section className="home-section">
+      <div className="home-section__head">
+        <h2>Shop by department</h2>
+        <span className="home-section__note">Start with what you need</span>
       </div>
       <div className="home-grid-3">
         {v.homeDepartments.map((d: Vals) => (
-          <button key={d.id} className="card" onClick={d.go} style={sx("padding:var(--space-6);display:flex;align-items:center;gap:var(--space-4);text-align:left;cursor:pointer;background:var(--gray-0)")}>
-            <span className="iconbox" style={sx("width:48px;height:48px;flex:0 0 48px;background:var(--surface-sunken);color:var(--text-primary)")}><span className="ms" style={sx("font-size:var(--text-2xl)")}>{d.icon}</span></span>
-            <span style={sx("min-width:0;display:flex;flex-direction:column;gap:var(--space-1)")}>
-              <span style={sx("font-size:var(--text-base);font-weight:var(--weight-medium)")}>{d.name}</span>
-              <span style={sx("font-size:var(--text-sm);line-height:var(--leading-normal);color:var(--text-secondary)")}>{d.blurb}</span>
-              <span style={sx("font-size:var(--text-sm);color:var(--text-accent);margin-top:var(--space-1)")}>{d.count} products <span className="ms" style={sx("font-size:var(--text-sm);vertical-align:-2px")}>arrow_forward</span></span>
+          <button key={d.id} className="card dept-card" onClick={d.go}>
+            <span className="iconbox"><span className="ms">{d.icon}</span></span>
+            <span className="dept-card__copy">
+              <span className="dept-card__name">{d.name}</span>
+              <span className="dept-card__blurb">{d.blurb}</span>
+              <span className="dept-card__count">{d.count} products <span className="ms home-card__arrow">arrow_forward</span></span>
             </span>
           </button>
         ))}
       </div>
     </section>
 
-    <section style={sx("display:flex;flex-direction:column;gap:var(--space-5)")}>
-      <div style={sx("display:flex;align-items:baseline;gap:var(--space-3)")}>
-        <h2 style={sx("margin:0;font-size:var(--text-2xl);font-weight:var(--weight-medium)")}>Featured products</h2>
-        <span style={sx("font-size:var(--text-sm);color:var(--text-secondary)")}>Selected from the real catalog</span>
-        <span style={sx("flex:1")}></span>
+    <section className="home-section">
+      <div className="home-section__head">
+        <h2>Featured products</h2>
+        <span className="home-section__note">Selected from the real catalog</span>
+        <span className="home-section__spacer" />
         <button className="text-button" onClick={v.goCategory}>View all</button>
       </div>
       <div className="home-grid-4">
         {v.bestOf.map((b: Vals, i: number) => (
-          <article key={i} className="card prod" onClick={b.go} style={sx("overflow:hidden;cursor:pointer;background:var(--gray-0)")}>
-            <div className="ph" style={sx("height:180px;border:none;border-radius:0;border-bottom:1px solid var(--border-subtle);background:var(--gray-0)")}><CatalogImage src={b.image} alt={b.name} /></div>
-            <div style={sx("padding:var(--space-5);display:flex;flex-direction:column;gap:var(--space-2)")}>
-              <div style={sx(`font-size:var(--text-xs);font-weight:var(--weight-medium);color:${b.awardFg}`)}>{b.award}</div>
-              <div style={sx("font-size:var(--text-base);font-weight:var(--weight-medium);line-height:var(--leading-normal)")}>{b.name}</div>
-              <div style={sx("min-height:40px;font-size:var(--text-sm);line-height:var(--leading-normal);color:var(--text-secondary);display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden")}>{b.why}</div>
-              <div style={sx("display:flex;align-items:baseline;justify-content:space-between;gap:var(--space-3);margin-top:var(--space-3)")}>
-                <span className="num" style={sx("font-size:var(--text-base);font-weight:var(--weight-medium)")}>{b.price}</span>
-                <span style={sx("font-size:var(--text-xs);color:var(--text-tertiary)")}>{b.picks}</span>
+          <article key={i} className="card prod feature-card" onClick={b.go}>
+            <div className="ph"><CatalogImage src={b.image} alt={b.name} /></div>
+            <div className="home-card__body">
+              <div className="feature-card__award" style={{ "--award-fg": b.awardFg } as React.CSSProperties}>{b.award}</div>
+              <div className="feature-card__name">{b.name}</div>
+              <div className="feature-card__why">{b.why}</div>
+              <div className="home-card__foot">
+                <span className="num home-card__price">{b.price}</span>
+                <span className="feature-card__picks">{b.picks}</span>
               </div>
             </div>
           </article>
@@ -195,26 +195,26 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
     </section>
 
     <section className="home-split">
-      <div className="card" style={sx("padding:var(--space-6);display:flex;flex-direction:column;gap:var(--space-5)")}>
+      <div className="card home-starts">
         <div>
-          <h2 style={sx("margin:0;font-size:var(--text-base);font-weight:var(--weight-medium)")}>Popular starting points</h2>
-          <p style={sx("margin:var(--space-2) 0 0;font-size:var(--text-sm);color:var(--text-secondary)")}>Jump straight to the categories builders compare most.</p>
+          <h2>Popular starting points</h2>
+          <p>Jump straight to the categories builders compare most.</p>
         </div>
-        <div style={sx("display:flex;flex-wrap:wrap;gap:var(--space-3)")}>
+        <div className="home-starts__chips">
           {v.homeCategories.map((c: Vals) => (
-            <button key={c.name} className="pill ghostb" onClick={c.go} style={sx("display:inline-flex;align-items:center;gap:var(--space-2)")}>
-              <span className="ms" style={sx("font-size:var(--text-base)")}>{c.icon}</span>
+            <button key={c.name} className="pill ghostb home-starts__chip" onClick={c.go}>
+              <span className="ms">{c.icon}</span>
               <span>{c.name}</span>
-              <span style={sx("color:var(--text-tertiary)")}>{c.count}</span>
+              <span className="home-starts__chip-count">{c.count}</span>
             </button>
           ))}
         </div>
       </div>
-      <div className="card" style={sx("padding:var(--space-6);display:flex;flex-direction:column;gap:var(--space-4);background:var(--surface-sunken)")}>
+      <div className="card home-why">
         <div className="eyebrow">Why Rigsmith</div>
-        <div style={sx("display:flex;align-items:flex-start;gap:var(--space-3)")}><span className="ms" style={sx("color:var(--success);font-size:var(--text-base)")}>verified</span><span style={sx("font-size:var(--text-sm);line-height:var(--leading-normal)")}>Every PC part is checked against the rest of your build.</span></div>
-        <div style={sx("display:flex;align-items:flex-start;gap:var(--space-3)")}><span className="ms" style={sx("color:var(--success);font-size:var(--text-base)")}>inventory_2</span><span style={sx("font-size:var(--text-sm);line-height:var(--leading-normal)")}>Stock and delivery dates shown before you order.</span></div>
-        <div style={sx("display:flex;align-items:flex-start;gap:var(--space-3)")}><span className="ms" style={sx("color:var(--success);font-size:var(--text-base)")}>photo_library</span><span style={sx("font-size:var(--text-sm);line-height:var(--leading-normal)")}>Real photos and full specifications on every product.</span></div>
+        <div className="home-why__point"><span className="ms">verified</span><span>Every PC part is checked against the rest of your build.</span></div>
+        <div className="home-why__point"><span className="ms">inventory_2</span><span>Stock and delivery dates shown before you order.</span></div>
+        <div className="home-why__point"><span className="ms">photo_library</span><span>Real photos and full specifications on every product.</span></div>
       </div>
     </section>
   </div>
