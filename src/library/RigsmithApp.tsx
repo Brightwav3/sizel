@@ -73,11 +73,26 @@ export class RigsmithApp extends React.Component<{}, AppState> {
       this.syncingFromUrl = false;
       return;
     }
-    const navigationChanged = prevState.route !== this.state.route || prevState.category !== this.state.category || prevState.productId !== this.state.productId || prevState.dept !== this.state.dept || prevState.openDept !== this.state.openDept || prevState.brand !== this.state.brand;
+    const pageChanged = prevState.route !== this.state.route
+      || prevState.category !== this.state.category
+      || prevState.productId !== this.state.productId
+      || prevState.dept !== this.state.dept
+      || prevState.openDept !== this.state.openDept;
+    const navigationChanged = pageChanged || prevState.brand !== this.state.brand;
     if (navigationChanged) {
       const nextUrl = urlForState(this.state);
       if (nextUrl !== window.location.pathname) window.history.pushState({}, "", nextUrl);
     }
+    /**
+     * A new page starts at its top. Without this the shopper keeps the scroll
+     * position of the page they left, so opening a product from halfway down a
+     * listing drops them into the middle of the product page.
+     *
+     * Narrowing the brand is a refinement of the page you are on, not a new
+     * page, so the grid stays where it was. Back and forward return early
+     * above, which leaves the browser's own scroll restoration alone.
+     */
+    if (pageChanged) window.scrollTo(0, 0);
   }
 
   dockPoint() {
