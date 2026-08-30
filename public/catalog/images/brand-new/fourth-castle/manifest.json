@@ -1,0 +1,37 @@
+{
+  "brand": "Fourth Castle",
+  "style_manual": "brand-guides/fourth-castle.md",
+  "logo_reference": "logos/generated/fourth-castle.png",
+  "generation_rules": {
+    "background": "pure white #FFFFFF",
+    "text": "English only, physically printed on product or retail box",
+    "logo": "Fourth Castle castle-gate mark physically printed on product and/or box",
+    "box_design": "charcoal, deep plum, warm gold architectural premium packaging"
+  },
+  "products": [
+    {
+      "id": "fourth-castle-castle-5-slim",
+      "file": "fourth-castle-castle-5-slim.png",
+      "composition": "console and designed retail box",
+      "visible_specs": ["4K 120Hz", "16GB", "1TB NVMe SSD", "UHD DISC", "RAY TRACING", "HDR", "WI-FI 6", "HDMI 2.1"]
+    },
+    {
+      "id": "fourth-castle-castle-5-digital",
+      "file": "fourth-castle-castle-5-digital.png",
+      "composition": "console and designed retail box",
+      "visible_specs": ["4K 120Hz", "16GB", "1TB NVMe SSD", "DIGITAL EDITION", "RAY TRACING", "HDR", "WI-FI 6", "HDMI 2.1", "CASTLE OS"]
+    },
+    {
+      "id": "fourth-castle-castle-5-pro",
+      "file": "fourth-castle-castle-5-pro.png",
+      "composition": "console and designed retail box",
+      "visible_specs": ["4K 120Hz", "16GB", "2TB NVMe SSD", "16.7 TFLOPS GPU", "ENHANCED RAY TRACING", "HDR", "WI-FI 7", "HDMI 2.1", "CASTLE OS"]
+    },
+    {
+      "id": "fourth-castle-castle-5",
+      "file": "fourth-castle-castle-5.png",
+      "composition": "console and designed retail box",
+      "visible_specs": ["4K 120Hz", "16GB", "825GB NVMe SSD", "UHD DISC", "RAY TRACING", "HDR", "WI-FI 6", "HDMI 2.1", "CASTLE OS"]
+    }
+  ]
+}

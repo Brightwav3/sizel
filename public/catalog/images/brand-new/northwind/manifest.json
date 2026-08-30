@@ -1,0 +1,44 @@
+[
+  {
+    "id": "northwind-gx-5050",
+    "path": "C:\\Users\\Sajmon\\Documents\\Codex\\2026-08-29\\is-t\\outputs\\electronics-product-db\\images\\brand-new\\northwind\\northwind-gx-5050.png",
+    "bytes": 1633347,
+    "sha256": "29ED0071935D51F18EDE89C641C28472EF96230CE4A80C307B0BE846C72E58A7"
+  },
+  {
+    "id": "northwind-gx-5060",
+    "path": "C:\\Users\\Sajmon\\Documents\\Codex\\2026-08-29\\is-t\\outputs\\electronics-product-db\\images\\brand-new\\northwind\\northwind-gx-5060.png",
+    "bytes": 1998493,
+    "sha256": "8DEE1AF1E798D0D48FF53A352790944331D7C9B3881480BC1ED356ABCB460FAE"
+  },
+  {
+    "id": "northwind-gx-5070-ti",
+    "path": "C:\\Users\\Sajmon\\Documents\\Codex\\2026-08-29\\is-t\\outputs\\electronics-product-db\\images\\brand-new\\northwind\\northwind-gx-5070-ti.png",
+    "bytes": 1937201,
+    "sha256": "94809C7B598340B8E032477674516205BA2137FC03159F7CCDD1E8D1C694FBDF"
+  },
+  {
+    "id": "northwind-gx-5070",
+    "path": "C:\\Users\\Sajmon\\Documents\\Codex\\2026-08-29\\is-t\\outputs\\electronics-product-db\\images\\brand-new\\northwind\\northwind-gx-5070.png",
+    "bytes": 2209143,
+    "sha256": "BE0D86FE4ADA732358132E89B42416B11D2E9AE44B2DCA67EBBAE13BDDFBEA58"
+  },
+  {
+    "id": "northwind-gx-5080",
+    "path": "C:\\Users\\Sajmon\\Documents\\Codex\\2026-08-29\\is-t\\outputs\\electronics-product-db\\images\\brand-new\\northwind\\northwind-gx-5080.png",
+    "bytes": 2031380,
+    "sha256": "7772B2107E21DCF0EA8E0EF666EE8DA6A3E3B228BD2AC0F7A8EFD7DFD1ABBBDA"
+  },
+  {
+    "id": "northwind-gx-5090-reference-edition",
+    "path": "C:\\Users\\Sajmon\\Documents\\Codex\\2026-08-29\\is-t\\outputs\\electronics-product-db\\images\\brand-new\\northwind\\northwind-gx-5090-reference-edition.png",
+    "bytes": 1933629,
+    "sha256": "DFDF992F23CABE76170208101082C053E2C9976352DE6839D359003AC6D26C1E"
+  },
+  {
+    "id": "northwind-gx-5090",
+    "path": "C:\\Users\\Sajmon\\Documents\\Codex\\2026-08-29\\is-t\\outputs\\electronics-product-db\\images\\brand-new\\northwind\\northwind-gx-5090.png",
+    "bytes": 2063113,
+    "sha256": "71192C0CC075B178714BB3072420F58F685C2E408A890DF4514D40B6C9648AD7"
+  }
+]
