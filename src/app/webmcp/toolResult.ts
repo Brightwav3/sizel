@@ -11,6 +11,8 @@
 import type { ToolCallResult } from "./webmcpApi";
 
 export const OUTPUT_BUDGET = 1500;
+// A multi-section snapshot replaces several separate round trips (ADR 0006).
+export const SNAPSHOT_OUTPUT_BUDGET = 6000;
 
 const json = (payload: unknown) => JSON.stringify(payload);
 

@@ -4,7 +4,7 @@ Every tool Rigsmith registers, what it takes, what it returns, and where it is
 offered. Generated from `src/app/webmcp/tools.ts`; when the two disagree the
 code is right.
 
-- **33 tools**, registered through `document.modelContext.registerTool`.
+- **34 tools**, registered through `document.modelContext.registerTool`.
 - **Read-only** tools carry `readOnlyHint`. An agent may call them without
   asking. **Write** tools change what the shopper sees or what they will pay.
 - **Screens** lists the routes a tool is offered on. `all` means every screen.
@@ -15,6 +15,7 @@ code is right.
 
 | Tool | Kind | Screens | Required |
 | --- | --- | --- | --- |
+| `read_shop` | read | all | — |
 | `search_products` | read | all | — |
 | `get_product` | read | all | `productId` |
 | `get_current_build` | read | all | — |
@@ -24,8 +25,8 @@ code is right.
 | `list_brands` | read | home, category | — |
 | `get_deals` | read | home, category | — |
 | `list_filters` | read | category, builder | `category` |
-| `compare_products` | read | category, product, builder | `productIds` |
-| `check_stock` | read | category, product, cart | `productId` |
+| `compare_products` | read | all | `productIds` |
+| `check_stock` | read | all | `productId` |
 | `list_compatible_parts` | read | category, product, builder | `slot` |
 | `set_build_component` | write | category, product, builder | `slot` |
 | `undo_build_change` | write | category, product, builder | — |
@@ -34,13 +35,13 @@ code is right.
 | `get_product_variants` | read | product | `productId` |
 | `get_reviews` | read *(untrusted)* | product | `productId` |
 | `select_product_variant` | write | product | `productId` |
-| `list_watchdogs` | read | product, cart | — |
+| `list_watchdogs` | read | all | — |
 | `remove_watchdog` | write | product, cart | `productId` |
-| `compare_build_to_product` | read | builder, product | `productId` |
+| `compare_build_to_product` | read | all | `productId` or `productIds` |
 | `focus_builder_slot` | write | builder, product | `slot` |
-| `check_build_compatibility` | read | product, builder, cart | — |
-| `estimate_performance` | read | builder, cart | — |
-| `explain_build_bottleneck` | read | builder | — |
+| `check_build_compatibility` | read | all | — |
+| `estimate_performance` | read | all | — |
+| `explain_build_bottleneck` | read | all | — |
 | `fix_build_issue` | read | builder | — |
 | `recommend_build` | write | home, category, builder | `budget` |
 | `set_build_target` | write | home, builder | — |
@@ -386,3 +387,28 @@ Every failure is a stated reason with a way forward, never a thrown exception.
 | `nothing_to_undo` | The build has not changed |
 | `nothing_to_set` | No target was given |
 | `tool_failed` | An unexpected fault, with the reason |
+
+
+### `read_shop`
+
+Preferred read entry point for agents. Combine `search`, `productIds` (up to 3),
+`compareProductIds` (2–4), `compareDeviceIds` (up to 3), and `include` sections
+(`build`, `cart`, `watchdogs`). No navigation, mutation or generic tool execution.
+Results are keyed by section and bounded to 6000 characters; single tools retain
+1500-character responses. A failed section does not discard successful sections.
+Errors: `nothing_to_read`, `section_unavailable`, `invalid_ids`, `section_too_large`.
+A large section is explicitly marked for a separate retry, never silently cut.
+
+Agent fast path: read_shop search + current build/cart; compare candidates; make
+only the requested edits; read_shop build + devices + cart for verification.
+Independent reads may run concurrently. State-changing tools stay sequential.
+Refresh discovery only after a tool-change notification or stale handle, and read
+only new schemas rather than repeatedly printing every known descriptor.
+
+`compare_build_to_product` also accepts `productIds` (1–3), returning `devices`
+plus one shared build. `productId` retains the original single-device response.
+`check_build_compatibility` now includes sockets, clearance, PSU headroom,
+GPU stock, a catalog performance estimate and the bottleneck in one response.
+Phone comparisons include structured display, battery, storage and camera facts.
+These read-only summaries are available on every route. No per-game benchmarks
+or currency conversion are invented when the catalog does not provide them.

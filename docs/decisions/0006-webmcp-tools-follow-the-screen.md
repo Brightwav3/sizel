@@ -63,3 +63,26 @@ Results are shaped in `webmcp/toolResult.ts` against the documented character bu
 - This ADR does not expose tools to other origins; `exposedTo` stays unused.
 - This ADR does not decide the deployment origin trial token or hosting headers.
 - This ADR does not change catalog records, routes, DOM structure or visual style.
+
+
+## Amendment: agent-efficient reads (2026-08-30)
+
+Read-only summaries and `read_shop` remain available across routes. Mutations
+still follow the visible screen and write only through the application controller.
+`read_shop` groups explicit, bounded read sections and cannot invoke arbitrary
+names or writes. It reuses the existing handlers and returns errors per section.
+Its 6000-character ceiling replaces several 1500-character round trips; ordinary
+results keep the smaller ceiling. Single-device comparisons remain compatible.
+
+Rejected alternatives: a generic batch executor could hide writes and permissions;
+removing old tools would break existing callers; registering all mutation tools on
+all routes would offer edits unrelated to the screen. Raising every response limit
+would waste context. Stable read summaries avoid forced navigation without those costs.
+
+The common PSU requirement now takes the maximum of calculated headroom and the
+GPU catalog recommendation. The adviser, fast fit check, UI issues and tool report
+use the same requirement. Missing game benchmarks and FX rates remain missing.
+
+Enforced in: `src/app/webmcp/tools.ts`, `src/app/webmcp/toolResult.ts`,
+`src/entities/build/metrics.ts`, `src/app/webmcp/buildAdvisor.ts`.
+This does not authorize checkout, purchases, global write tools or invented data.

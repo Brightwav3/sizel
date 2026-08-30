@@ -295,7 +295,8 @@ describe("explain_build_bottleneck", () => {
 describe("powerReport", () => {
   it("states draw, requirement and headroom the way the rule does", () => {
     const report = powerReport({ ...DEFAULT_PICKS } as Picks);
-    expect(report.requiredW).toBe(Math.ceil(report.drawW * 1.15));
+    expect(report.requiredW).toBeGreaterThanOrEqual(Math.ceil(report.drawW * 1.15));
+    expect(report.headroomW).toBe(report.psuW - report.drawW);
     expect(report.ok).toBe(report.psuW >= report.requiredW);
   });
 });

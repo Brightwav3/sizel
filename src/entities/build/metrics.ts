@@ -20,6 +20,13 @@ export function powerDraw(picks: Partial<Picks>): number {
   return (selected("gpu")?.watt ?? 0) + (selected("cpu")?.cpuPowerW ?? 0) + 80;
 }
 
+/** Meet both calculated headroom and the GPU manufacturer's catalog recommendation. */
+export function requiredPower(picks: Partial<Picks>): number {
+  const gpu = partIn("gpu", picks.gpu);
+  const recommended = Number((gpu?.specifications as any)?.power?.recommendedPsuW ?? 0);
+  return Math.max(Math.ceil(powerDraw(picks) * 1.15), recommended);
+}
+
 /** Compatibility checks read only normalized facts derived from products.json. */
 export function compatibilityIssues(picks: Partial<Picks>): string[] {
   const selected = (slot: PcSlot) => partIn(slot, picks[slot]);
@@ -46,8 +53,8 @@ export function compatibilityIssues(picks: Partial<Picks>): string[] {
     issues.push(`${gpu.name} is ${gpu.len} mm long, but ${cs.name} allows ${cs.clearance} mm.`);
   }
   const draw = powerDraw(picks);
-  if (psu?.watt && psu.watt < draw * 1.15) {
-    issues.push(`${psu.name} provides ${psu.watt} W, but this build needs about ${Math.ceil(draw * 1.15)} W with headroom.`);
+  if (psu?.watt && psu.watt < requiredPower(picks)) {
+    issues.push(`${psu.name} provides ${psu.watt} W, but this build needs about ${requiredPower(picks)} W with headroom.`);
   }
   if (cpu?.socket && cooler?.supportedSockets?.length && !cooler.supportedSockets.includes(cpu.socket)) {
     issues.push(`${cooler.name} does not support the ${cpu.socket} socket used by ${cpu.name}.`);
@@ -78,7 +85,7 @@ export function buildFits(picks: Partial<Picks>): boolean {
   if (gpu?.len && cs?.clearance && gpu.len > cs.clearance) return false;
 
   const psu = selected("psu");
-  if (psu?.watt && psu.watt < powerDraw(picks) * 1.15) return false;
+  if (psu?.watt && psu.watt < requiredPower(picks)) return false;
 
   const cooler = selected("cooler");
   if (cpu?.socket && cooler?.supportedSockets?.length && !cooler.supportedSockets.includes(cpu.socket)) return false;

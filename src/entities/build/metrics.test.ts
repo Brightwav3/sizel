@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CATALOG, DEFAULT_PICKS } from "../../data/catalog/catalog";
-import { buildFits, buildNumbers, compatibilityIssues, metrics, powerDraw } from "./metrics";
+import { buildFits, buildNumbers, compatibilityIssues, metrics, powerDraw, requiredPower } from "./metrics";
 import type { Picks } from "../../shared/lib/types";
 
 /**
@@ -39,10 +39,10 @@ describe("compatibilityIssues on a partial build", () => {
 
     // The demand quoted is the one the two chosen parts draw, plus headroom —
     // not the draw of a full machine assembled from defaults.
-    const expected = Math.ceil(powerDraw({ psu: psu550, gpu: bigGpu.id }) * 1.15);
-    const full = Math.ceil(powerDraw({ ...DEFAULT_PICKS, gpu: bigGpu.id }) * 1.15);
+    const expected = requiredPower({ psu: psu550, gpu: bigGpu.id });
+    const full = requiredPower({ ...DEFAULT_PICKS, gpu: bigGpu.id });
     expect(issues.join(" ")).toContain(`about ${expected} W`);
-    expect(expected).toBeLessThan(full);
+    expect(expected).toBeLessThanOrEqual(full);
   });
 
   it("grows the demand as more parts are chosen", () => {
