@@ -1,7 +1,8 @@
 import React from "react";
 import { CATALOG, CAT_META, DESCS, SPECS } from "../../data/catalog";
 import { money } from "../../data/metrics";
-import { partFits } from "../../domain/queries";
+import { partFits, productTitle } from "../../domain/queries";
+import { ratingFor } from "../../data/reviews";
 import type { PcSlot } from "../../types";
 import type { BuildContext } from "../buildContext";
 
@@ -135,7 +136,10 @@ export function buildCatalogVals(context: BuildContext) {
           dim: out ? 0.55 : 1,
           addBg: out ? "var(--surface-sunken)" : "var(--surface-card)",
           addFg: out ? "var(--text-tertiary)" : "var(--text-primary)",
-          name: g.name, brand: brandOf(g), image: g.imagePath,
+          name: productTitle(g, cat), brand: brandOf(g), image: g.imagePath,
+          rating: ratingFor(g), inBuild: g.id === (s.picks as any)[cat],
+          watched: app.isWatched(g.id, g.stock === 0 ? "availability" : "price"),
+          watch: () => app.toggleWatchdog(cat, g.id, g.stock === 0 ? "availability" : "price"),
           desc: (DESCS[cat] || (() => CAT_META[cat].blurb))(g),
           specs: (SPECS[cat] || (() => []))(g),
           cta: out ? "Notify me" : "Add to cart",
@@ -177,7 +181,10 @@ export function buildCatalogVals(context: BuildContext) {
           dim: out ? 0.55 : 1,
           addBg: out ? "var(--surface-sunken)" : "var(--surface-card)",
           addFg: out ? "var(--text-tertiary)" : "var(--text-primary)",
-          name: g.name, brand: brandOf(g), image: g.imagePath,
+          name: productTitle(g, cardCategory), brand: brandOf(g), image: g.imagePath,
+          rating: ratingFor(g), inBuild: false,
+          watched: app.isWatched(g.id, g.stock === 0 ? "availability" : "price"),
+          watch: () => app.toggleWatchdog(cardCategory, g.id, g.stock === 0 ? "availability" : "price"),
           desc: (DESCS[cardCategory] || (() => CAT_META[cardCategory].blurb))(g),
           specs: (SPECS[cardCategory] || (() => []))(g),
           cta: out ? "Notify me" : "Add to cart",

@@ -1,11 +1,15 @@
 import React from "react";
 import { CAT_META, SPECS } from "../../data/catalog";
 import { money } from "../../data/metrics";
+import { productTitle } from "../../domain/queries";
+import { ratingFor, reviewsFor } from "../../data/reviews";
 import type { PcSlot } from "../../types";
 import type { BuildContext } from "../buildContext";
 
 export function buildProductVals(context: BuildContext) {
   const { app, route, openDept, pSlot, pick, buildableProduct, candidateBuild, pFits } = context;
+  const watchKind = pick.stock === 0 ? "availability" as const : "price" as const;
+
   return {
       pImage: pick.imagePath,
       pName: pick.name,
@@ -45,6 +49,16 @@ export function buildProductVals(context: BuildContext) {
         : (candidateBuild?.issues || ["This product is not compatible with your current build."]).join(" "),
       // Buying comes first; the configurator is one service the shop offers,
       // so slotting a part into a build is the secondary action.
+      pTitle: productTitle(pick, pSlot),
+      pRating: ratingFor(pick),
+      pReviews: reviewsFor(pick),
+      // An out-of-stock product is watched for its return, one in stock for a
+      // price drop. The check and the toggle have to agree on which.
+      pWatched: app.isWatched(pick.id, watchKind),
+      pWatchLabel: app.isWatched(pick.id, watchKind)
+        ? "Watchdog is on"
+        : watchKind === "availability" ? "Tell me when it is back" : "Tell me if the price drops",
+      pWatch: () => app.toggleWatchdog(pSlot, pick.id, watchKind),
       pActionLabel: "Add to cart",
       pDelivery: pick.days <= 2 ? "Delivery tomorrow" : `Delivery in ${pick.days} days`,
       pPriceExVat: money(Math.round(pick.price / 1.21)),

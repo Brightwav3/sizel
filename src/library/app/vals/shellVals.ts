@@ -2,6 +2,9 @@ import React from "react";
 import { CAT_META } from "../../data/catalog";
 
 import type { PcSlot } from "../../types";
+import { CATALOG } from "../../data/catalog";
+import { money } from "../../data/metrics";
+import { productTitle } from "../../domain/queries";
 import type { BuildContext } from "../buildContext";
 
 export function buildShellVals(context: BuildContext) {
@@ -34,6 +37,24 @@ export function buildShellVals(context: BuildContext) {
       isCheckout: on("checkout"), isDone: on("done"),
       startGuided: () => app.setState({ route: "builder", chosen: [], builderSlot: "cpu" }),
 
+      /** Watched products, newest first, each removable from the panel. */
+      watchCount: s.watchdogs.length,
+      watchItems: s.watchdogs.map((watch, index) => {
+        const part = CATALOG[watch.slot].find(item => item.id === watch.productId);
+        const cheaper = part ? part.price < watch.priceAtWatch : false;
+        const back = part ? part.stock !== 0 : false;
+        return {
+          id: watch.productId,
+          name: part ? productTitle(part, watch.slot) : watch.productId,
+          image: part?.imagePath,
+          note: watch.kind === "price"
+            ? (cheaper ? `Dropped to ${money(part!.price)}` : `Watching from ${money(watch.priceAtWatch)}`)
+            : (back ? "Back in stock" : "Waiting for stock"),
+          hit: watch.kind === "price" ? cheaper : back,
+          open: () => app.setState({ route: "product", productSlot: watch.slot, productId: watch.productId }),
+          drop: () => app.toggleWatchdog(watch.slot, watch.productId, watch.kind),
+        };
+      }).reverse(),
       savedCount: s.saved, cartCount: s.cart.reduce((total, line) => total + line.qty, 0),
       cartDotBg: s.cart.length ? "var(--gray-900)" : "var(--surface-sunken)",
       cartDotFg: s.cart.length ? "#fff" : "var(--text-tertiary)",

@@ -1,7 +1,49 @@
 import React from "react";
 import { sx, useHover, type Vals } from "../sx";
+import "../reviews.css";
 
 /** Frosted 56px bar, spanning sidebar and workspace both. */
+const WatchBell: React.FC<{ v: Vals }> = ({ v }) => {
+  const [open, setOpen] = React.useState(false);
+  const holder = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    if (!open) return;
+    const away = (event: MouseEvent) => { if (!holder.current?.contains(event.target as Node)) setOpen(false); };
+    document.addEventListener("mousedown", away);
+    return () => document.removeEventListener("mousedown", away);
+  }, [open]);
+
+  const alerts = v.watchItems.filter((item: Vals) => item.hit).length;
+  return (
+    <div ref={holder} style={sx("position:relative;display:flex;align-items:center")}>
+      <button type="button" aria-label="Watchdog" aria-expanded={open} onClick={() => setOpen(value => !value)}
+        style={sx("position:relative;display:flex;align-items:center;justify-content:center;width:36px;height:36px;padding:0;background:transparent;border:0;border-radius:8px;cursor:pointer")}>
+        <span className="ms" style={sx(`font-size:20px;color:${alerts ? "var(--accent-active)" : "var(--text-secondary)"}`)}>{"sound_detection_dog_barking"}</span>
+        {v.watchCount > 0 && (
+          <span className="num" style={sx(`position:absolute;top:1px;right:1px;font-size:12px;font-weight:500;min-width:15px;height:15px;border-radius:99px;background:${alerts ? "var(--accent-active)" : "var(--gray-900)"};color:#fff;display:flex;align-items:center;justify-content:center;padding:0 4px`)}>{v.watchCount}</span>
+        )}
+      </button>
+      {open && (
+        <div className="watch-panel">
+          <h3>Watchdog</h3>
+          <p>{v.watchCount ? "We will flag these here when something changes." : "Watch a product and any change shows up here. Nothing leaves this device."}</p>
+          {v.watchItems.map((item: Vals) => (
+            <div key={item.id} className="watch-item">
+              <span className="watch-item__image">{item.image ? <img src={item.image} alt="" /> : <span className="ms">image</span>}</span>
+              <span className="watch-item__copy">
+                <button type="button" onClick={() => { setOpen(false); item.open(); }}>{item.name}</button>
+                <small style={sx(item.hit ? "color:var(--green-600)" : "")}>{item.note}</small>
+              </span>
+              <button type="button" className="watch-item__drop" aria-label="Stop watching" onClick={item.drop}><span className="ms">close</span></button>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+};
+
 export const TopBar: React.FC<{ v: Vals }> = ({ v }) => {
   const saved = useHover("position:relative;display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;cursor:pointer;transition:background 140ms ease", "background:var(--surface-hover)");
   const account = useHover("display:flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;cursor:pointer;transition:background 140ms ease", "background:var(--surface-hover)");
@@ -17,10 +59,7 @@ export const TopBar: React.FC<{ v: Vals }> = ({ v }) => {
         <input aria-label="Search products" value={v.searchValue} onChange={v.searchChange} placeholder="Search parts, brands, or builds" style={sx("border:0;outline:0;background:transparent;color:var(--text-primary);font:inherit;min-width:0;width:100%;padding:0")} />
       </div>
       <div style={sx("grid-column:3;justify-self:end;display:flex;align-items:center;gap:4px")}>
-        <div {...saved}>
-          <span className="ms" style={sx("font-size:20px;color:var(--text-secondary)")}>favorite</span>
-          <span className="num" style={sx("position:absolute;top:1px;right:1px;font-size:12px;font-weight:500;min-width:15px;height:15px;border-radius:99px;background:var(--gray-900);color:#fff;display:flex;align-items:center;justify-content:center;padding:0 4px")}>{v.savedCount}</span>
-        </div>
+        <WatchBell v={v} />
         <div {...account}>
           <span className="ms" style={sx("font-size:20px;color:var(--text-secondary)")}>account_circle</span>
         </div>

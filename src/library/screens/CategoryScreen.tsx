@@ -1,5 +1,6 @@
 import React from "react";
 import { sx, useHover, type Vals } from "../sx";
+import { RatingLine } from "../shell/Stars";
 
 /** Category listing: crumb header, brand tiles, inline sorts and chips, product grid. */
 export const CategoryScreen: React.FC<{ v: Vals }> = ({ v }) => v.departmentOverview ? <DepartmentOverview v={v} /> : (
@@ -99,11 +100,17 @@ export const ProductCard: React.FC<{ g: Vals }> = ({ g }) => {
         <span style={sx(`display:${g.stateShow};position:absolute;top:8px;left:8px;align-items:center;font-size:12px;font-weight:500;letter-spacing:0.4px;text-transform:uppercase;padding:2px 8px;border-radius:var(--radius-xs);background:${g.stateBg};color:var(--text-inverse)`)}>{g.state}</span>
       </div>
       <div style={sx(`padding:10px;display:flex;flex-direction:column;gap:4px;flex:1;opacity:${g.dim}`)}>
-        <div style={sx("display:flex;align-items:baseline;gap:6px")}>
-          <div style={sx(`font-size:12px;font-weight:500;color:${g.tagFg};flex:1`)}>{g.tag}</div>
-          <div style={sx("font-size:12px;color:var(--text-tertiary)")}>{g.brand}</div>
+        <div style={sx("display:flex;align-items:center;gap:6px;min-height:16px")}>
+          <RatingLine average={g.rating.average} count={g.rating.count} size={13} />
+          <span style={sx("flex:1")}></span>
+          <button type="button" aria-label={g.watched ? "Stop the watchdog" : "Set a watchdog"} aria-pressed={g.watched}
+            onClick={(event) => { event.stopPropagation(); g.watch(); }}
+            style={sx(`display:inline-flex;padding:0;background:transparent;border:0;cursor:pointer;color:${g.watched ? "var(--accent-active)" : "var(--text-tertiary)"}`)}>
+            <span className="ms" style={sx("font-size:16px")}>{"sound_detection_dog_barking"}</span>
+          </button>
         </div>
         <div style={sx("font-size:13px;font-weight:500;line-height:1.35")}>{g.name}</div>
+        {g.inBuild && <div style={sx("font-size:11px;font-weight:500;color:var(--accent-active)")}>In your build</div>}
         <div style={sx("font-size:12px;color:var(--text-secondary);line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden")}>{g.desc}</div>
         <div style={sx("display:flex;flex-wrap:wrap;gap:4px")}>
           {g.specs.map((sp: string, i: number) => (
