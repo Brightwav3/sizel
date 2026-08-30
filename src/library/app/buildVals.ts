@@ -341,7 +341,7 @@ export function buildVals(app: RigsmithApp): Vals {
       posts: [
         { kind: "Guide", title: "How much graphics card do you actually need at 1440p?", dek: "We measured nine cards across three games and plotted the point where more money stops buying frames.", meta: "6 min read · 2d ago" },
         { kind: "Teardown", title: "What a quiet PC is really made of", dek: "Fan curves, case mesh, and the three parts that decide whether you hear your computer.", meta: "9 min read · 1w ago" },
-        { kind: "Builder story", title: "A $1,200 build that still hits 144 fps", dek: "Where app builder saved money, and the one part they refused to compromise on.", meta: "4 min read · 2w ago" },
+        { kind: "Builder story", title: "A $1,200 build that still hits 144 fps", dek: "Where this builder saved money, and the one part they refused to compromise on.", meta: "4 min read · 2w ago" },
       ],
       deals: [
         { name: valueGpu.name, price: money(valueGpu.price), go: () => app.setState({ route: "product", productSlot: "gpu", productId: valueGpu.id }) },
@@ -525,12 +525,25 @@ export function buildVals(app: RigsmithApp): Vals {
       pFitText: !buildableProduct ? "Verified against the canonical Rigsmith product catalog."
         : pFits ? "Compatible with your current build based on the product specifications."
         : (candidateBuild?.issues || ["This product is not compatible with your current build."]).join(" "),
-      pActionLabel: buildableProduct ? "Put app in my build" : "Add to cart",
+      pActionLabel: buildableProduct ? "Put this in my build" : "Add to cart",
       pAddToBuild: () => buildableProduct
         ? app.set(pSlot as PcSlot, pick.id)
         : app.setState({ inCart: true, toast: pick.name + " added to cart" }, () => app.flash()),
 
-      buildSub: "9 parts chosen · " + (m.fits ? "everything fits" : "one thing does not fit"),
+     buildSub: "9 parts chosen · " + (m.fits ? "everything fits" : "one thing does not fit"),
+      builderSlot: s.builderSlot,
+      builderCategory: (ORDER.find(item => item.slot === s.builderSlot) || ({} as any)).cat || s.builderSlot,
+      builderSearch: s.builderSearch,
+      setBuilderSearch: (event: React.ChangeEvent<HTMLInputElement>) => app.setState({ builderSearch: event.target.value }),
+      clearBuilderSearch: () => app.setState({ builderSearch: "" }),
+      builderInstalled: (() => { const part = app.part(s.builderSlot); return { name: part.name, specs: part.specs?.slice(0, 2).join(" · ") }; })(),
+      builderRows: ORDER.map(item => { const part = app.part(item.slot); return { slot: item.slot, icon: item.icon, cat: item.cat, name: part.name, price: money(part.price), open: () => app.setState({ builderSlot: item.slot, builderSearch: "" }) }; }),
+      builderOptions: CATALOG[s.builderSlot].filter(part => `${part.brand ?? ""} ${part.name} ${part.model ?? ""}`.toLowerCase().includes(s.builderSearch.toLowerCase())).map(part => ({
+        id: part.id, brand: part.brand, name: part.name, image: part.imagePath, specs: part.specs?.slice(0, 3).join(" · "),
+        stock: part.stock === 0 ? "Unavailable" : `Ships in ${part.days} days`, price: money(part.price), priceKind: part.merchandising ?? "standard",
+        installed: s.picks[s.builderSlot] === part.id, disabled: s.picks[s.builderSlot] === part.id || part.stock === 0, select: () => app.set(s.builderSlot, part.id),
+      })),
+      builderIssues: m.issues, builderDraw: m.watt, builderHeadroom: Math.max(0, (app.part("psu").watt ?? 0) - m.watt),
       addBuildLabel: s.inCart ? "In your cart" : "Add build to cart · " + money(m.price),
       addBuildToCart: () => { app.setState({ inCart: true, route: "cart", toast: "Build added to cart" }); app.flash(); },
       optimize: () => {
@@ -585,7 +598,7 @@ export function buildVals(app: RigsmithApp): Vals {
       compatIcon: m.fits ? "check_circle" : "error",
       compatFg: m.fits ? "var(--success)" : "var(--danger)",
       compatText: m.fits ? "We checked fit, power, and cooling for all 9 parts. Nothing to worry about."
-        : "Your graphics card is too long for app case. Pick a shorter card or a bigger case.",
+        : "Your graphics card is too long for this case. Pick a shorter card or a bigger case.",
 
       pickerLabel: (ORDER.find(o => o.slot === pslot) || ({} as any)).label || "part",
       pickerCols: ordered.map((o, i) => ({
@@ -700,4 +713,3 @@ export function buildVals(app: RigsmithApp): Vals {
       restart: () => app.setState({ route: "builder", inCart: false, step: 0, lastChange: null }),
     };
   }
-

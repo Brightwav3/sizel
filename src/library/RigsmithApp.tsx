@@ -20,6 +20,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     route: "home", pickerSlot: null, productId: DEFAULT_PICKS.gpu, category: "gpu", productSlot: "gpu",
     catalogOpen: false, dept: "pc", openDept: "pc",
     picks: { ...DEFAULT_PICKS },
+    builderSlot: "gpu", builderSearch: "",
     gStep: 0, gDone: [], cornerMin: true, cornerX: null, cornerY: null,
     budget: 1800, target: 144, res: "1440p", quiet: true,
     fitOnly: true, minPrice: 0, maxPrice: 2200, useFilter: "any", brand: "any", facetFilters: {}, sort: "popular", stockOnly: false, onSale: false, search: "",

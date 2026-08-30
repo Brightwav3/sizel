@@ -5,6 +5,7 @@ export interface AppState {
   route: Route; pickerSlot: PcSlot | null; productId: string; category: Slot; productSlot: Slot;
   catalogOpen: boolean; dept: string; openDept: string | null;
   picks: Picks; gStep: number; gDone: PcSlot[];
+  builderSlot: PcSlot; builderSearch: string;
   cornerMin: boolean; cornerX: number | null; cornerY: number | null;
   budget: number; target: number; res: keyof typeof RES; quiet: boolean;
   fitOnly: boolean; minPrice: number; maxPrice: number; useFilter: string; brand: string;
