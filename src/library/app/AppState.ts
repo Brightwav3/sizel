@@ -1,5 +1,5 @@
 import { RES } from "../data/metrics";
-import type { CartLine, PcSlot, Picks, Route, Slot } from "../types";
+import type { CartLine, PcSlot, Picks, Route, Slot, Watchdog } from "../types";
 
 // ADR 0002: AppState is the single owner of the active PC build.
 // docs/decisions/0002-single-build-state-and-domain-view-models.md
@@ -28,5 +28,7 @@ export interface AppState {
   prev: Picks | null;
   /** Real cart lines — products and, at most once, the assembled build. */
   cart: CartLine[];
+  /** Products the shopper is watching for stock or a price drop. */
+  watchdogs: Watchdog[];
   step: number; toast: string | null; saved: number;
 }

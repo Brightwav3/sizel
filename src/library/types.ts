@@ -73,6 +73,16 @@ export interface CartLine {
   qty: number;
 }
 
+/** A product the shopper asked to be told about. */
+export interface Watchdog {
+  productId: string;
+  slot: Slot;
+  /** What to watch: the product coming back, or its price falling. */
+  kind: "availability" | "price";
+  /** Price at the moment the watch was created, for a "cheaper than" check. */
+  priceAtWatch: number;
+}
+
 export type Catalog = Record<Slot, Part[]>;
 export type Picks = Record<PcSlot, string>;
 
