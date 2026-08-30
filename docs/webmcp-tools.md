@@ -412,3 +412,20 @@ GPU stock, a catalog performance estimate and the bottleneck in one response.
 Phone comparisons include structured display, battery, storage and camera facts.
 These read-only summaries are available on every route. No per-game benchmarks
 or currency conversion are invented when the catalog does not provide them.
+
+
+### Three-call agent workflow
+
+1. `read_shop` with `search.compare: true` returns search-selected distinct models
+   with their comparison. The selection is explicitly the first models in the
+   requested ordering, not a claim that expensive products are universally best.
+2. `recommend_build` with `apply: true, configure: true` applies the requested
+   targets and picks in one controller update. It never writes to the cart.
+3. `read_shop` with `include: ["build", "cart", "watchdogs"]` and
+   `compareDeviceSearch` finds and compares up to three devices against that build.
+
+`compareDeviceSearch` accepts the quick-search fields and defaults to consoles.
+Regular `search` now also accepts `inStockOnly`. In compare mode the response
+returns selection ids instead of repeating prices and names in both sections.
+Cart changes and watches still require the user's actual authorization; a timed
+run must stop or explicitly exclude blocked steps rather than bypass review.

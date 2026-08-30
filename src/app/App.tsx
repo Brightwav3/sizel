@@ -270,14 +270,18 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   }
 
   /** Replace the whole build at once — a recommendation the shopper accepted. */
-  applyPicks(picks: Picks, title: string) {
-    this.setState({
+  applyPicks(picks: Picks, title: string, targets?: Partial<Pick<AppState, "budget" | "res" | "target" | "quiet">>) {
+    this.setState(state => ({
+      budget: targets?.budget ?? state.budget,
+      res: targets?.res ?? state.res,
+      target: targets?.target ?? state.target,
+      quiet: targets?.quiet ?? state.quiet,
       picks,
       chosen: [...RigsmithApp.BUILD_STEPS],
-      prev: this.state.picks,
+      prev: state.picks,
       lastChange: null,
       toast: title,
-    });
+    }));
     this.flash();
   }
 
