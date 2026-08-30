@@ -51,7 +51,7 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
     </nav>
 
     <section className="card offer-hero" style={sx("padding:var(--space-6);display:flex;flex-direction:column;gap:var(--space-3);background:var(--surface-sunken)")}>
-      <div className={`offer-hero__frame ${animationPhase ? "offer-slide-a" : "offer-slide-b"}`} style={sx("display:grid;grid-template-columns:minmax(0,1.15fr) minmax(280px,.85fr);gap:var(--space-8);align-items:center")}>
+      <div className={`offer-hero__frame home-hero ${animationPhase ? "offer-slide-a" : "offer-slide-b"}`} >
       <div style={sx("display:flex;flex-direction:column;align-items:flex-start;gap:var(--space-3);padding-left:var(--space-4)")}>
         <div className="eyebrow">{offer.heroEyebrow}</div>
         <h1 style={sx("margin:0;max-width:560px;font-size:var(--text-2xl);font-weight:var(--weight-medium);line-height:var(--leading-tight);letter-spacing:var(--tracking)")}>{offer.heroTitle}</h1>
@@ -117,7 +117,7 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
         <h2 style={sx("margin:0;font-size:var(--text-2xl);font-weight:var(--weight-medium)")}>Promotions and new arrivals</h2>
         <span style={sx("font-size:var(--text-sm);color:var(--text-secondary)")}>A reason to look beyond PC parts</span>
       </div>
-      <div style={sx("display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-4)")}>
+      <div className="home-grid-3">
         {v.promotions.map((p: Vals, i: number) => (
           <article key={i} className="card prod" onClick={p.go} style={sx("overflow:hidden;cursor:pointer;background:var(--gray-0)")}>
             <div className="ph" style={sx("height:150px;border:none;border-radius:0;border-bottom:1px solid var(--border-subtle);background:var(--gray-0)")}><CatalogImage src={p.image} alt={p.name} /></div>
@@ -140,7 +140,7 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
         <h2 style={sx("margin:0;font-size:var(--text-2xl);font-weight:var(--weight-medium)")}>Shop by department</h2>
         <span style={sx("font-size:var(--text-sm);color:var(--text-secondary)")}>Start with what you need</span>
       </div>
-      <div style={sx("display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:var(--space-4)")}>
+      <div className="home-grid-3">
         {v.homeDepartments.map((d: Vals) => (
           <button key={d.id} className="card" onClick={d.go} style={sx("padding:var(--space-6);display:flex;align-items:center;gap:var(--space-4);text-align:left;cursor:pointer;background:var(--gray-0)")}>
             <span className="iconbox" style={sx("width:48px;height:48px;flex:0 0 48px;background:var(--surface-sunken);color:var(--text-primary)")}><span className="ms" style={sx("font-size:var(--text-2xl)")}>{d.icon}</span></span>
@@ -161,7 +161,7 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
         <span style={sx("flex:1")}></span>
         <button className="text-button" onClick={v.goCategory}>View all</button>
       </div>
-      <div style={sx("display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:var(--space-4)")}>
+      <div className="home-grid-4">
         {v.bestOf.map((b: Vals, i: number) => (
           <article key={i} className="card prod" onClick={b.go} style={sx("overflow:hidden;cursor:pointer;background:var(--gray-0)")}>
             <div className="ph" style={sx("height:180px;border:none;border-radius:0;border-bottom:1px solid var(--border-subtle);background:var(--gray-0)")}><CatalogImage src={b.image} alt={b.name} /></div>
@@ -179,7 +179,7 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
       </div>
     </section>
 
-    <section style={sx("display:grid;grid-template-columns:minmax(0,1.3fr) minmax(280px,.7fr);gap:var(--space-4);align-items:stretch")}>
+    <section className="home-split">
       <div className="card" style={sx("padding:var(--space-6);display:flex;flex-direction:column;gap:var(--space-5)")}>
         <div>
           <h2 style={sx("margin:0;font-size:var(--text-base);font-weight:var(--weight-medium)")}>Popular starting points</h2>
@@ -198,8 +198,8 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
       <div className="card" style={sx("padding:var(--space-6);display:flex;flex-direction:column;gap:var(--space-4);background:var(--surface-sunken)")}>
         <div className="eyebrow">Why Rigsmith</div>
         <div style={sx("display:flex;align-items:flex-start;gap:var(--space-3)")}><span className="ms" style={sx("color:var(--success);font-size:var(--text-base)")}>verified</span><span style={sx("font-size:var(--text-sm);line-height:var(--leading-normal)")}>Every PC part is checked against the rest of your build.</span></div>
-        <div style={sx("display:flex;align-items:flex-start;gap:var(--space-3)")}><span className="ms" style={sx("color:var(--success);font-size:var(--text-base)")}>inventory_2</span><span style={sx("font-size:var(--text-sm);line-height:var(--leading-normal)")}>Stock and delivery details come from the local catalog.</span></div>
-        <div style={sx("display:flex;align-items:flex-start;gap:var(--space-3)")}><span className="ms" style={sx("color:var(--success);font-size:var(--text-base)")}>photo_library</span><span style={sx("font-size:var(--text-sm);line-height:var(--leading-normal)")}>Product cards use the canonical generated product photography.</span></div>
+        <div style={sx("display:flex;align-items:flex-start;gap:var(--space-3)")}><span className="ms" style={sx("color:var(--success);font-size:var(--text-base)")}>inventory_2</span><span style={sx("font-size:var(--text-sm);line-height:var(--leading-normal)")}>Stock and delivery dates shown before you order.</span></div>
+        <div style={sx("display:flex;align-items:flex-start;gap:var(--space-3)")}><span className="ms" style={sx("color:var(--success);font-size:var(--text-base)")}>photo_library</span><span style={sx("font-size:var(--text-sm);line-height:var(--leading-normal)")}>Real photos and full specifications on every product.</span></div>
       </div>
     </section>
   </div>

@@ -1,0 +1,53 @@
+/**
+ * Responsive layout.
+ *
+ * The prototype carries its layout in inline `sx()` declaration strings, which
+ * no media query can reach. Every grid that has to reflow lives here instead,
+ * as a class the screen applies. Inline styles stay for colours and spacing.
+ *
+ * Breakpoints: 1240 (laptop), 1000 (small laptop), 860 (tablet), 620 (phone).
+ */
+
+/* Page frame ------------------------------------------------------------- */
+.shell-grid { display: grid; grid-template-columns: 264px minmax(0, 1fr); }
+@media (max-width: 1240px) { .shell-grid { grid-template-columns: 232px minmax(0, 1fr); } }
+@media (max-width: 1000px) { .shell-grid { grid-template-columns: 210px minmax(0, 1fr); } }
+@media (max-width: 860px)  { .shell-grid { grid-template-columns: minmax(0, 1fr); } }
+
+.topbar-grid { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(280px, 420px) minmax(160px, 1fr); }
+@media (max-width: 860px) { .topbar-grid { grid-template-columns: auto minmax(0, 1fr) auto; gap: var(--space-3); padding: 0 var(--space-3); } }
+@media (max-width: 620px) { .topbar-grid .topbar-search { grid-column: 1 / -1; } }
+
+/* Page padding ----------------------------------------------------------- */
+@media (max-width: 860px) { .page-pad { padding-right: var(--space-5); padding-left: var(--space-5); } }
+@media (max-width: 620px) { .page-pad { padding-right: var(--space-4); padding-left: var(--space-4); } }
+
+/* Product detail --------------------------------------------------------- */
+.product-grid { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(320px, 0.85fr); gap: var(--space-8); align-items: start; }
+@media (max-width: 1000px) { .product-grid { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); } }
+
+.product-fps { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-3); }
+@media (max-width: 620px) { .product-fps { grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-2); } .product-fps .num { font-size: 20px; } }
+
+.product-facts { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+@media (max-width: 480px) { .product-facts { grid-template-columns: minmax(0, 1fr); } }
+
+/* Home ------------------------------------------------------------------- */
+.home-hero { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(280px, .85fr); gap: var(--space-8); align-items: center; }
+@media (max-width: 1000px) { .home-hero { grid-template-columns: minmax(0, 1fr); gap: var(--space-6); } }
+
+.home-grid-3 { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
+@media (max-width: 1000px) { .home-grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px)  { .home-grid-3 { grid-template-columns: minmax(0, 1fr); } }
+
+.home-grid-4 { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); }
+@media (max-width: 1240px) { .home-grid-4 { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
+@media (max-width: 1000px) { .home-grid-4 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 620px)  { .home-grid-4 { grid-template-columns: minmax(0, 1fr); } }
+
+.home-split { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(280px, .7fr); gap: var(--space-4); align-items: stretch; }
+@media (max-width: 1000px) { .home-split { grid-template-columns: minmax(0, 1fr); } }
+
+/* Catalog ---------------------------------------------------------------- */
+.catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: var(--space-3); }
+@media (max-width: 620px) { .catalog-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-2); } }
