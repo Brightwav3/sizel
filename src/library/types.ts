@@ -43,6 +43,10 @@ export interface Part {
   merchandising?: "new" | "sale";
   /** consumer categories carry their spec chips inline */
   specs?: string[];
+  /** storage tiers of one device: the canonical product id they all share */
+  variantOf?: string;
+  /** the capacity this listing is, e.g. "256 GB" */
+  variantLabel?: string;
   /** graphics cards */
   fps?: number;
   good?: string;

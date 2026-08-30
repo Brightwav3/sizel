@@ -1,5 +1,7 @@
 import React from "react";
-import { CAT_META, SPECS } from "../../data/catalog";
+import { CATALOG, CAT_META, SPECS } from "../../data/catalog";
+import { siblingVariants } from "../../data/storageVariants";
+import { colorwaysFor } from "../../data/colorways";
 import { money } from "../../data/metrics";
 import { productTitle } from "../../domain/queries";
 import { ratingFor, reviewsFor } from "../../data/reviews";
@@ -9,6 +11,12 @@ import type { BuildContext } from "../buildContext";
 export function buildProductVals(context: BuildContext) {
   const { app, route, openDept, pSlot, pick, buildableProduct, candidateBuild, pFits } = context;
   const watchKind = pick.stock === 0 ? "availability" as const : "price" as const;
+  // The same device at other storage capacities: separate listings, one choice.
+  const variants = siblingVariants(pick, CATALOG[pSlot] ?? []);
+  // Alza-style: every tier is priced against the cheapest one, so the deltas
+  // stay the same whichever tier you are looking at.
+  const cheapest = variants.length ? variants[0].price : pick.price;
+  const colorways = colorwaysFor(pick, pSlot);
 
   return {
       pImage: pick.imagePath,
@@ -60,6 +68,18 @@ export function buildProductVals(context: BuildContext) {
         : watchKind === "availability" ? "Tell me when it is back" : "Tell me if the price drops",
       pWatch: () => app.toggleWatchdog(pSlot, pick.id, watchKind),
       pActionLabel: "Add to cart",
+      pStorageLabel: pick.variantLabel ?? "",
+      pStorageOptions: variants.map(variant => ({
+        id: variant.id,
+        label: variant.variantLabel ?? "",
+        extra: `+ ${money(variant.price - cheapest)}`,
+        note: variant.stock === 0 ? "Out of stock" : "In stock",
+        soldOut: variant.stock === 0,
+        selected: variant.id === pick.id,
+        pick: () => app.setState({ route: "product", productSlot: pSlot, productId: variant.id }),
+      })),
+      // Colour is presentation only: no separate listing behind it yet.
+      pColorways: colorways,
       pDelivery: pick.days <= 2 ? "Delivery tomorrow" : `Delivery in ${pick.days} days`,
       pPriceExVat: money(Math.round(pick.price / 1.21)),
       pAllFromBrand: () => app.setState({ route: "category", category: pSlot, productSlot: pSlot, brand: pick.brand ?? "any", openDept: null }),

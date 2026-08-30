@@ -3,6 +3,8 @@ import type { Vals } from "../sx";
 import "../responsive.css";
 import "../product.css";
 import { RatingLine, Stars } from "../shell/Stars";
+import { OptionPicker } from "../shell/OptionPicker";
+import { ColorPicker } from "../shell/ColorPicker";
 
 /**
  * Product detail laid out the way a large electronics retailer does it: the
@@ -47,6 +49,11 @@ export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => (
         <div className="product-buy__stock">
           <strong style={{ color: v.pStockFg }}>{v.pStock}</strong>
           <span><span className="ms">local_shipping</span>{v.pDelivery}</span>
+        </div>
+
+        <div className="product-buy__options">
+          <ColorPicker key={v.pSku} colorways={v.pColorways} />
+          <OptionPicker label="Storage" value={v.pStorageLabel} icon="sd_card" options={v.pStorageOptions} />
         </div>
 
         <div className="product-buy__price">

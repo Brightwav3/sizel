@@ -45,6 +45,33 @@
 .product-buy__stock span { display: inline-flex; align-items: center; gap: var(--space-2); color: var(--text-secondary); font-size: var(--text-xs); }
 .product-buy__stock .ms { font-size: var(--text-base); color: var(--text-tertiary); }
 
+/* Colour and storage, asked the way a phone shop asks: a collapsed row that
+   names the current choice, and a drop-down listing every option with its
+   price difference and stock. */
+.product-buy__options { display: flex; flex-direction: column; gap: var(--space-2); }
+
+.option-picker { position: relative; }
+.option-picker__row { display: flex; align-items: center; gap: var(--space-3); width: 100%; padding: var(--space-2) var(--space-3); background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-nav); font: inherit; color: var(--text-primary); text-align: left; cursor: pointer; transition: border-color 140ms ease, box-shadow 140ms ease; }
+.option-picker__row:hover { border-color: var(--gray-500); }
+.option-picker__row.is-open { border-color: var(--text-accent); box-shadow: inset 0 0 0 1px var(--text-accent); }
+.option-picker__tile { display: inline-flex; align-items: center; justify-content: center; width: 34px; height: 34px; flex: 0 0 34px; border-radius: var(--radius-xs); background: var(--surface-sunken); color: var(--text-secondary); }
+.option-picker__tile .ms { font-size: var(--text-xl, 20px); }
+.option-picker__swatch { width: 20px; height: 20px; border-radius: var(--radius-xs); border: 1px solid rgba(0, 0, 0, 0.14); }
+.option-picker__copy { display: flex; flex-direction: column; gap: 1px; flex: 1; min-width: 0; }
+.option-picker__copy small { color: var(--text-tertiary); font-size: var(--text-xs); }
+.option-picker__copy strong { font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.option-picker__chevron { color: var(--text-accent); font-size: var(--text-xl, 20px); }
+
+.option-picker__list { position: absolute; z-index: 30; left: 0; right: 0; top: calc(100% + 6px); display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-2); background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-nav); box-shadow: 0 12px 28px rgba(41, 41, 41, 0.16); }
+.option-picker__option { display: flex; flex-direction: column; gap: 2px; padding: var(--space-2) var(--space-3); background: transparent; border: 1px solid transparent; border-radius: var(--radius-xs); font: inherit; color: var(--text-primary); text-align: left; cursor: pointer; }
+.option-picker__option:hover { background: var(--surface-hover); }
+.option-picker__option.is-on { background: var(--surface-sunken); border-color: var(--text-accent); }
+.option-picker__option-head { display: flex; align-items: baseline; gap: var(--space-2); }
+.option-picker__option-head strong { font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.option-picker__option-head small { color: var(--text-tertiary); font-size: var(--text-xs); }
+.option-picker__option em { font-style: normal; color: var(--green-600); font-size: var(--text-xs); }
+.option-picker__option em.is-out { color: var(--text-tertiary); }
+
 .product-buy__price { display: flex; flex-direction: column; gap: 2px; padding-top: var(--space-2); }
 .product-buy__price strong { color: var(--danger); font-size: 30px; font-weight: var(--weight-medium); line-height: 1.1; }
 .product-buy__price small { color: var(--text-tertiary); font-size: var(--text-xs); }
