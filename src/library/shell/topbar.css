@@ -17,12 +17,14 @@
   -webkit-backdrop-filter: saturate(180%) blur(14px);
   border-bottom: 1px solid var(--border-subtle);
 }
+body:has(.topbar-search-wrap.is-open) .topbar { z-index: 110; border-bottom-color: transparent; }
 
 /* Logo ------------------------------------------------------------------- */
 .topbar__logo { display: flex; align-items: center; gap: 9px; width: auto; cursor: pointer; }
 .topbar__logo img { display: block; width: 96px; height: auto; object-fit: contain; }
 
 /* Search ----------------------------------------------------------------- */
+.topbar-search-wrap { position: relative; width: 100%; min-width: 0; z-index: 22; }
 .topbar-search {
   display: flex;
   box-sizing: border-box;
@@ -37,6 +39,7 @@
   color: var(--text-tertiary);
   font-size: var(--text-sm);
 }
+.topbar-search-wrap.is-open .topbar-search { border-color: var(--text-tertiary); box-shadow: 0 0 0 1px var(--border-subtle); }
 .topbar-search .ms { font-size: var(--text-base); }
 .topbar-search input {
   width: 100%;
@@ -47,6 +50,53 @@
   outline: 0;
   color: var(--text-primary);
   font: inherit;
+}
+.topbar-search__clear { display: grid; place-items: center; flex: 0 0 26px; width: 26px; height: 26px; padding: 0; color: var(--text-tertiary); background: transparent; border: 0; border-radius: var(--radius-pill); cursor: pointer; }
+.topbar-search__clear:hover { color: var(--text-primary); background: var(--surface-hover); }
+.topbar-search__clear .ms { font-size: var(--text-sm); }
+
+.search-page-scrim { position: fixed; inset: 0; z-index: 100; padding: 0; background: color-mix(in srgb, var(--surface-inverse) 32%, transparent); border: 0; cursor: default; }
+/* The topbar's backdrop filter creates a fixed-position containing block.
+   This second layer intentionally dims that block while the body portal above
+   handles the rest of the page. */
+.search-scrim { position: fixed; inset: 0; z-index: 21; padding: 0; background: color-mix(in srgb, var(--surface-inverse) 32%, transparent); border: 0; cursor: default; }
+.search-flyout {
+  position: fixed;
+  top: 64px;
+  left: 50%;
+  z-index: 22;
+  width: min(760px, calc(100vw - 32px));
+  overflow: hidden;
+  background: var(--surface-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-card);
+  box-shadow: var(--shadow-popover);
+  animation: search-flyout-in 140ms ease both;
+}
+.search-flyout__section { padding: var(--space-5); }
+.search-flyout__section + .search-flyout__section { border-top: 1px solid var(--border-subtle); }
+.search-recent { display: flex; gap: var(--space-2); margin-top: var(--space-3); overflow-x: auto; scrollbar-width: none; }
+.search-recent::-webkit-scrollbar { display: none; }
+.search-recent button { display: inline-flex; flex: 0 0 auto; min-height: 30px; align-items: center; gap: var(--space-1); padding: 0 var(--space-3); color: var(--text-secondary); background: var(--surface-sunken); border: 1px solid var(--border-subtle); border-radius: var(--radius-pill); font: inherit; font-size: var(--text-xs); cursor: pointer; transition: color 140ms ease, background 140ms ease, transform 140ms ease; }
+.search-recent button:hover { color: var(--text-primary); background: var(--surface-hover); }
+.search-recent button:active { transform: scale(.98); }
+.search-recent .ms { font-size: var(--text-sm); }
+.search-products { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); margin-top: var(--space-3); border-top: 1px solid var(--border-subtle); border-left: 1px solid var(--border-subtle); }
+.search-products button { display: grid; grid-template-columns: 48px minmax(0, 1fr) 18px; align-items: center; gap: var(--space-3); min-width: 0; min-height: 72px; padding: var(--space-3); color: var(--text-primary); text-align: left; background: var(--surface-card); border: 0; border-right: 1px solid var(--border-subtle); border-bottom: 1px solid var(--border-subtle); cursor: pointer; transition: color 140ms ease, background 140ms ease, transform 140ms ease; }
+.search-products button:hover { color: var(--text-accent); background: var(--surface-hover); }
+.search-products button:active { transform: scale(.99); }
+.search-products button > span:first-child { display: grid; place-items: center; width: 48px; height: 48px; overflow: hidden; background: var(--surface-sunken); border-radius: var(--radius-nav); }
+.search-products img { width: 100%; height: 100%; object-fit: contain; }
+.search-products strong { overflow: hidden; font-size: var(--text-sm); font-weight: var(--weight-medium); line-height: var(--leading-snug); text-overflow: ellipsis; }
+.search-products button > .ms { color: var(--text-tertiary); font-size: var(--text-base); }
+@keyframes search-flyout-in {
+  from { transform: translate(-50%, calc(var(--space-1) * -1)); opacity: 0; }
+  to { transform: translateX(-50%); opacity: 1; }
+}
+
+@media (max-width: 700px) {
+  .search-flyout { width: calc(100vw - 24px); }
+  .search-products { grid-template-columns: minmax(0, 1fr); }
 }
 
 /* Actions ---------------------------------------------------------------- */

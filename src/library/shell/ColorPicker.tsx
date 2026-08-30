@@ -2,17 +2,15 @@ import React from "react";
 import { OptionPicker } from "./OptionPicker";
 import type { Colorway } from "../data/colorways";
 
-/**
- * Colour is chosen on the page and nowhere else: the catalog has one record
- * and one photograph per device, so a finish has no listing of its own yet.
- * The selection lives here rather than in app state for that reason — nothing
- * downstream can act on it.
- */
+// ADR 0003: colour identifies a derived storefront listing and is URL-owned.
+// docs/decisions/0003-storefront-variants-live-in-the-adapter.md
 export const ColorPicker: React.FC<{
   colorways: Colorway[];
+  selectedId?: string | null;
   onChange?: (colorway: Colorway) => void;
-}> = ({ colorways, onChange }) => {
-  const [chosen, setChosen] = React.useState(0);
+}> = ({ colorways, selectedId, onChange }) => {
+  const initial = Math.max(0, colorways.findIndex(colorway => colorway.id === selectedId));
+  const [chosen, setChosen] = React.useState(initial);
   if (colorways.length < 2) return null;
   const active = colorways[chosen] ?? colorways[0];
   return (

@@ -61,5 +61,30 @@ export function buildShellVals(context: BuildContext) {
       toastText: s.toast || "", toastOpacity: s.toast ? 1 : 0,
       searchValue: s.search,
       searchChange: (e: React.ChangeEvent<HTMLInputElement>) => app.setState({ search: e.target.value, route: e.target.value ? "category" : "home", category: "gpu", brand: "any" }),
+      recentSearches: s.recentSearches,
+      runSearch: (query: string) => {
+        const search = query.trim();
+        if (!search) return;
+        app.setState({
+          search,
+          route: "category",
+          category: "gpu",
+          productSlot: "gpu",
+          dept: "pc",
+          brand: "any",
+          recentSearches: [search, ...s.recentSearches.filter(item => item.toLowerCase() !== search.toLowerCase())].slice(0, 6),
+        });
+      },
+      searchRecommendations: [
+        { slot: "gpu", product: CATALOG.gpu.find(part => part.stock !== 0) },
+        { slot: "phones", product: CATALOG.phones.find(part => part.stock !== 0) },
+        { slot: "storage", product: CATALOG.storage.find(part => part.stock !== 0) },
+        { slot: "cooler", product: CATALOG.cooler.find(part => part.stock !== 0) },
+      ].filter(item => item.product).map(item => ({
+        id: item.product!.id,
+        name: productTitle(item.product!, item.slot as any),
+        image: item.product!.imagePath,
+        go: () => app.setState({ route: "product", productSlot: item.slot as any, productId: item.product!.id, productColorId: null }),
+      })),
   };
 }

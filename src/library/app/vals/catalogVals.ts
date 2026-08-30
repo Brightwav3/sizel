@@ -1,18 +1,27 @@
+// ADR 0003: category cards expand canonical SKUs into colour listings.
+// docs/decisions/0003-storefront-variants-live-in-the-adapter.md
 import React from "react";
 import { CATALOG, CAT_META, DESCS, SPECS } from "../../data/catalog";
 import { money } from "../../data/metrics";
 import { partFits, productTitle } from "../../domain/queries";
 import { ratingFor } from "../../data/reviews";
+import { colorwaysFor } from "../../data/colorways";
+import { listingStock, stockLabel } from "../../data/listingStock";
 import type { PcSlot } from "../../types";
 import type { BuildContext } from "../buildContext";
 
 export function buildCatalogVals(context: BuildContext) {
   const { app, s, route, on, dept, openDept, searchText, cat, catList, brandOf, specFilters, fitFilters, visible, hidden, bounds, filtersOn } = context;
+  const listingCount = (products: typeof visible, slot: typeof cat) => products.reduce(
+    (total, product) => total + Math.max(1, colorwaysFor(product, slot).length), 0,
+  );
+  const visibleListings = listingCount(visible, cat);
+  const poolListings = listingCount(catList, cat);
   return {
       filtersOpen: filtersOn ? "true" : "false",
       catName: s.search ? "Search results" : s.brand === "any" ? CAT_META[cat].name : s.brand + " " + CAT_META[cat].name.toLowerCase(),
       gpuFilterDisplay: cat === "gpu" && !s.openDept ? "flex" : "none",
-      catSub: visible.length + " shown of " + CAT_META[cat].count + " products",
+      catSub: visibleListings + " shown of " + poolListings + " listings",
       minPrice: s.minPrice, minPriceLabel: money(s.minPrice), maxPrice: s.maxPrice, maxPriceLabel: money(s.maxPrice),
       setMinPrice: (e: any) => app.setState({ minPrice: Math.min(+e.target.value, s.maxPrice - 20) }),
       setMaxPrice: (e: any) => app.setState({ maxPrice: Math.max(+e.target.value, s.minPrice + 20) }),
@@ -64,8 +73,8 @@ export function buildCatalogVals(context: BuildContext) {
       anyFilter: s.onSale || s.stockOnly || s.fastShip || s.fitOnly || s.minPrice > 0 || s.maxPrice < 2200 || s.brand !== "any" || s.useFilter !== "any" || s.sort !== "popular" || !!s.search || Object.values(s.facetFilters).some(values => values.length > 0),
 
       // Filter panel ------------------------------------------------------
-      visibleCount: `${visible.length} of ${catList.length}`,
-      poolCount: String(catList.length),
+      visibleCount: `${visibleListings} of ${poolListings}`,
+      poolCount: String(poolListings),
       /** What is currently narrowing the list, each chip removing just itself. */
       activeFilterChips: [
         ...(s.search ? [{ label: `"${s.search}"`, clear: () => app.setState({ search: "" }) }] : []),
@@ -114,8 +123,8 @@ export function buildCatalogVals(context: BuildContext) {
       fitOnlyLabel: `Fits my ${Object.keys(app.chosenPicks()).length}-part build`,
       toggleFitOnly: () => app.setState({ fitOnly: !s.fitOnly }),
 
-      gpuCards: visible.map(g => {
-        const stockCount = g.stock ?? 0;
+      gpuCards: visible.flatMap(g => (colorwaysFor(g, cat).length ? colorwaysFor(g, cat) : [null]).map(colorway => {
+        const stockCount = listingStock(g, cat, colorway?.id);
         const out = stockCount === 0;
         const sale = g.merchandising === "sale";
         const fresh = g.merchandising === "new";
@@ -136,7 +145,7 @@ export function buildCatalogVals(context: BuildContext) {
           dim: out ? 0.55 : 1,
           addBg: out ? "var(--surface-sunken)" : "var(--surface-card)",
           addFg: out ? "var(--text-tertiary)" : "var(--text-primary)",
-          name: productTitle(g, cat), brand: brandOf(g), image: g.imagePath,
+          name: `${productTitle(g, cat)}${colorway ? ` · ${colorway.name}` : ""}`, brand: brandOf(g), image: colorway?.imagePath ?? g.imagePath,
           rating: ratingFor(g), inBuild: s.chosen.includes(cat as PcSlot) && g.id === (s.picks as any)[cat],
           watched: app.isWatched(g.id, g.stock === 0 ? "availability" : "price"),
           watch: () => app.toggleWatchdog(cat, g.id, g.stock === 0 ? "availability" : "price"),
@@ -149,19 +158,19 @@ export function buildCatalogVals(context: BuildContext) {
           tag: s.chosen.includes(cat as PcSlot) && g.id === (s.picks as any)[cat] ? "In your build" : g.tag,
           tagFg: g.id === (s.picks as any)[cat] ? "var(--accent-active)" : g.tag === "Best value" ? "var(--green-600)" : "var(--text-tertiary)",
           bd: g.id === (s.picks as any)[cat] ? "var(--accent)" : "var(--border-subtle)",
-          stock: out ? "Out of stock" : g.days <= 2 ? (stockCount > 5 ? "In stock · > 5 pcs" : `In stock · ${stockCount} pcs`) : "Ships in " + g.days + " days",
+          stock: out ? "Out of stock" : g.days <= 2 ? `In stock · ${stockLabel(stockCount)} pcs` : "Ships in " + g.days + " days",
           stockFg: out ? "var(--text-tertiary)" : g.days <= 2 ? "var(--green-600)" : "var(--amber-600)",
-          go: () => app.setState({ route: "product", productSlot: cat, productId: g.id }),
+          go: () => app.setState({ route: "product", productSlot: cat, productId: g.id, productColorId: colorway?.id ?? null }),
         };
-      }),
+      })),
       departmentCards: dept.cats.flatMap(cardCategory => CATALOG[cardCategory].filter(g =>
         g.price >= s.minPrice && g.price <= s.maxPrice &&
         (!s.stockOnly || (g.days <= 2 && g.stock !== 0)) &&
         (!s.onSale || g.merchandising === "sale") &&
         (s.brand === "any" || brandOf(g) === s.brand) &&
         (!searchText || [g.name, g.model, g.description, JSON.stringify(g.specifications)].join(" ").toLowerCase().includes(searchText))
-      ).map(g => {
-        const stockCount = g.stock ?? 0;
+      ).flatMap(g => (colorwaysFor(g, cardCategory).length ? colorwaysFor(g, cardCategory) : [null]).map(colorway => {
+        const stockCount = listingStock(g, cardCategory, colorway?.id);
         const out = stockCount === 0;
         const sale = g.merchandising === "sale";
         const fresh = g.merchandising === "new";
@@ -181,7 +190,7 @@ export function buildCatalogVals(context: BuildContext) {
           dim: out ? 0.55 : 1,
           addBg: out ? "var(--surface-sunken)" : "var(--surface-card)",
           addFg: out ? "var(--text-tertiary)" : "var(--text-primary)",
-          name: productTitle(g, cardCategory), brand: brandOf(g), image: g.imagePath,
+          name: `${productTitle(g, cardCategory)}${colorway ? ` · ${colorway.name}` : ""}`, brand: brandOf(g), image: colorway?.imagePath ?? g.imagePath,
           rating: ratingFor(g), inBuild: false,
           watched: app.isWatched(g.id, g.stock === 0 ? "availability" : "price"),
           watch: () => app.toggleWatchdog(cardCategory, g.id, g.stock === 0 ? "availability" : "price"),
@@ -191,11 +200,11 @@ export function buildCatalogVals(context: BuildContext) {
           add: () => out ? app.setState({ toast: "We'll email you when it's back" }, () => app.flash()) : app.addToCart(cardCategory, g.id),
           good: g.good || g.note || g.meaning || CAT_META[cardCategory].blurb,
           price: money(g.price), tag: g.tag, tagFg: "var(--text-tertiary)", bd: "var(--border-subtle)",
-          stock: out ? "Out of stock" : g.days <= 2 ? (stockCount > 5 ? "In stock · > 5 pcs" : `In stock · ${stockCount} pcs`) : "Ships in " + g.days + " days",
+          stock: out ? "Out of stock" : g.days <= 2 ? `In stock · ${stockLabel(stockCount)} pcs` : "Ships in " + g.days + " days",
           stockFg: out ? "var(--text-tertiary)" : g.days <= 2 ? "var(--green-600)" : "var(--amber-600)",
-          go: () => app.setState({ route: "product", productSlot: cardCategory, productId: g.id, openDept: null }),
+          go: () => app.setState({ route: "product", productSlot: cardCategory, productId: g.id, productColorId: colorway?.id ?? null, openDept: null }),
         };
-      })),
+      }))),
       hiddenNote: hidden > 0 ? hidden + " products hidden by your filters." : null,
   };
 }

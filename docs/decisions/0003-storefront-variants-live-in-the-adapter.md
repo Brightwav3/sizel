@@ -1,4 +1,4 @@
-# ADR 0003: Storage tiers are derived listings; colour is presentation only
+# ADR 0003: Storage tiers and colours are derived storefront listings
 
 - **Status:** Accepted
 - **Date:** 2026-08-30
@@ -8,37 +8,54 @@
 
 ADR 0001 made `public/catalog/products.json` the canonical catalog: one record per device, at one storage capacity, with one photograph. A shop sells a phone at several capacities and several colours. Those are shopping choices the buy box has to ask, but they are not facts the canonical catalog carries.
 
-The two choices are not the same kind of thing. A capacity has its own price, its own stock and its own code — it is a listing. A colour, with one photograph per device, is not.
+The storefront now has a distinct photograph for every supported colour. A colour therefore needs its own grid card, availability and deep link even though it still shares the canonical device SKU and price.
 
 ## Decision
 
 Storage tiers are expanded in `data/storageVariants.ts` when the adapter builds `CATALOG`, and are ordinary `Part` listings from then on: the grid, search, facets, the cart and the WebMCP tools see them without knowing they were derived. The device's own capacity keeps the canonical id; every other tier takes `<id>::<n>gb`, so existing links, cart lines and watchdogs still resolve. Tiers share the base record's photograph, `variantOf`, and therefore its reviews.
 
-Colour is a fixed palette per brand in `data/colorways.ts`, chosen in local component state on the product page. Nothing downstream can read it.
+Colour palettes and image paths remain derived in `data/colorways.ts`. The category view expands each phone or console listing once per colour. The canonical product id remains unchanged, while `productColorId` identifies the derived colour listing in application state and as the final product URL segment. Opening a card therefore selects the exact colour shown, and refreshing or sharing the URL preserves it.
+
+Storefront stock is deterministic presentation data derived from category, product id and colour id. It varies per listing while remaining stable across renders. Scarce and expensive categories have lower ceilings; `11` is the display bucket `> 10`.
 
 ## Rejected alternatives
 
 - Write the tiers into `products.json`: rejected because the JSON is a port of the canonical catalog and this is a storefront decision. ADR 0001 stands.
 - Keep one listing and switch capacity on the product page only: rejected because the price, stock and code differ per tier, so a single listing would have to lie on the grid and in the cart.
-- Give colour its own listings too: rejected because there is one photograph per device, so every colour would show the same picture and the shop would claim a difference it cannot show.
+- Write every colour into `products.json`: rejected because the JSON remains the canonical device catalog and colour imagery is a storefront concern.
+- Pick a random colour and stock value on every render: rejected because cards would change while browsing and deep links could not reproduce what the shopper opened.
+- Encode colour into the canonical product id: rejected because cart, reviews, storage sibling detection and external catalog references still identify the underlying SKU.
 
 ## Consequences
 
 ### Positive
 
 - Capacity is searchable, filterable and priceable like any other listing.
+- Every available colour has its own image, grid card, stable stock presentation and deep link.
 - The canonical catalog stays a faithful port.
 - Reviews stay attached to the device rather than being split across its tiers.
 
 ### Costs
 
-- Category counts now count listings, not devices: 14 phones read as 36 listings.
+- Category counts now count colour-and-storage combinations rather than devices.
 - Derived ids carry a `::` separator that URL-encodes in links.
-- Colour cannot be added to the cart until the catalog carries per-colour records.
+- Cart lines still identify the canonical SKU; preserving colour in cart and checkout is not decided here.
 
 ## Enforced in
 
 - `src/library/data/storageVariants.ts`
 - `src/library/data/colorways.ts`
+- `src/library/data/listingStock.ts`
 - `src/library/data/realCatalog.ts`
+- `src/library/app/AppState.ts`
+- `src/library/app/navigation.ts`
+- `src/library/app/vals/catalogVals.ts`
+- `src/library/app/vals/productVals.ts`
 - `src/library/shell/OptionPicker.tsx`
+- `src/library/shell/ColorPicker.tsx`
+
+## Explicit non-decisions
+
+- This does not make colour a canonical catalog record or change the underlying product SKU.
+- This does not define colour-specific prices.
+- This does not yet preserve colour in cart or checkout lines.

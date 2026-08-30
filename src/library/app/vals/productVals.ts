@@ -1,7 +1,10 @@
+// ADR 0003: product detail resolves colour and stock from listing identity.
+// docs/decisions/0003-storefront-variants-live-in-the-adapter.md
 import React from "react";
 import { CATALOG, CAT_META, SPECS } from "../../data/catalog";
 import { siblingVariants } from "../../data/storageVariants";
 import { colorwaysFor } from "../../data/colorways";
+import { listingStock, stockLabel } from "../../data/listingStock";
 import { money } from "../../data/metrics";
 import { productTitle } from "../../domain/queries";
 import { ratingFor, reviewsFor } from "../../data/reviews";
@@ -9,7 +12,7 @@ import type { PcSlot } from "../../types";
 import type { BuildContext } from "../buildContext";
 
 export function buildProductVals(context: BuildContext) {
-  const { app, route, openDept, pSlot, pick, buildableProduct, hasBuild, chosenCount, candidateIssues, pFits } = context;
+  const { app, s, route, openDept, pSlot, pick, buildableProduct, hasBuild, chosenCount, candidateIssues, pFits } = context;
   const watchKind = pick.stock === 0 ? "availability" as const : "price" as const;
   // The same device at other storage capacities: separate listings, one choice.
   const variants = siblingVariants(pick, CATALOG[pSlot] ?? []);
@@ -17,6 +20,8 @@ export function buildProductVals(context: BuildContext) {
   // stay the same whichever tier you are looking at.
   const cheapest = variants.length ? variants[0].price : pick.price;
   const colorways = colorwaysFor(pick, pSlot);
+  const selectedColor = colorways.find(colorway => colorway.id === s.productColorId) ?? colorways[0];
+  const stockCount = listingStock(pick, pSlot, selectedColor?.id);
 
   return {
       pImage: pick.imagePath,
@@ -26,8 +31,8 @@ export function buildProductVals(context: BuildContext) {
       pModel: pick.brand ? pick.name.replace(pick.brand + " ", "") : pick.name.split(" ").slice(1).join(" ") || pick.name,
       pIsGpu: pSlot === "gpu", pCatName: CAT_META[pSlot].name,
       pPrice: money(pick.price),
-      pStock: pick.days <= 2 ? "In stock · ships tomorrow" : "Ships in " + pick.days + " days",
-      pStockFg: pick.days <= 2 ? "var(--green-600)" : "var(--amber-600)",
+      pStock: stockCount === 0 ? "Out of stock" : pick.days <= 2 ? `In stock · ${stockLabel(stockCount)} pcs · ships tomorrow` : "Ships in " + pick.days + " days",
+      pStockFg: stockCount === 0 ? "var(--danger)" : pick.days <= 2 ? "var(--green-600)" : "var(--amber-600)",
       pBlurb: pick.blurb || [pick.note || pick.meaning, CAT_META[pSlot].blurb].filter(Boolean).join(". ").replace("..", "."),
       pSpecs: (SPECS[pSlot] || (() => []))(pick),
       pFpsCards: pSlot === "gpu" ? [
@@ -77,10 +82,12 @@ export function buildProductVals(context: BuildContext) {
         note: variant.stock === 0 ? "Out of stock" : "In stock",
         soldOut: variant.stock === 0,
         selected: variant.id === pick.id,
-        pick: () => app.setState({ route: "product", productSlot: pSlot, productId: variant.id }),
+        pick: () => app.setState({ route: "product", productSlot: pSlot, productId: variant.id, productColorId: selectedColor?.id ?? null }),
       })),
       // Colour is presentation only: no separate listing behind it yet.
       pColorways: colorways,
+      pSelectedColorId: selectedColor?.id ?? null,
+      pSelectColor: (colorId: string) => app.setState({ productColorId: colorId }),
       pDelivery: pick.days <= 2 ? "Delivery tomorrow" : `Delivery in ${pick.days} days`,
       pPriceExVat: money(Math.round(pick.price / 1.21)),
       pAllFromBrand: () => app.setState({ route: "category", category: pSlot, productSlot: pSlot, brand: pick.brand ?? "any", openDept: null }),
@@ -90,4 +97,3 @@ export function buildProductVals(context: BuildContext) {
       pAddToBuild: () => app.set(pSlot as PcSlot, pick.id),
   };
 }
-
