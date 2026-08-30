@@ -1,5 +1,6 @@
 import React from "react";
 import "./styles.css";
+import "./tooltip.css";
 import { buildVals } from "./app/buildVals";
 import { RigsmithView } from "./app/RigsmithView";
 import type { AppState } from "./app/AppState";

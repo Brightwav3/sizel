@@ -18,7 +18,7 @@ export const FilterPanel: React.FC<{ v: Vals }> = ({ v }) => (
     {v.activeFilterChips.length > 0 && (
       <div className="filter-active">
         {v.activeFilterChips.map((chip: Vals, i: number) => (
-          <button key={i} type="button" className="filter-chip" onClick={chip.clear}>
+          <button key={i} type="button" className="filter-chip" onClick={chip.clear} data-tip="Remove this filter">
             {chip.label}<span className="ms">close</span>
           </button>
         ))}

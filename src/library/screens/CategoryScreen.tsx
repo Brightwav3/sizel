@@ -103,7 +103,7 @@ export const ProductCard: React.FC<{ g: Vals }> = ({ g }) => {
         <div style={sx("display:flex;align-items:center;gap:6px;min-height:16px")}>
           <RatingLine average={g.rating.average} count={g.rating.count} size={13} />
           <span style={sx("flex:1")}></span>
-          <button type="button" aria-label={g.watched ? "Stop the watchdog" : "Set a watchdog"} aria-pressed={g.watched}
+          <button type="button" aria-label={g.watched ? "Stop the watchdog" : "Set a watchdog"} data-tip={g.watched ? "Stop watching this product" : "Watch for price and stock changes"} data-tip-align="end" aria-pressed={g.watched}
             onClick={(event) => { event.stopPropagation(); g.watch(); }}
             style={sx(`display:inline-flex;padding:0;background:transparent;border:0;cursor:pointer;color:${g.watched ? "var(--accent-active)" : "var(--text-tertiary)"}`)}>
             <span className="ms" style={sx("font-size:16px")}>{"sound_detection_dog_barking"}</span>

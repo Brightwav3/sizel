@@ -1,0 +1,28 @@
+/* Hover/focus labels for icon-only controls. Add data-tip="Label" to the control. */
+[data-tip]{position:relative}
+[data-tip]::after{
+  content:attr(data-tip);
+  position:absolute;left:50%;top:calc(100% + 8px);
+  transform:translateX(-50%) translateY(-2px);
+  z-index:60;
+  padding:5px 8px;border-radius:6px;
+  background:var(--gray-900);color:#fff;
+  font-family:var(--font-sans);font-size:12px;font-weight:500;line-height:1.2;
+  letter-spacing:-0.1px;white-space:nowrap;
+  box-shadow:0 4px 12px rgba(41,41,41,.18);
+  opacity:0;pointer-events:none;
+  transition:opacity 120ms ease,transform 120ms ease;
+  transition-delay:0ms;
+}
+[data-tip]:hover::after,[data-tip]:focus-visible::after{
+  opacity:1;transform:translateX(-50%) translateY(0);transition-delay:220ms;
+}
+/* Flip above the control when there is no room below it. */
+[data-tip][data-tip-place="top"]::after{top:auto;bottom:calc(100% + 8px);transform:translateX(-50%) translateY(2px)}
+[data-tip][data-tip-place="top"]:hover::after,[data-tip][data-tip-place="top"]:focus-visible::after{transform:translateX(-50%) translateY(0)}
+/* Keep tooltips off the viewport edge for controls pinned to the right. */
+[data-tip][data-tip-align="end"]::after{left:auto;right:0;transform:translateX(0) translateY(-2px)}
+[data-tip][data-tip-align="end"]:hover::after,[data-tip][data-tip-align="end"]:focus-visible::after{transform:translateX(0) translateY(0)}
+@media (prefers-reduced-motion:reduce){
+  [data-tip]::after{transition:none}
+}

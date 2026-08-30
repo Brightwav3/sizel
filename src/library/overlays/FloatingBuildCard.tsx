@@ -5,7 +5,7 @@ import { sx, type Vals } from "../sx";
 export const FloatingBuildCard: React.FC<{ v: Vals }> = ({ v }) => (
   <div className="t-panel-slide" data-corner="1" data-open={v.cornerOpen} style={sx(`position:fixed;left:0;top:0;transform:${v.cornerTransform};z-index:25`)}>
     {v.cornerCollapsed && (
-      <div onPointerDown={v.cornerDrag} onDoubleClick={v.cornerToggle} style={sx("width:52px;height:52px;border-radius:99px;background:var(--gray-900);color:#fff;display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 8px 24px rgba(41,41,41,.22);cursor:grab")}>
+      <div onPointerDown={v.cornerDrag} onDoubleClick={v.cornerToggle} data-tip="Your build: drag to move, double-click to open" data-tip-place="top" style={sx("width:52px;height:52px;border-radius:99px;background:var(--gray-900);color:#fff;display:flex;align-items:center;justify-content:center;position:relative;box-shadow:0 8px 24px rgba(41,41,41,.22);cursor:grab")}>
         <span className="ms" style={sx("font-size:20px")}>construction</span>
         <span className="num" onClick={v.cornerToggle} style={sx("position:absolute;top:-2px;right:-4px;min-width:20px;height:20px;padding:0 5px;border-radius:99px;background:#fff;color:var(--gray-900);border:1px solid var(--border-default);font-size:12px;font-weight:500;display:flex;align-items:center;justify-content:center;cursor:pointer")}>{v.cornerCount}</span>
       </div>
@@ -13,11 +13,11 @@ export const FloatingBuildCard: React.FC<{ v: Vals }> = ({ v }) => (
     {v.cornerExpanded && (
       <div className="card" style={sx("width:296px;border-color:var(--border-default);box-shadow:0 8px 24px rgba(41,41,41,.12);overflow:hidden")}>
         <div onPointerDown={v.cornerDrag} style={sx("padding:12px 14px;display:flex;align-items:center;gap:8px;border-bottom:1px solid var(--border-subtle);cursor:grab;user-select:none")}>
-          <span className="ms" style={sx("font-size:14px;color:var(--gray-400)")}>drag_indicator</span>
+          <span className="ms" data-tip="Drag to move this card" style={sx("font-size:14px;color:var(--gray-400)")}>drag_indicator</span>
           <div style={sx("font-size:13px;font-weight:500;flex:1")}>{v.cornerTitle}</div>
           <div className="num" style={sx("font-size:12px;color:var(--text-tertiary)")}>{v.cornerCount}</div>
-          <span className="ms" onClick={v.cornerResume} style={sx("font-size:14px;color:var(--text-tertiary);cursor:pointer")}>open_in_full</span>
-          <span className="ms" onClick={v.cornerToggle} style={sx("font-size:14px;color:var(--text-tertiary);cursor:pointer")}>remove</span>
+          <span className="ms" onClick={v.cornerResume} data-tip="Open the full build" style={sx("font-size:14px;color:var(--text-tertiary);cursor:pointer")}>open_in_full</span>
+          <span className="ms" onClick={v.cornerToggle} data-tip="Collapse to a bubble" data-tip-align="end" style={sx("font-size:14px;color:var(--text-tertiary);cursor:pointer")}>remove</span>
         </div>
         <div style={sx("padding:10px 14px;display:flex;flex-direction:column;gap:7px")}>
           {v.cornerRows.map((c: Vals, i: number) => (
