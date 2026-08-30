@@ -204,7 +204,15 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     return this.state.chosen.includes(slot) ? this.state.chosen : [...this.state.chosen, slot];
   }
 
-  /** The one write path into the active build. ADR 0002. */
+  /**
+   * The one write path into the active build. ADR 0002.
+   *
+   * Adding a part does not move the shopper. The configurator is one service
+   * the shop offers, not the place a product page leads; being thrown into it
+   * from a quiet secondary button is the shop pushing itself on someone who
+   * only meant to note a part down. The toast is the whole confirmation, and
+   * the floating card picks the change up wherever they are.
+   */
   set(slot: PcSlot, id: string) {
     const before = this.metrics();
     const picks = { ...this.state.picks, [slot]: id };
@@ -212,7 +220,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     const item = CATALOG[slot].find(x => x.id === id)!;
     const dp = after.price - before.price, df = after.fps - before.fps;
     this.setState({
-      picks, chosen: this.withChosen(slot), prev: this.state.picks, route: "builder",
+      picks, chosen: this.withChosen(slot), prev: this.state.picks,
       lastChange: {
         icon: (ORDER.find(o => o.slot === slot) || ({} as any)).icon || "build",
         title: "Changed to " + item.name,
@@ -222,7 +230,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
           { k: "Noise", v: this.noiseWord(after.noise) === this.noiseWord(before.noise) ? "No change" : this.noiseWord(after.noise), fg: "var(--text-secondary)" },
         ],
       },
-      toast: "Build updated — everything re-checked",
+      toast: `${item.name} added to your build`,
     });
     this.flash();
   }
