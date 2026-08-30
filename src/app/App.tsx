@@ -7,6 +7,7 @@ import { buildVals } from "../entities/build/buildVals";
 import { RigsmithView } from "./RigsmithView";
 import type { AppState } from "./state/AppState";
 import { stateFromLocation, urlForState } from "./routes";
+import { stopWebmcpTools, syncWebmcpTools } from "./webmcp";
 import {
   CATALOG, DEFAULT_PICKS, ORDER,
 } from "../data/catalog/catalog";
@@ -52,6 +53,8 @@ export class RigsmithApp extends React.Component<{}, AppState> {
 
   componentDidMount() {
     RigsmithApp.instance = this;
+    // WebMCP tools bind to the mounted controller, so they register here.
+    syncWebmcpTools(this.state.route);
     window.addEventListener("resize", this.onResize);
     window.addEventListener("popstate", this.onPopState);
     const next = stateFromLocation();
@@ -64,12 +67,15 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   }
   componentWillUnmount() {
     if (RigsmithApp.instance === this) RigsmithApp.instance = null;
+    stopWebmcpTools();
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("popstate", this.onPopState);
     clearTimeout(this.t);
   }
 
   componentDidUpdate(prevProps: {}, prevState: AppState) {
+    // Tools follow the screen: each route offers the ones it can honour.
+    if (prevState.route !== this.state.route) syncWebmcpTools(this.state.route);
     if (!this.urlReady) return;
     if (this.syncingFromUrl) {
       this.syncingFromUrl = false;
@@ -236,6 +242,58 @@ export class RigsmithApp extends React.Component<{}, AppState> {
       toast: `${item.name} added to your build`,
     });
     this.flash();
+  }
+
+  // Tool-facing write paths --------------------------------------------
+  /**
+   * The four writes below exist for WebMCP tool handlers. They stay on this
+   * class on purpose: ADR 0002 gives the build one owner, and a tool that
+   * reached into state directly would be a second one.
+   */
+
+  /** Drop a slot back to its default and forget the shopper ever chose it. */
+  resetSlot(slot: PcSlot) {
+    this.setState({
+      picks: { ...this.state.picks, [slot]: DEFAULT_PICKS[slot] },
+      chosen: this.state.chosen.filter(item => item !== slot),
+      prev: this.state.picks,
+      toast: `${CATALOG[slot].find(part => part.id === DEFAULT_PICKS[slot])?.name ?? "Part"} restored`,
+    });
+    this.flash();
+  }
+
+  /** Step back to the build before the last change. One level, like the UI. */
+  undoBuild(): boolean {
+    const prev = this.state.prev;
+    if (!prev) return false;
+    this.setState({ picks: prev, prev: null, lastChange: null, toast: "Last change undone" });
+    this.flash();
+    return true;
+  }
+
+  /** What the shopper is aiming for: money, resolution, frame rate, quiet. */
+  setTargets(patch: Partial<Pick<AppState, "budget" | "res" | "target" | "quiet">>) {
+    this.setState({ ...patch, toast: "Build targets updated" } as Pick<AppState, "toast">);
+    this.flash();
+  }
+
+  /** Replace the whole build at once — a recommendation the shopper accepted. */
+  applyPicks(picks: Picks, title: string) {
+    this.setState({
+      picks,
+      chosen: [...RigsmithApp.BUILD_STEPS],
+      prev: this.state.picks,
+      lastChange: null,
+      toast: title,
+    });
+    this.flash();
+  }
+
+  /** Show the agent's own search on screen, so the shopper sees it happen. */
+  showInCatalog(patch: Partial<Pick<AppState,
+    "route" | "category" | "productSlot" | "dept" | "search" | "brand" | "facetFilters" |
+    "minPrice" | "maxPrice" | "sort" | "stockOnly" | "onSale" | "productId">>) {
+    this.setState({ catalogOpen: false, ...patch } as Pick<AppState, "route">);
   }
 
   /** Recommended build order: each part constrains the ones after it. */

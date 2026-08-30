@@ -1,6 +1,6 @@
 # Rigsmith — WebMCP Challenge submission draft
 
-> Status: the catalog and interactive app are working. WebMCP tools, deployment, public repository URL, and demo video are not ready yet.
+> Status: the catalog, the interactive app, and the WebMCP tool set are working. Deployment, public repository URL, and demo video are not ready yet.
 
 This draft is based on the pasted **OpenAI WebMCP Challenge Official Rules** supplied with the project on 2026-08-29. The official rules remain the source of truth if they change.
 
@@ -22,12 +22,19 @@ What we learned is that an agent experience needs explicit actions and stable da
 
 PC configuration is a high-friction task for browser agents: it involves searching, selecting across categories, preserving context, and validating relationships between products. WebMCP can expose these operations directly as structured tools instead of making an agent guess which UI controls to click.
 
-The intended tools are:
+Nineteen tools are registered, listed in full in the README. The four that
+carry the story are:
 
 - `search_products` — find products by category, brand, price, availability, or specification.
-- `get_product` — retrieve a complete product record and its specifications.
-- `set_build_component` — add, replace, or remove a component in the current build.
-- `check_build_compatibility` — return compatibility errors, warnings, and estimated power draw.
+- `check_build_compatibility` — return the conflicts in the build on screen and its power headroom.
+- `fix_build_issue` — return the swaps that clear those conflicts, smallest price change first.
+- `explain_build_bottleneck` — name the part holding the frame rate down and the frames it costs.
+
+The last two are the reason this is worth doing as tools rather than as page
+scraping. A compatibility message states a conflict but never names the part to
+change, and the frame rate model knows which component caps the graphics card
+but never says so on screen. Both answers exist in the data and neither is
+reachable by clicking.
 
 This lets a person say, “I want a quiet 1440p build under $1,500,” while the agent searches the catalog, assembles candidates, explains the trade-offs, and leaves the person to approve the final choices.
 
@@ -41,7 +48,10 @@ The application and data layer are local and self-contained. The React UI provid
 
 ## Current milestone boundary
 
-The current repository contains a working catalog and interactive UI. It does not yet claim a working WebMCP-powered app. WebMCP registrations, end-to-end agent testing, deployment, and the demo video must be completed before submission.
+The repository contains a working catalog, interactive UI, and WebMCP tool
+registrations under `src/app/webmcp/`, covered by unit tests. Deployment behind
+an origin trial token, testing against a real agent rather than a stub, and the
+demo video must still be completed before submission.
 
 Because the catalog and UI predate the final WebMCP implementation, the eventual submission should keep a dated commit trail that clearly distinguishes this data milestone from the new WebMCP work. The rules say pre-existing work is evaluated only on the meaningful WebMCP extension made during the Submission Period.
 
@@ -71,7 +81,7 @@ The video must be public on YouTube, include audio, and stay under three minutes
 
 - [ ] Working live URL accessible in ChatGPT’s in-app browser or Chrome with WebMCP enabled.
 - [ ] Public repository with all source, assets, instructions, and an open-source license.
-- [ ] Repository contains `document.modelContext.registerTool({ ... })` registrations.
+- [x] Repository contains `document.modelContext.registerTool({ ... })` registrations.
 - [ ] English project description submitted.
 - [ ] Public YouTube demo under three minutes with audio.
 - [ ] Final screenshots uploaded.

@@ -54,7 +54,49 @@ The canonical frontend catalog is `public/catalog/products.json`. Architectural 
 
 ## WebMCP Challenge status
 
-The interactive application and local catalog are working. WebMCP tool registration, deployment, public repository URL, and demo video are still pending. Planned tools are documented in `docs/hackathon-submission.md`; the repository does not claim they are implemented yet.
+The interactive application, the local catalog, and the WebMCP tool set are working. Deployment, the public repository URL, and the demo video are still pending.
+
+Nineteen tools are registered from `src/app/webmcp/`. They follow the screen: a
+route offers only the tools it can honour, so the cart never exposes a build
+editor. Every handler reads and writes the same state the shopper sees, and
+results are held inside Chrome's 1.5K character budget.
+
+| Tool | What it does |
+| --- | --- |
+| `search_products` | Search the catalog by text, category, brand, price or stock |
+| `get_product` | One full record, with the facts compatibility checks use |
+| `get_current_build` | The nine slots on screen, with price, frame rate and power |
+| `list_filters` | The filters a category supports, so filter names are never guessed |
+| `compare_products` | Two to four listings, showing only where they differ |
+| `check_stock` | Stock on hand and the delivery date |
+| `show_in_catalog` | Put the agent's own search on the shopper's screen |
+| `list_compatible_parts` | Parts for one slot that fit the build on screen |
+| `set_build_component` | Fit a part, or return a slot to its default |
+| `check_build_compatibility` | Conflicts in plain sentences, plus power headroom |
+| `estimate_performance` | Frame rate, noise, price, power and delivery |
+| `explain_build_bottleneck` | The part holding the frame rate down, and what it costs |
+| `fix_build_issue` | Swaps that clear a conflict, smallest price change first |
+| `recommend_build` | A whole machine for a budget, proposed or applied |
+| `set_build_target` | Budget, resolution, frame rate and noise preference |
+| `undo_build_change` | Step the build back one change |
+| `create_watchdog` | Watch a listing for stock or a price drop |
+| `add_to_cart` | Add one product to the cart |
+| `add_build_to_cart` | Add the assembled PC, refusing while it does not fit |
+
+Read-only tools carry `readOnlyHint`, so an agent can tell which calls are
+safe to make without asking. The four that spend money or change the build do
+not, and `add_build_to_cart` refuses outright while a conflict is open.
+
+### Running the tools locally
+
+1. Open `chrome://flags/#enable-webmcp-testing` and set it to **Enabled**.
+2. Relaunch Chrome, then run `npm run dev`.
+3. Install the [Model Context Tool Inspector](https://chromewebstore.google.com/detail/model-context-tool-inspec/gbpdfapgefenggkahomfgkhfehlcenpd) to list the registered tools and call them by hand.
+
+Without WebMCP the shop runs exactly as before: registration is skipped when
+`document.modelContext` is absent. A deployed build additionally needs an
+origin trial token and an origin-isolated document, so do not serve it with
+`Origin-Agent-Cluster: ?0`.
 
 ## Data and licensing
 
