@@ -25,8 +25,11 @@ import type { ToolCallResult } from "./webmcpApi";
 
 /** Live registrations, each with the controller that withdraws it. */
 const registered = new Map<string, AbortController>();
-/** Registrations are serialised: two route changes must not interleave. */
-let queue: Promise<void> = Promise.resolve();
+// Claim names synchronously, so slow browser acknowledgements never block
+// discovery of other tools or a newer route. AbortSignal owns cancellation.
+let retry: ReturnType<typeof setTimeout> | undefined;
+let desiredRoute: Route | null = null;
+let retries = 0;
 
 /**
  * A handler never throws at the agent. A thrown error reaches it as an opaque
@@ -57,9 +60,16 @@ function drop(name: string) {
   registered.delete(name);
 }
 
-async function apply(route: Route) {
+function apply(route: Route) {
   const context = modelContext();
-  if (!context) return;
+  if (!context) {
+    // Some browser integrations inject the API after React mounts.
+    if (retries++ < 100) retry = setTimeout(() => {
+      retry = undefined;
+      if (desiredRoute !== null) apply(desiredRoute);
+    }, 100);
+    return;
+  }
   const wanted = new Map(toolsForRoute(route).map(tool => [tool.name, tool]));
 
   for (const name of Array.from(registered.keys())) {
@@ -71,6 +81,13 @@ async function apply(route: Route) {
     void routes;
     const controller = new AbortController();
     const required = ((tool.inputSchema as any).required ?? []) as string[];
+    registered.set(name, controller);
+    const onError = (error: unknown) => {
+      if (registered.get(name) !== controller) return;
+      registered.delete(name);
+      controller.abort();
+      console.error(`[webmcp] could not register ${name}`, error);
+    };
     try {
       /**
        * The hints go in `annotations`, which is where the specification puts
@@ -78,34 +95,39 @@ async function apply(route: Route) {
        * origin-trial build reads them from there, and a dictionary member it
        * does not know is ignored rather than rejected.
        */
-      await context.registerTool({
+      const registration = context.registerTool({
         ...rest,
         readOnlyHint,
         untrustedContentHint,
         annotations: { readOnlyHint: readOnlyHint === true, untrustedContentHint: untrustedContentHint === true },
         execute: guard(name, required, execute),
       }, { signal: controller.signal });
-      registered.set(name, controller);
+      Promise.resolve(registration).catch(onError);
     } catch (error) {
       // One tool refused must not cost the screen the rest of its set.
-      console.error(`[webmcp] could not register ${name}`, error);
+      onError(error);
     }
   }
 }
 
 /** Register the tools this screen supports. Safe to call on every update. */
 export function syncWebmcpTools(route: Route): void {
-  queue = queue.then(() => apply(route)).catch(error => console.error("[webmcp] registration failed", error));
+  desiredRoute = route;
+  retries = 0;
+  clearTimeout(retry);
+  retry = undefined;
+  apply(route);
 }
 
 /** Drop every registration — the app is unmounting. */
 export function stopWebmcpTools(): void {
-  queue = queue.then(() => {
-    for (const name of Array.from(registered.keys())) drop(name);
-  }).catch(error => console.error("[webmcp] teardown failed", error));
+  desiredRoute = null;
+  clearTimeout(retry);
+  retry = undefined;
+  for (const name of Array.from(registered.keys())) drop(name);
 }
 
-/** Tool names live on the page right now, for diagnostics. */
+/** Names submitted to the browser, including pending acknowledgements. */
 export const registeredToolNames = () => Array.from(registered.keys());
 
 export { TOOLS, toolsForRoute } from "./tools";

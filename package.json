@@ -5,7 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
-    "build": "tsc -b && vite build",
+    "build": "tsc -b && vite build && node scripts/build-sites.mjs",
     "audit:catalog": "node scripts/audit-catalog.mjs",
     "preview": "vite preview",
     "check:catalog": "tsx scripts/check-catalog.ts",
@@ -17,6 +17,7 @@
     "react-dom": "^19.2.8"
   },
   "devDependencies": {
+    "@openai/sites-vite-plugin": "^0.2.0",
     "@types/node": "^26.4.0",
     "@types/react": "^19.2.18",
     "@types/react-dom": "^19.2.5",

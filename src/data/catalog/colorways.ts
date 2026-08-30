@@ -81,7 +81,7 @@ export function colorwaysFor(product: Part, slot: Slot): Colorway[] {
   return (PALETTES[brand] ?? []).map(colorway => ({
     ...colorway,
     imagePath: slug
-      ? `/catalog/images/colorways/${slug}/${imageProductId}/${colorway.id}.png`
+      ? `/catalog/images/colorways/${slug}/${imageProductId}/${colorway.id}.webp`
       : undefined,
   }));
 }

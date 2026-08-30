@@ -2,7 +2,7 @@
 
 ## Brand mark
 
-![Fourth Castle logo](../logos/generated/fourth-castle.png)
+![Fourth Castle logo](../logos/generated/fourth-castle.webp)
 
 ## Visual language
 

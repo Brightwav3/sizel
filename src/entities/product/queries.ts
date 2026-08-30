@@ -109,7 +109,7 @@ export function productTitle(product: Part, category?: Slot): string {
   return suffix.length ? `${product.name} ${suffix.join(" ")}` : product.name;
 }
 
-export const brandLogo = (brand: string) => "/catalog/logos/" + brand.toLowerCase().replace(/\s+/g, "-") + ".png";
+export const brandLogo = (brand: string) => "/catalog/logos/" + brand.toLowerCase().replace(/\s+/g, "-") + ".webp";
 
 /** Case fans are bundled with the build, never sold as a standalone listing. */
 export const allProducts = (): Part[] =>

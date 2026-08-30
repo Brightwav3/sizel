@@ -56,11 +56,11 @@ export const EshopSidebar: React.FC<{ v: Vals }> = ({ v }) => {
   )).map(brand => ({
     name: brand,
     slug: brand.toLowerCase().replace(/\s+/g, "-"),
-    logo: `/catalog/logos/${brand.toLowerCase().replace(/\s+/g, "-")}.png`,
+    logo: `/catalog/logos/${brand.toLowerCase().replace(/\s+/g, "-")}.webp`,
     count: catalogDept.cats.flatMap(slot => CATALOG[slot]).filter(part => part.brand === brand).length,
   })).sort((a, b) => b.count - a.count || a.name.localeCompare(b.name)) : [];
   const groups: { title: string; hint: string; icon: string; image?: string; slot?: string; featured?: boolean }[] = activeDept ? [
-    ...(activeDept.name === "PC parts" ? [{ title: "Build a PC", hint: "Start a build · Check compatibility · Saved builds", icon: "construction", image: "/catalog/promos/rigsmith-configurator-promo.png", featured: true }] : []),
+    ...(activeDept.name === "PC parts" ? [{ title: "Build a PC", hint: "Start a build · Check compatibility · Saved builds", icon: "construction", image: "/catalog/promos/rigsmith-configurator-promo.webp", featured: true }] : []),
     ...(catalogDept?.cats.map(slot => ({ title: CAT_META[slot].name, hint: `${CAT_META[slot].count} products`, icon: CAT_ICON[slot], image: CATALOG[slot][0]?.imagePath, slot })) ?? []),
   ] : [];
   /**
@@ -116,8 +116,8 @@ export const EshopSidebar: React.FC<{ v: Vals }> = ({ v }) => {
             <nav aria-label="Shop categories" className="eshop-rail-list">{departmentItems}</nav>
           )}
           {v.isHome && <div className="eshop-audience-services" aria-label="Upcoming Rigsmith services">
-            <div className="eshop-audience-service" aria-disabled="true"><span className="audience-icon"><img src="/rigsmith-promos/students.png" alt="" /></span><span><strong>Rigsmith for students</strong><small>Student pricing and study-ready tech</small></span><em>Soon</em></div>
-            <div className="eshop-audience-service" aria-disabled="true"><span className="audience-icon"><img src="/rigsmith-promos/firms.png" alt="" /></span><span><strong>Rigsmith for firms</strong><small>Bulk orders and company hardware</small></span><em>Soon</em></div>
+            <div className="eshop-audience-service" aria-disabled="true"><span className="audience-icon"><img src="/rigsmith-promos/students.webp" alt="" /></span><span><strong>Rigsmith for students</strong><small>Student pricing and study-ready tech</small></span><em>Soon</em></div>
+            <div className="eshop-audience-service" aria-disabled="true"><span className="audience-icon"><img src="/rigsmith-promos/firms.webp" alt="" /></span><span><strong>Rigsmith for firms</strong><small>Bulk orders and company hardware</small></span><em>Soon</em></div>
           </div>}
         </div>
         {(v.isCategory || v.isProduct) && (

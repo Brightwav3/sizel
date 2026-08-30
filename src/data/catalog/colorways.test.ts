@@ -15,7 +15,7 @@ describe("colourway image paths", () => {
     };
 
     expect(colorwaysFor(variant, "phones")[0].imagePath).toBe(
-      "/catalog/images/colorways/pear/pear-phone-16e/midnight.png",
+      "/catalog/images/colorways/pear/pear-phone-16e/midnight.webp",
     );
   });
 });

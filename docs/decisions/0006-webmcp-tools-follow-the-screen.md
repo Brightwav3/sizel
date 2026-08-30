@@ -44,7 +44,7 @@ Results are shaped in `webmcp/toolResult.ts` against the documented character bu
 ### Costs
 
 - A new tool must state its routes, which is a judgment call that can be got wrong.
-- Registration is asynchronous and serialised, so a burst of route changes settles a tick behind the screen.
+- Tool registrations are submitted together without waiting for browser acknowledgements. Names are claimed synchronously; abort controllers cancel obsolete pending registrations. A stale rejection cannot remove a newer registration. If the browser API arrives late, discovery retries every 100 ms for at most 10 seconds and stops on unmount.
 - Every live registration holds an `AbortController` for as long as its screen is showing.
 - Handlers must compute their reply from values they hold rather than reading state back, because React applies state on its own schedule.
 
