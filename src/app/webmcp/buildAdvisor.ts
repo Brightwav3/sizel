@@ -7,7 +7,7 @@
  * stays the single write path.
  */
 import { CATALOG, DEFAULT_PICKS } from "../../data/catalog/catalog";
-import { RES, compatibilityIssues, metrics, part, powerDraw } from "../../entities/build/metrics";
+import { RES, buildFits, buildNumbers, compatibilityIssues, metrics, part, powerDraw } from "../../entities/build/metrics";
 import type { Resolution } from "../../entities/build/metrics";
 import { partFits } from "../../entities/product/queries";
 import type { Part, PcSlot, Picks } from "../../shared/lib/types";
@@ -30,9 +30,20 @@ export const fansForCase = (caseId: string) =>
 
 const quietEnough = (product: Part) => (product.noise ?? 0) <= 34;
 
-/** Parts that slot in without raising an issue against what is chosen so far. */
-function fittingPool(slot: PcSlot, picks: Partial<Picks>, quiet: boolean): Part[] {
-  const pool = CATALOG[slot].filter(product => partFits(product, slot, picks));
+/**
+ * Parts that slot in without raising an issue against what is chosen so far.
+ *
+ * `ceiling` narrows by price before the compatibility check runs, because a
+ * number comparison is far cheaper than assembling a candidate build. When
+ * nothing affordable fits, the caller still needs the unpriced pool, so both
+ * come back and `overBudget` is the caller's to record.
+ */
+function fittingPool(slot: PcSlot, picks: Partial<Picks>, quiet: boolean, ceiling = Infinity): Part[] {
+  const affordable = ceiling === Infinity ? CATALOG[slot] : CATALOG[slot].filter(product => product.price <= ceiling);
+  const pool = (affordable.length ? affordable : CATALOG[slot]).filter(product => partFits(product, slot, picks));
+  if (!pool.length && affordable.length && affordable.length < CATALOG[slot].length) {
+    return CATALOG[slot].filter(product => partFits(product, slot, picks));
+  }
   if (!quiet) return pool;
   const silent = pool.filter(quietEnough);
   return silent.length ? silent : pool;
@@ -61,12 +72,10 @@ export function recommendBuild(budget: number, res: Resolution = "1440p", quiet 
 
   for (const slot of PICK_ORDER) {
     if (slot === "fans") { picks.fans = fansForCase(picks.case ?? DEFAULT_PICKS.case); continue; }
-    const pool = fittingPool(slot, picks, quiet);
-    if (!pool.length) { picks[slot] = DEFAULT_PICKS[slot]; continue; }
     const share = budget * BUDGET_SHARE[slot] * 1.2;
-    const affordable = pool.filter(product => product.price <= share);
-    if (!affordable.length) overBudget.push(slot);
-    const choices = affordable.length ? affordable : pool;
+    const choices = fittingPool(slot, picks, quiet, share);
+    if (!choices.length) { picks[slot] = DEFAULT_PICKS[slot]; continue; }
+    if (choices.every(product => product.price > share)) overBudget.push(slot);
     const best = choices.reduce((a, b) => rank(b) > rank(a) || (rank(b) === rank(a) && b.price < a.price) ? b : a);
     picks[slot] = best.id;
   }
@@ -78,23 +87,24 @@ export function recommendBuild(budget: number, res: Resolution = "1440p", quiet 
   for (const slot of ["gpu", "cpu", "ram", "storage"] as PcSlot[]) {
     const left = budget - spend(complete);
     if (left <= 0) break;
-    const ceiling = part(complete, slot).price + left;
-    const better = fittingPool(slot, complete, quiet)
-      .filter(product => product.price <= ceiling && rank(product) > rank(part(complete, slot)))
+    const current = part(complete, slot);
+    const ceiling = current.price + left;
+    const better = fittingPool(slot, complete, quiet, ceiling)
+      .filter(product => product.price <= ceiling && rank(product) > rank(current))
       .sort((a, b) => rank(b) - rank(a))[0];
     if (!better) continue;
     const next = { ...complete, [slot]: better.id } as Picks;
-    if (compatibilityIssues(next).length === 0) complete = next;
+    if (buildFits(next)) complete = next;
   }
 
-  const model = metrics(complete, res);
+  const numbers = buildNumbers(complete, res);
   return {
     picks: complete,
-    price: model.price,
-    fps: model.fps,
-    watt: model.watt,
-    issues: model.issues,
-    headroom: budget - model.price,
+    price: numbers.price,
+    fps: numbers.fps,
+    watt: numbers.watt,
+    issues: compatibilityIssues(complete),
+    headroom: budget - numbers.price,
     overBudget,
   };
 }
@@ -117,7 +127,7 @@ export interface Bottleneck {
 export function bottleneck(picks: Picks, res: Resolution = "1440p"): Bottleneck {
   const gpu = part(picks, "gpu"), cpu = part(picks, "cpu"), ram = part(picks, "ram");
   const ceiling = Math.round((gpu.fps ?? 0) * RES[res]);
-  const current = metrics(picks, res).fps;
+  const current = buildNumbers(picks, res).fps;
   const factors: { slot: PcSlot; factor: number; part: Part }[] = [
     { slot: "cpu", factor: Math.min(1, (cpu.score ?? 100) / 100), part: cpu },
     { slot: "ram", factor: Math.min(1, (ram.score ?? 100) / 100), part: ram },
@@ -143,13 +153,17 @@ export function bottleneck(picks: Picks, res: Resolution = "1440p"): Bottleneck 
 /** The cheapest fitting part in a slot that actually raises the frame rate. */
 function nextBest(slot: PcSlot, picks: Picks, res: Resolution) {
   const current = part(picks, slot);
-  const now = metrics(picks, res).fps;
+  const now = buildNumbers(picks, res).fps;
   const better = CATALOG[slot]
     .filter(product => product.id !== current.id && rank(product) > rank(current))
-    .filter(product => compatibilityIssues({ ...picks, [slot]: product.id }).length === 0)
-    .map(product => ({ product, fps: metrics({ ...picks, [slot]: product.id }, res).fps }))
-    .filter(option => option.fps > now)
-    .sort((a, b) => a.product.price - b.product.price)[0];
+    .sort((a, b) => a.price - b.price)
+    .reduce<{ product: Part; fps: number } | null>((found, product) => {
+      if (found) return found;
+      const next = { ...picks, [slot]: product.id } as Picks;
+      if (!buildFits(next)) return null;
+      const fps = buildNumbers(next, res).fps;
+      return fps > now ? { product, fps } : null;
+    }, null);
   return better
     ? { id: better.product.id, name: better.product.name, price: better.product.price, fps: better.fps }
     : null;
@@ -178,7 +192,7 @@ export function fixOptions(picks: Picks, res: Resolution = "1440p", preferred?: 
   if (!issues.length) return [];
   const blamed = PICK_ORDER.filter(slot => issues.some(issue => issue.includes(part(picks, slot).name)));
   const slots = preferred ? [preferred] : (blamed.length ? blamed : PICK_ORDER);
-  const baseline = metrics(picks, res);
+  const baseline = buildNumbers(picks, res);
 
   return slots.flatMap(slot => {
     const current = part(picks, slot);
@@ -192,14 +206,14 @@ export function fixOptions(picks: Picks, res: Resolution = "1440p", preferred?: 
           ...(slot === "case" ? { fans: fansForCase(product.id) } : {}),
         } as Picks,
       }))
-      .filter(option => compatibilityIssues(option.next).length === 0)
+      .filter(option => buildFits(option.next))
       .map(option => ({
         slot,
         id: option.product.id,
         name: option.product.name,
         price: option.product.price,
         priceDelta: option.product.price - current.price,
-        fpsDelta: metrics(option.next, res).fps - baseline.fps,
+        fpsDelta: buildNumbers(option.next, res).fps - baseline.fps,
       }))
       .sort((a, b) => Math.abs(a.priceDelta) - Math.abs(b.priceDelta))
       .slice(0, 3);

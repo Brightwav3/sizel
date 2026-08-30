@@ -56,10 +56,11 @@ The canonical frontend catalog is `public/catalog/products.json`. Architectural 
 
 The interactive application, the local catalog, and the WebMCP tool set are working. Deployment, the public repository URL, and the demo video are still pending.
 
-Nineteen tools are registered from `src/app/webmcp/`. They follow the screen: a
-route offers only the tools it can honour, so the cart never exposes a build
-editor. Every handler reads and writes the same state the shopper sees, and
-results are held inside Chrome's 1.5K character budget.
+Twenty-seven tools are registered from `src/app/webmcp/`. They follow the
+screen: a route offers only the tools it can honour, so the cart never exposes
+a build editor and the checkout offers no catalog browsing. No screen presents
+more than eighteen. Every handler reads and writes the same state the shopper
+sees, and results are held inside Chrome's 1.5K character budget.
 
 | Tool | What it does |
 | --- | --- |
@@ -80,12 +81,23 @@ results are held inside Chrome's 1.5K character budget.
 | `set_build_target` | Budget, resolution, frame rate and noise preference |
 | `undo_build_change` | Step the build back one change |
 | `create_watchdog` | Watch a listing for stock or a price drop |
+| `list_watchdogs` | What is being watched, with the price then and now |
+| `remove_watchdog` | Stop watching a listing |
+| `list_categories` | The departments and categories, with listing counts |
+| `get_product_variants` | The storage tiers and finishes one device is sold in |
+| `get_reviews` | Rating and recent reviews, labelled as untrusted content |
 | `add_to_cart` | Add one product to the cart |
 | `add_build_to_cart` | Add the assembled PC, refusing while it does not fit |
+| `get_cart` | Every cart line, subtotal, shipping, total and delivery |
+| `update_cart_line` | Change a line's quantity, or remove it |
+| `start_checkout` | Open the checkout; it never fills in the shopper's details |
 
 Read-only tools carry `readOnlyHint`, so an agent can tell which calls are
-safe to make without asking. The four that spend money or change the build do
-not, and `add_build_to_cart` refuses outright while a conflict is open.
+safe to make without asking. The ones that spend money or change the build do
+not: `add_build_to_cart` refuses outright while a conflict is open, and
+`start_checkout` stops at the delivery step rather than placing an order.
+`get_reviews` returns text written by other shoppers, so it carries
+`untrustedContentHint`.
 
 ### Running the tools locally
 

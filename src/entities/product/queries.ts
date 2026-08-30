@@ -8,7 +8,7 @@
 import { CATALOG, CAT_META, DEPTS, locateProduct } from "../../data/catalog/catalog";
 // ADR 0005: reusable product rules live in the product entity.
 // docs/decisions/0005-feature-first-source-layout.md
-import { compatibilityIssues } from "../build/metrics";
+import { buildFits } from "../build/metrics";
 import { FACETS, FIT_FACET_IDS } from "../../features/catalog/catalogFacets";
 import type { FacetDefinition } from "../../features/catalog/catalogFacets";
 import { capacityLabel } from "../../data/catalog/storageVariants";
@@ -44,7 +44,7 @@ const BUILD_SLOTS: PcSlot[] = ["gpu", "cpu", "board", "ram", "storage", "cooler"
 /** Does this part slot into the build without raising an issue? */
 export function partFits(product: Part, category: Slot, build: Partial<Picks>): boolean {
   if (!BUILD_SLOTS.includes(category as PcSlot)) return true;
-  return compatibilityIssues({ ...build, [category as PcSlot]: product.id }).length === 0;
+  return buildFits({ ...build, [category as PcSlot]: product.id });
 }
 
 /** Cheapest and dearest listing in a pool, for a price control that fits the category. */

@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { CATALOG, DEFAULT_PICKS } from "../../data/catalog/catalog";
-import { compatibilityIssues, powerDraw } from "./metrics";
+import { buildFits, buildNumbers, compatibilityIssues, metrics, powerDraw } from "./metrics";
+import type { Picks } from "../../shared/lib/types";
 
 /**
  * A shopper who has chosen nothing has no build, and a shopper who has chosen
@@ -55,5 +56,57 @@ describe("compatibilityIssues on a partial build", () => {
     const cpu = CATALOG.cpu.find(c => c.socket && c.socket !== board.socket);
     if (!cpu) return; // every CPU in the catalog fits every board
     expect(compatibilityIssues({ cpu: cpu.id, board: board.id }).length).toBeGreaterThan(0);
+  });
+});
+
+describe("buildFits", () => {
+  /** Every combination of the parts that constrain each other, plus defaults. */
+  const builds = () => {
+    const out: Partial<Picks>[] = [{}, { ...DEFAULT_PICKS }];
+    for (const cpu of CATALOG.cpu) {
+      for (const board of CATALOG.board) {
+        out.push({ ...DEFAULT_PICKS, cpu: cpu.id, board: board.id });
+        out.push({ cpu: cpu.id, board: board.id });
+      }
+    }
+    for (const cs of CATALOG.case) {
+      for (const gpu of CATALOG.gpu) out.push({ ...DEFAULT_PICKS, case: cs.id, gpu: gpu.id, fans: `${cs.id}::fans` });
+    }
+    for (const psu of CATALOG.psu) {
+      for (const gpu of CATALOG.gpu) out.push({ ...DEFAULT_PICKS, psu: psu.id, gpu: gpu.id });
+    }
+    for (const ram of CATALOG.ram) out.push({ ...DEFAULT_PICKS, ram: ram.id });
+    for (const cooler of CATALOG.cooler) out.push({ ...DEFAULT_PICKS, cooler: cooler.id });
+    for (const storage of CATALOG.storage) out.push({ ...DEFAULT_PICKS, storage: storage.id });
+    return out;
+  };
+
+  it("agrees with compatibilityIssues on every constrained combination", () => {
+    const cases = builds();
+    expect(cases.length).toBeGreaterThan(100);
+    for (const picks of cases) {
+      expect(buildFits(picks), JSON.stringify(picks)).toBe(compatibilityIssues(picks).length === 0);
+    }
+  });
+
+  it("finds both sides: some of those builds fit and some do not", () => {
+    const results = builds().map(buildFits);
+    expect(results).toContain(true);
+    expect(results).toContain(false);
+  });
+});
+
+describe("buildNumbers", () => {
+  it("carries the same numbers metrics reports", () => {
+    for (const res of ["1080p", "1440p", "4K"] as const) {
+      const picks = { ...DEFAULT_PICKS } as Picks;
+      const full = metrics(picks, res);
+      const numbers = buildNumbers(picks, res);
+      expect(numbers.price).toBe(full.price);
+      expect(numbers.fps).toBe(full.fps);
+      expect(numbers.noise).toBe(full.noise);
+      expect(numbers.days).toBe(full.days);
+      expect(numbers.watt).toBe(full.watt);
+    }
   });
 });
