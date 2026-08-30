@@ -1,6 +1,7 @@
 import React from "react";
 import { CATALOG } from "../../data/catalog";
 import { money } from "../../data/metrics";
+import { productTitle } from "../../domain/queries";
 import type { PcSlot } from "../../types";
 import type { BuildContext } from "../buildContext";
 
@@ -18,7 +19,8 @@ export function buildCheckoutVals(context: BuildContext) {
     return {
       index,
       kind: line.kind,
-      name: line.kind === "build" ? "Custom PC build" : part?.name ?? "Product",
+      // A phone in the cart has to say which storage tier it is.
+      name: line.kind === "build" ? "Custom PC build" : part ? productTitle(part, line.slot) : "Product",
       brand: line.kind === "build" ? "Rigsmith assembly service" : part?.brand ?? "",
       note: line.kind === "build"
         ? [m.cpu.name, m.gpu.name, m.ram.name].join(" · ") + " · 6 more"

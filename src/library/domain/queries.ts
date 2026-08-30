@@ -9,6 +9,7 @@ import { CATALOG, CAT_META, DEPTS } from "../data/catalog";
 import { compatibilityIssues } from "../data/metrics";
 import { FACETS, FIT_FACET_IDS } from "../app/catalogFacets";
 import type { FacetDefinition } from "../app/catalogFacets";
+import { capacityLabel } from "../data/storageVariants";
 import type { Part, PcSlot, Picks, Slot } from "../types";
 
 export interface ProductQuery {
@@ -64,11 +65,7 @@ const spec = (product: Part, ...path: string[]) => {
   return value;
 };
 
-const capacity = (gb: unknown) => {
-  const value = Number(gb);
-  if (!Number.isFinite(value) || value <= 0) return undefined;
-  return value >= 1000 ? `${value / 1000} TB` : `${value} GB`;
-};
+const capacity = (gb: unknown) => capacityLabel(Number(gb));
 
 /**
  * The name a shop puts on a listing: the catalog name plus the one attribute

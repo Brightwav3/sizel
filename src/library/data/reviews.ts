@@ -22,6 +22,12 @@ const hash = (text: string) => {
 /** A stable number in [0, 1) for one product and one purpose. */
 const seeded = (id: string, salt: string) => (hash(`${id}:${salt}`) % 10000) / 10000;
 
+/**
+ * Storage tiers of one device are separate listings but the same hardware, so
+ * they are reviewed as one product rather than each tier scoring differently.
+ */
+const reviewId = (product: Part) => product.variantOf ?? product.id;
+
 export interface Rating {
   /** Average score, one decimal, 3.4 to 5.0. */
   average: number;
@@ -32,10 +38,10 @@ export interface Rating {
 }
 
 export function ratingFor(product: Part): Rating {
-  const base = seeded(product.id, "score");
+  const base = seeded(reviewId(product), "score");
   // Well-reviewed catalogue: most products land between 4.0 and 5.0.
   const average = Math.round((3.4 + base * 1.6) * 10) / 10;
-  const count = 6 + Math.floor(seeded(product.id, "count") * 320);
+  const count = 6 + Math.floor(seeded(reviewId(product), "count") * 320);
 
   // Skew the distribution towards the average rather than inventing noise.
   const weights = [5, 4, 3, 2, 1].map(stars => Math.max(0.5, 10 - Math.abs(stars - average) * 7));
@@ -91,19 +97,19 @@ export function reviewsFor(product: Part, limit = 4): Review[] {
   const rating = ratingFor(product);
   return Array.from({ length: limit }, (_, index) => {
     const salt = `review-${index}`;
-    const pick = <T,>(list: T[], key: string) => list[Math.floor(seeded(product.id, `${salt}:${key}`) * list.length)];
-    const drift = seeded(product.id, `${salt}:drift`);
+    const pick = <T,>(list: T[], key: string) => list[Math.floor(seeded(reviewId(product), `${salt}:${key}`) * list.length)];
+    const drift = seeded(reviewId(product), `${salt}:drift`);
     const stars = Math.max(3, Math.min(5, Math.round(rating.average + (drift < 0.25 ? -1 : 0))));
-    const day = 1 + Math.floor(seeded(product.id, `${salt}:day`) * 27);
+    const day = 1 + Math.floor(seeded(reviewId(product), `${salt}:day`) * 27);
     return {
-      id: `${product.id}-${index}`,
+      id: `${reviewId(product)}-${index}`,
       author: pick(AUTHORS, "author"),
       initials: pick(AUTHORS, "author").split(" ")[0].slice(0, 1) + pick(AUTHORS, "author").split(" ")[1][0],
       stars,
       title: pick(HEADLINES, "title"),
       body: pick(BODIES, "body"),
       date: `${day} ${pick(MONTHS, "month")} 2026`,
-      verified: seeded(product.id, `${salt}:verified`) > 0.25,
+      verified: seeded(reviewId(product), `${salt}:verified`) > 0.25,
     };
   });
 }

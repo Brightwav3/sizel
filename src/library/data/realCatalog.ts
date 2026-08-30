@@ -1,6 +1,7 @@
 import productsJson from "../../../public/catalog/products.json";
 import type { Catalog, CategoryMeta, Dept, Part, PcSlot, Slot } from "../types";
 import { MERCHANDISING } from "./merchandising";
+import { storageVariants } from "./storageVariants";
 
 type JsonRecord = Record<string, any>;
 type RawProduct = {
@@ -151,6 +152,14 @@ function toPart(product: RawProduct, slot: Exclude<Slot, "fans">): Part {
 }
 
 const productsFor = (category: RealCategory) => PRODUCTS.filter(product => product.category === category).map(product => toPart(product, realCategoryFor[category]));
+
+/**
+ * Phones and handheld consoles are sold at several storage capacities, one
+ * listing each. Home consoles ship with a fixed drive, so they are left alone.
+ */
+const handheld = (part: Part) => (part.specifications?.hardware as JsonRecord | undefined)?.storageType === "Flash";
+const withStorageTiers = (parts: Part[], slot: Slot, only: (part: Part) => boolean = () => true) =>
+  parts.flatMap(part => only(part) ? storageVariants(part, slot) : [part]);
 const caseParts = productsFor("pc-case");
 const fanParts: Part[] = caseParts.map(part => {
   const includedFans = asNumber((part.specifications?.cooling as JsonRecord | undefined)?.includedFans, 0);
@@ -175,8 +184,8 @@ export const CATALOG: Catalog = {
   psu: productsFor("psu"),
   case: caseParts,
   fans: fanParts,
-  phones: productsFor("smartphone"),
-  consoles: productsFor("console"),
+  phones: withStorageTiers(productsFor("smartphone"), "phones"),
+  consoles: withStorageTiers(productsFor("console"), "consoles", handheld),
 };
 
 const count = (slot: Slot) => slot === "fans" ? CATALOG[slot].length : CATALOG[slot].filter(part => !part.id.endsWith("::fans")).length;

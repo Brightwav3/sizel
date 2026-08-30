@@ -1,4 +1,5 @@
 import type { Part } from "../types";
+import { capacityLabel } from "../data/storageVariants";
 
 export type FacetDefinition = { id: string; label: string; get(product: Part): string | string[] | undefined };
 
@@ -7,6 +8,9 @@ const spec = (product: Part, ...path: string[]) => {
   for (const key of path) value = value?.[key];
   return value;
 };
+
+/** Capacity as a shopper reads it, from whatever the specifications hold. */
+const storageLabel = (value: unknown) => capacityLabel(Number(value));
 
 const facetValue = (value: unknown) => value === undefined || value === null || value === "" ? undefined : String(value);
 const facetBand = (value: unknown, low: number, high: number, unit: string) => {
@@ -69,7 +73,7 @@ export const FACETS: Record<string, FacetDefinition[]> = {
   ],
   phones: [
     { id: "phone-display", label: "Display type", get: p => facetValue(spec(p, "display", "type")) },
-    { id: "phone-storage", label: "Storage", get: p => facetValue(spec(p, "storage", "capacityGB") ? `${spec(p, "storage", "capacityGB")} GB` : undefined) },
+    { id: "phone-storage", label: "Storage", get: p => facetValue(storageLabel(spec(p, "storage", "capacityGB"))) },
     { id: "phone-network", label: "Mobile network", get: p => facetValue(spec(p, "connectivity", "cellular")) },
     { id: "phone-durability", label: "Water resistance", get: p => facetValue(spec(p, "durability", "waterResistance")) },
     { id: "phone-wireless", label: "Wireless charging", get: p => spec(p, "battery", "wirelessCharging") ? "Wireless charging" : "No wireless charging" },
@@ -77,7 +81,7 @@ export const FACETS: Record<string, FacetDefinition[]> = {
   consoles: [
     { id: "console-form-factor", label: "Console type", get: p => facetValue(spec(p, "physical", "formFactor")) },
     { id: "console-resolution", label: "Maximum resolution", get: p => facetValue(spec(p, "output", "maxResolution")) },
-    { id: "console-storage", label: "Storage", get: p => facetValue(spec(p, "hardware", "storageGB") ? `${Number(spec(p, "hardware", "storageGB")) / 1000} TB` : undefined) },
+    { id: "console-storage", label: "Storage", get: p => facetValue(storageLabel(spec(p, "hardware", "storageGB"))) },
     { id: "console-drive", label: "Optical drive", get: p => spec(p, "media", "opticalDrive") ? "Disc drive" : "Digital only" },
     { id: "console-ray-tracing", label: "Ray tracing", get: p => spec(p, "output", "rayTracing") ? "Ray tracing" : "Standard rendering" },
   ],
