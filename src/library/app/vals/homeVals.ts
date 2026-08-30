@@ -1,22 +1,17 @@
 import React from "react";
-import { CATALOG, CAT_ICON, CAT_META, DEFAULT_PICKS, DEPTS, DESCS, GSTEP, GUIDED, ORDER, SPECS } from "../../data/catalog";
-import { RES, money } from "../../data/metrics";
+import { CATALOG } from "../../data/catalog";
+import { money } from "../../data/metrics";
 import type { PcSlot } from "../../types";
 import type { BuildContext } from "../buildContext";
 
 export function buildHomeVals(context: BuildContext) {
-  const { app, s, m, route, on, sideStyle, shopping, dept, picked, depts, openDept, categories, spend, over, fpsOk, quietOk, rows, games, wantRes, allProducts, searchText, cat, catList, brandOf, brandLogo, facetDefinitions, facetValues, specFilters, fitFacetIds, fitFilters, technicalFilters, visible, hidden, pSlot, pick, buildableProduct, candidateBuild, pFits, pslot, cur, pool, ordered, mtx, rowDefs, fg, pickerRows, stepDefs, st, filtersOn, gSpent, valueGpu, quietGpu, featuredCpu, featuredCooler, featuredStorage, featuredPhone, featuredConsole, promoProduct, brandNames, brandRibbon, homeDepartments, homeCategorySlots, homeCategories } = context;
+  const { app, s, route, on, dept, allProducts, pick, valueGpu, quietGpu, featuredCpu, featuredCooler, featuredStorage, featuredPhone, featuredConsole, promoProduct, brandRibbon, homeDepartments, homeCategories } = context;
   return {
-      prebuilts: [
-        { name: valueGpu.name, claim: `${valueGpu.good} · ${valueGpu.brand}`, price: money(valueGpu.price), image: valueGpu.imagePath, go: () => app.setState({ route: "product", productSlot: "gpu", productId: valueGpu.id }) },
-        { name: quietGpu.name, claim: `${quietGpu.good} · ${quietGpu.brand}`, price: money(quietGpu.price), image: quietGpu.imagePath, go: () => app.setState({ route: "product", productSlot: "gpu", productId: quietGpu.id }) },
-      ],
       heroProduct: {
         name: valueGpu.name,
         brand: valueGpu.brand,
         price: money(valueGpu.price),
         image: valueGpu.imagePath,
-        claim: valueGpu.good,
         go: () => app.setState({ route: "product", productSlot: "gpu", productId: valueGpu.id }),
       },
       brandRibbon,
@@ -59,7 +54,7 @@ export function buildHomeVals(context: BuildContext) {
         },
         promoProduct(valueGpu, "gpu", "PC upgrade pick", "Compare graphics memory, card length and power draw before you buy.", {
           heroEyebrow: "PC parts in focus", heroTitle: "The right graphics card sets the whole build.", heroCta: "Shop graphics cards",
-          heroSecondaryLabel: "Build a PC", heroSecondaryGo: () => app.setState({ route: "guided", gStep: 0, gDone: [] }),
+          heroSecondaryLabel: "Build a PC", heroSecondaryGo: () => app.setState({ route: "builder" }),
           heroStats: [{ value: String((valueGpu.stock ?? 0) > 5 ? "> 5" : (valueGpu.stock ?? 0)), label: "in stock" }, { value: String(CATALOG.gpu.length), label: "graphics cards" }, { value: "9", label: "compatibility checks" }],
           heroGo: () => app.setState({ route: "category", dept: "pc", category: "gpu", brand: "any", search: "" }),
         }),
@@ -77,13 +72,13 @@ export function buildHomeVals(context: BuildContext) {
         }),
         promoProduct(featuredStorage, "storage", "Storage spotlight", "Keep more games, projects and media ready without guessing which drive fits.", {
           heroEyebrow: "Storage spotlight", heroTitle: "More room for the things you keep.", heroCta: "Shop storage",
-          heroSecondaryLabel: "Build a PC", heroSecondaryGo: () => app.setState({ route: "guided", gStep: 0, gDone: [] }),
+          heroSecondaryLabel: "Build a PC", heroSecondaryGo: () => app.setState({ route: "builder" }),
           heroStats: [{ value: String((featuredStorage.stock ?? 0) > 5 ? "> 5" : (featuredStorage.stock ?? 0)), label: "in stock" }, { value: String(CATALOG.storage.length), label: "storage options" }, { value: "1–2", label: "day delivery" }],
           heroGo: () => app.setState({ route: "category", dept: "pc", category: "storage", brand: "any", search: "" }),
         }),
         promoProduct(featuredCpu, "cpu", "Processor spotlight", "Start with the processor that matches your workload, socket and upgrade path.", {
           heroEyebrow: "Processor spotlight", heroTitle: "The part that sets your build's pace.", heroCta: "Shop processors",
-          heroSecondaryLabel: "Build a PC", heroSecondaryGo: () => app.setState({ route: "guided", gStep: 0, gDone: [] }),
+          heroSecondaryLabel: "Build a PC", heroSecondaryGo: () => app.setState({ route: "builder" }),
           heroStats: [{ value: String((featuredCpu.stock ?? 0) > 5 ? "> 5" : (featuredCpu.stock ?? 0)), label: "in stock" }, { value: String(CATALOG.cpu.length), label: "processor options" }, { value: "9", label: "compatibility checks" }],
           heroGo: () => app.setState({ route: "category", dept: "pc", category: "cpu", brand: "any", search: "" }),
         }),
@@ -92,27 +87,11 @@ export function buildHomeVals(context: BuildContext) {
       homeCategories,
       catalogCount: String(allProducts.length),
       brandCount: String(new Set(allProducts.map(product => product.brand)).size),
-      inStockCount: String(allProducts.filter(product => product.stock !== 0).length),
-      news: [
-        { when: "Now", text: `${valueGpu.name} · ${valueGpu.brand}`, tag: money(valueGpu.price), tagFg: "var(--green-600)", go: () => app.setState({ route: "product", productSlot: "gpu", productId: valueGpu.id }) },
-        { when: "Now", text: `${quietGpu.name} available`, tag: quietGpu.stock === 0 ? "unavailable" : "in stock", tagFg: "var(--text-tertiary)", go: () => app.setState({ route: "product", productSlot: "gpu", productId: quietGpu.id }) },
-        { when: "Catalog", text: `${CATALOG.board.length} motherboards ready to compare`, tag: "open picker", tagFg: "var(--accent-active)", go: () => app.setState({ route: "picker", pickerSlot: "board" }) },
-      ],
       bestOf: [
         { name: valueGpu.name, why: valueGpu.description, award: "Lowest price", awardFg: "var(--green-600)", price: money(valueGpu.price), picks: valueGpu.availability === "out_of_stock" ? "unavailable" : "in stock", image: valueGpu.imagePath, go: () => app.setState({ route: "product", productSlot: "gpu", productId: valueGpu.id }) },
         { name: quietGpu.name, why: quietGpu.description, award: "Quietest estimate", awardFg: "var(--accent-active)", price: money(quietGpu.price), picks: quietGpu.availability === "out_of_stock" ? "unavailable" : "in stock", image: quietGpu.imagePath, go: () => app.setState({ route: "product", productSlot: "gpu", productId: quietGpu.id }) },
         { name: featuredCpu.name, why: featuredCpu.description, award: "Default processor", awardFg: "var(--text-tertiary)", price: money(featuredCpu.price), picks: featuredCpu.availability === "out_of_stock" ? "unavailable" : "in stock", image: featuredCpu.imagePath, go: () => app.setState({ route: "product", productSlot: "cpu", productId: featuredCpu.id }) },
         { name: featuredCooler.name, why: featuredCooler.description, award: "Quietest estimate", awardFg: "var(--text-tertiary)", price: money(featuredCooler.price), picks: featuredCooler.availability === "out_of_stock" ? "unavailable" : "in stock", image: featuredCooler.imagePath, go: () => app.setState({ route: "product", productSlot: "cooler", productId: featuredCooler.id }) },
-      ],
-      posts: [
-        { kind: "Guide", title: "How much graphics card do you actually need at 1440p?", dek: "We measured nine cards across three games and plotted the point where more money stops buying frames.", meta: "6 min read · 2d ago" },
-        { kind: "Teardown", title: "What a quiet PC is really made of", dek: "Fan curves, case mesh, and the three parts that decide whether you hear your computer.", meta: "9 min read · 1w ago" },
-        { kind: "Builder story", title: "A $1,200 build that still hits 144 fps", dek: "Where this builder saved money, and the one part they refused to compromise on.", meta: "4 min read · 2w ago" },
-      ],
-      deals: [
-        { name: valueGpu.name, price: money(valueGpu.price), go: () => app.setState({ route: "product", productSlot: "gpu", productId: valueGpu.id }) },
-        { name: featuredStorage.name, price: money(featuredStorage.price), go: () => app.setState({ route: "product", productSlot: "storage", productId: featuredStorage.id }) },
-        { name: featuredCooler.name, price: money(featuredCooler.price), go: () => app.setState({ route: "product", productSlot: "cooler", productId: featuredCooler.id }) },
       ],
   };
 }

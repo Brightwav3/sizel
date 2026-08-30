@@ -1,12 +1,17 @@
 import type { AppState } from "./AppState";
-import { DEPTS } from "../data/catalog";
+import { CATALOG, DEPTS } from "../data/catalog";
 import type { Slot } from "../types";
 
 const categorySlugs: Record<string, string> = {
   gpu: "graphic-cards", cpu: "processors", board: "motherboards", ram: "memory",
   cooler: "cpu-coolers", psu: "power-supplies", storage: "storage", case: "pc-cases",
-  phones: "smartphones", consoles: "consoles",
+  fans: "case-fans", phones: "smartphones", consoles: "consoles",
 };
+
+const brandSlug = (brand: string) => brand.toLowerCase().replace(/\s+/g, "-");
+const brandForSlug = (slug: string, slots: Slot[]) => Array.from(new Set(
+  slots.flatMap(slot => CATALOG[slot]).map(product => product.brand).filter((brand): brand is string => Boolean(brand)),
+)).find(brand => brandSlug(brand) === slug) || null;
 
 const slotForSlug = (slug: string): Slot | null =>
   (Object.keys(categorySlugs) as Slot[]).find(slot => categorySlugs[slot] === slug) || null;
@@ -15,26 +20,30 @@ export function stateFromLocation(): Partial<AppState> {
   const segments = window.location.pathname.split("/").filter(Boolean).map(segment => decodeURIComponent(segment));
   if (segments.length === 0) return { route: "home" };
   if (segments[0] === "pc-builder") return { route: "builder" };
-  if (segments[0] === "build") return { route: "guided", gStep: 0, gDone: [] };
-  if (segments[0] === "compare") return { route: "picker", pickerSlot: "gpu" };
+  if (segments[0] === "build") return { route: "builder" };
   if (segments[0] === "cart") return { route: "cart" };
   if (segments[0] === "checkout") return { route: "checkout", step: 0 };
   if (segments[0] === "order-complete") return { route: "done" };
   const dept = segments[0] === "pc-parts" ? "pc" : segments[0] === "phones" ? "phone" : segments[0] === "gaming" ? "gaming" : null;
   if (!dept) return { route: "home" };
   const department = DEPTS.find(item => item.id === dept)!;
-  if (!segments[1]) return { route: "category", dept, openDept: dept, category: department.cats[0], productSlot: department.cats[0] };
+  if (!segments[1]) return { route: "category", dept, openDept: dept, category: department.cats[0], productSlot: department.cats[0], brand: "any" };
   const slot = segments[1] ? slotForSlug(segments[1]) : null;
-  if (!slot) return { route: "home" };
-  if (segments[2]) return { route: "product", dept, openDept: null, category: slot, productSlot: slot, productId: segments[2] };
-  return { route: "category", dept, openDept: null, category: slot, productSlot: slot };
+  if (!slot) {
+    const brand = brandForSlug(segments[1], department.cats);
+    return brand ? { route: "category", dept, openDept: dept, category: department.cats[0], productSlot: department.cats[0], brand } : { route: "home" };
+  }
+  if (segments[2]) {
+    const brand = brandForSlug(segments[2], [slot]);
+    if (brand) return { route: "category", dept, openDept: null, category: slot, productSlot: slot, brand };
+    return { route: "product", dept, openDept: null, category: slot, productSlot: slot, productId: segments[2], brand: "any" };
+  }
+  return { route: "category", dept, openDept: null, category: slot, productSlot: slot, brand: "any" };
 }
 
 export function urlForState(state: AppState): string {
   if (state.route === "home") return "/";
   if (state.route === "builder") return "/pc-builder";
-  if (state.route === "guided") return "/build";
-  if (state.route === "picker") return "/compare";
   if (state.route === "cart") return "/cart";
   if (state.route === "checkout") return "/checkout";
   if (state.route === "done") return "/order-complete";
@@ -42,7 +51,7 @@ export function urlForState(state: AppState): string {
   const productDept = slot === "phones" ? "phone" : slot === "consoles" ? "gaming" : "pc";
   const baseDept = state.route === "product" ? productDept : state.dept;
   const base = baseDept === "phone" ? "/phones" : baseDept === "gaming" ? "/gaming" : "/pc-parts";
-  if (state.route === "category" && state.openDept) return base;
+  if (state.route === "category" && state.openDept) return state.brand === "any" ? base : `${base}/${brandSlug(state.brand)}`;
   const category = categorySlugs[slot] || categorySlugs.gpu;
-  return `${base}/${category}${state.route === "product" ? `/${encodeURIComponent(state.productId)}` : ""}`;
+  return `${base}/${category}${state.route === "product" ? `/${encodeURIComponent(state.productId)}` : state.brand === "any" ? "" : `/${brandSlug(state.brand)}`}`;
 }

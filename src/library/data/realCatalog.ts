@@ -214,25 +214,6 @@ export const ORDER: { slot: PcSlot; cat: string; icon: string; label: string }[]
   { slot: "fans", cat: "Case fans", icon: "mode_fan", label: "fan pack" },
 ];
 
-export const GUIDED: PcSlot[] = ["board", "cpu", "gpu", "cooler", "ram", "storage", "psu", "case", "fans"];
-export const GSTEP: Record<PcSlot, { title: string; help: string }> = {
-  board: { title: "Start with the motherboard", help: "Everything else plugs into this. It sets which processor fits and how much you can add later." },
-  cpu: { title: "Now the processor", help: "Runs the game logic. Past a point the graphics card matters more." },
-  gpu: { title: "The graphics card", help: "This sets your frame rate, and it is the most expensive part." },
-  cooler: { title: "Cooling for the processor", help: "Bigger coolers spin slower, so they are quieter." },
-  ram: { title: "Memory", help: "Short-term working space. Games use a fixed amount." },
-  storage: { title: "Storage", help: "Where games live. Big games use a lot of space." },
-  psu: { title: "Power supply", help: "Feeds the machine, with headroom above what your parts draw." },
-  case: { title: "The case", help: "Limits how long a card and how tall a cooler you can use." },
-  fans: { title: "Case fans", help: "The included case airflow keeps temperatures under control." },
-};
-
-export const GAMES = [
-  { name: "Verdant Halls", m: 1.1 },
-  { name: "Kill Order 2", m: 1.01 },
-  { name: "Drift Atlas", m: 0.9 },
-];
-
 export const SPECS: Record<Slot, (p: Part) => string[]> = Object.fromEntries(
   (Object.keys(CATALOG) as Slot[]).map(slot => [slot, (part: Part) => part.specs ?? []]),
 ) as Record<Slot, (p: Part) => string[]>;
