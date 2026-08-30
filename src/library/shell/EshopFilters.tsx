@@ -51,7 +51,7 @@ export const FilterPanel: React.FC<{ v: Vals }> = ({ v }) => {
         </div>
       </FilterGroup>
 
-      <FilterGroup label="Technical specifications" open={open.specs} onToggle={() => toggle("specs")}>
+      <FilterGroup label="Technical specifications" open={open.specs} onToggle={() => toggle("specs")} display={v.specFilterDisplay}>
         <div style={sx("display:flex;flex-direction:column;gap:var(--space-2);padding:0 10px var(--space-3)")}>
           {v.specFilters.map((facet: Vals) => <FacetBlock key={facet.id} facet={facet} />)}
         </div>
@@ -116,5 +116,4 @@ const FacetBlock: React.FC<{ facet: Vals }> = ({ facet }) => {
     </div>
   );
 };
-
 
