@@ -1,0 +1,114 @@
+/**
+ * Two-column configurator.
+ *
+ * The build sheet lives in the shell sidebar and is both navigation and
+ * summary; the catalog gets the rest of the width; the totals sit in a bar
+ * pinned to the bottom instead of taking a third column.
+ */
+.forge-builder { display: flex; flex-direction: column; min-height: calc(100dvh - 56px); }
+.forge-workspace { flex: 1; min-width: 0; padding: var(--space-5) var(--space-6) var(--space-6); }
+.forge-workspace .forge-catalog-head { padding-bottom: var(--space-4); }
+.forge-workspace .forge-catalog-head h2 { font-size: 20px; }
+
+/* Build sheet ------------------------------------------------------------- */
+.forge-sheet { display: flex; flex-direction: column; padding: var(--space-3) var(--space-2); }
+.forge-sheet__head { display: flex; align-items: baseline; justify-content: space-between; padding: 0 var(--space-2) var(--space-2); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.forge-sheet__head small { color: var(--text-tertiary); font-size: var(--text-xs); font-weight: var(--weight-regular); }
+.forge-sheet__row { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); width: 100%; padding: var(--space-2); background: transparent; border: 0; border-radius: var(--radius-nav); text-align: left; }
+.forge-sheet__row:hover { background: var(--surface-hover); }
+.forge-sheet__step { display: grid; place-items: center; width: 22px; height: 22px; color: var(--text-tertiary); background: var(--gray-0); border: 1px solid var(--border-default); border-radius: var(--radius-pill); font-size: var(--text-xs); }
+.forge-sheet__step .material-symbols-outlined { font-size: 14px; }
+.forge-sheet__copy { display: flex; min-width: 0; flex-direction: column; }
+.forge-sheet__copy small { color: var(--text-tertiary); font-size: 11px; }
+.forge-sheet__copy strong { overflow: hidden; font-size: var(--text-sm); font-weight: var(--weight-regular); white-space: nowrap; text-overflow: ellipsis; }
+.forge-sheet__row b { color: var(--text-tertiary); font-size: var(--text-xs); font-weight: var(--weight-regular); }
+
+/* Done, doing, next, later - the recommended order made visible. */
+.forge-sheet__row.is-done .forge-sheet__step { color: var(--text-inverse); background: var(--success); border-color: var(--success); }
+.forge-sheet__row.is-done .forge-sheet__copy strong,
+.forge-sheet__row.is-done b { color: var(--text-primary); font-weight: var(--weight-medium); }
+.forge-sheet__row.is-active { background: var(--surface-card); box-shadow: var(--shadow-card); }
+.forge-sheet__row.is-active .forge-sheet__step { color: var(--text-inverse); background: var(--accent); border-color: var(--accent); }
+.forge-sheet__row.is-next .forge-sheet__copy strong { color: var(--text-accent); }
+.forge-sheet__row.is-next .forge-sheet__step { color: var(--accent); border-color: var(--accent); }
+.forge-sheet__row.is-todo { opacity: .55; }
+.forge-sheet__reset { margin-top: var(--space-3); padding: var(--space-2); color: var(--text-secondary); background: transparent; border: 0; font: inherit; font-size: var(--text-xs); text-decoration: underline; text-underline-offset: 2px; }
+
+/* Filter row -------------------------------------------------------------- */
+.forge-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding-bottom: var(--space-3); border-bottom: 1px solid var(--border-subtle); }
+.forge-fitswitch { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-pill); font-size: var(--text-sm); }
+.forge-fitswitch.is-on { background: var(--accent-soft); border-color: var(--accent); }
+.forge-fitswitch small { color: var(--text-tertiary); font-size: var(--text-xs); }
+.forge-switch { position: relative; width: 28px; height: 16px; flex: 0 0 28px; background: var(--gray-300); border-radius: var(--radius-pill); transition: background 140ms ease; }
+.forge-switch.is-on { background: var(--accent); }
+.forge-switch i { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; background: var(--gray-0); border-radius: var(--radius-pill); transition: left 160ms ease; }
+.forge-switch.is-on i { left: 14px; }
+
+.forge-facet { position: relative; }
+.forge-facet > button { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-2) var(--space-3); background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-pill); font-size: var(--text-sm); }
+.forge-facet > button.is-on { color: var(--text-inverse); background: var(--gray-900); border-color: var(--gray-900); }
+.forge-facet > button .material-symbols-outlined { font-size: var(--text-base); }
+.forge-facet__menu { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; display: flex; flex-direction: column; min-width: 200px; max-height: 280px; overflow-y: auto; padding: var(--space-1); background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-nav); box-shadow: 0 12px 32px rgba(41, 41, 41, .16); }
+.forge-facet__menu button { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); padding: var(--space-2); background: transparent; border: 0; border-radius: var(--radius-xs); font-size: var(--text-sm); text-align: left; }
+.forge-facet__menu button:hover { background: var(--surface-hover); }
+.forge-facet__menu small { color: var(--text-tertiary); font-size: var(--text-xs); }
+.forge-tick { display: grid; place-items: center; width: 14px; height: 14px; background: var(--gray-0); border: 1px solid var(--border-default); border-radius: var(--radius-xs); color: var(--text-inverse); }
+.forge-tick.is-on { background: var(--gray-900); border-color: var(--gray-900); }
+.forge-tick .material-symbols-outlined { font-size: 11px; }
+.forge-clearfacets { margin-left: auto; padding: var(--space-2); color: var(--text-accent); background: transparent; border: 0; font: inherit; font-size: var(--text-sm); }
+
+/* Compatibility stated on the row ---------------------------------------- */
+.forge-product.is-incompatible { opacity: .75; }
+.forge-product-clash { display: flex; align-items: center; gap: 4px; margin: var(--space-1) 0 0 !important; color: var(--danger) !important; font-size: var(--text-xs); }
+.forge-product-clash .material-symbols-outlined { font-size: 14px; }
+
+/* Bottom bar -------------------------------------------------------------- */
+.forge-bar { position: sticky; bottom: 0; z-index: 15; display: flex; align-items: center; gap: var(--space-6); padding: var(--space-3) var(--space-6); background: var(--surface-card); border-top: 1px solid var(--border-default); box-shadow: 0 -6px 20px rgba(41, 41, 41, .06); }
+.forge-bar__figure { display: flex; flex-direction: column; }
+.forge-bar__figure small { color: var(--text-tertiary); font-size: var(--text-xs); }
+.forge-bar__figure strong { font-size: var(--text-base); font-weight: var(--weight-medium); }
+.forge-bar__status { display: inline-flex; align-items: center; gap: var(--space-2); min-width: 0; overflow: hidden; color: var(--text-secondary); font-size: var(--text-xs); text-overflow: ellipsis; }
+.forge-bar__status .material-symbols-outlined { font-size: var(--text-base); }
+.forge-bar__actions { display: flex; align-items: center; gap: var(--space-3); margin-left: auto; }
+.forge-bar__actions small { color: var(--text-tertiary); font-size: var(--text-xs); }
+
+@media (max-width: 860px) {
+  .forge-bar { flex-wrap: wrap; gap: var(--space-3); padding: var(--space-3) var(--space-4); }
+  .forge-bar__actions { width: 100%; }
+  .forge-bar__actions .forge-primary { flex: 1; }
+  .forge-workspace { padding: var(--space-4); }
+}
+
+/* Match the shop's type scale and density ---------------------------------
+   The configurator inherited its own, larger scale. These rules pull it onto
+   the same tokens the catalog uses so the two screens read as one product. */
+.forge-workspace .forge-catalog-head label { min-height: 32px; border-radius: var(--radius-nav); font-size: var(--text-sm); }
+.forge-workspace .forge-catalog-head label .material-symbols-outlined { font-size: var(--text-base); color: var(--text-tertiary); }
+.forge-workspace .forge-catalog-head p { font-size: var(--text-xs); }
+
+.forge-filters .forge-fitswitch,
+.forge-filters .forge-facet > button { min-height: 30px; padding: 5px var(--space-3); border-radius: var(--radius-pill); font-size: var(--text-sm); }
+.forge-filters .forge-clearfacets { font-size: var(--text-xs); }
+
+.forge-workspace .forge-product { grid-template-columns: 48px minmax(0, 1fr) minmax(72px, 88px) 78px; gap: var(--space-3); padding: var(--space-3) 0; }
+.forge-workspace .forge-product-image { width: 48px; height: 48px; }
+.forge-workspace .forge-product-copy > span { font-size: var(--text-xs); }
+.forge-workspace .forge-product-copy h3 { margin: 1px 0; font-size: var(--text-sm); }
+.forge-workspace .forge-product-copy p { font-size: var(--text-xs); }
+.forge-workspace .forge-product-price strong { font-size: var(--text-base); }
+.forge-workspace .forge-select { min-height: 28px; width: 100%; padding: 0 var(--space-2); border-radius: var(--radius-nav); font-size: var(--text-xs); }
+
+.forge-bar { gap: var(--space-5); padding: var(--space-2) var(--space-6); }
+.forge-bar__figure strong { font-size: var(--text-sm); }
+.forge-bar .forge-primary { min-height: 34px; padding: 0 var(--space-4); border-radius: var(--radius-nav); font-size: var(--text-sm); }
+
+/* `overflow-x: hidden` on .forge-builder made it a scroll container, which
+   silently disables `position: sticky` on the bottom bar. `clip` prevents the
+   same horizontal overflow without establishing one. */
+.forge-builder { overflow-x: clip; overflow-y: visible; }
+
+/* The row title and image open the product page; only the button selects. */
+.forge-workspace .forge-product-image { padding: 0; border: 0; cursor: pointer; }
+.forge-product-link { padding: 0; color: inherit; background: transparent; border: 0; font: inherit; text-align: left; cursor: pointer; }
+.forge-product-link:hover { color: var(--text-accent); text-decoration: underline; text-underline-offset: 2px; }
+.forge-workspace .forge-product-copy h3 { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
