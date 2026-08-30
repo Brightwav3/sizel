@@ -58,6 +58,58 @@ export interface FacetSummary { id: string; label: string; fit: boolean; options
 
 export const brandOf = (product: Part) => product.brand || product.name.split(" ")[0];
 
+const spec = (product: Part, ...path: string[]) => {
+  let value: any = product.specifications;
+  for (const key of path) value = value?.[key];
+  return value;
+};
+
+const capacity = (gb: unknown) => {
+  const value = Number(gb);
+  if (!Number.isFinite(value) || value <= 0) return undefined;
+  return value >= 1000 ? `${value / 1000} TB` : `${value} GB`;
+};
+
+/**
+ * The name a shop puts on a listing: the catalog name plus the one attribute
+ * people choose by. "Pear Phone 16e" alone does not say which storage tier it
+ * is, and every listing of it would read identically.
+ */
+export function productTitle(product: Part, category?: Slot): string {
+  const extras: (string | undefined)[] = [];
+  switch (category) {
+    case "gpu":
+      extras.push(capacity(spec(product, "memory", "capacityGB")), spec(product, "memory", "type"));
+      break;
+    case "phones":
+      extras.push(capacity(spec(product, "storage", "capacityGB")));
+      break;
+    case "storage":
+      extras.push(spec(product, "storage", "protocol") ?? product.storageInterface);
+      break;
+    case "consoles":
+      extras.push(capacity(spec(product, "hardware", "storageGB")), spec(product, "output", "maxResolution"));
+      break;
+    case "psu":
+      extras.push(spec(product, "power", "efficiency"));
+      break;
+    case "board":
+      extras.push(product.formFactor, product.memoryType);
+      break;
+    case "cooler":
+      extras.push(spec(product, "cooling", "type"));
+      break;
+    case "case":
+      extras.push(spec(product, "chassis", "type"));
+      break;
+    case "cpu":
+      extras.push(spec(product, "cpu", "cores") ? `${spec(product, "cpu", "cores")}-core` : undefined);
+      break;
+  }
+  const suffix = extras.filter(Boolean).filter(value => !product.name.includes(String(value)));
+  return suffix.length ? `${product.name} ${suffix.join(" ")}` : product.name;
+}
+
 export const brandLogo = (brand: string) => "/catalog/logos/" + brand.toLowerCase().replace(/\s+/g, "-") + ".png";
 
 /** Case fans are bundled with the build, never sold as a standalone listing. */
@@ -180,7 +232,7 @@ export interface ProductSummary {
 export function productSummary(product: Part, category?: Slot): ProductSummary {
   return {
     id: product.id,
-    name: product.name,
+    name: productTitle(product, category),
     brand: brandOf(product),
     model: product.model,
     category,
