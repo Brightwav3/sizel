@@ -21,6 +21,23 @@ beforeEach(() => {
   holder.instance = { state: { picks, res: '1440p' }, metrics: () => metrics(picks, '1440p') };
 });
 describe('fewer WebMCP round trips', () => {
+  it('searches and compares distinct models without an agent round trip for ids', () => {
+    const result = call('read_shop', {
+      search: { category: 'phones', brand: 'Pear', sort: 'priceDesc', inStockOnly: true, compare: true },
+      compareDeviceSearch: { category: 'consoles', sort: 'priceDesc', limit: 5 },
+    });
+    expect(result.sections.searchComparison.items.length).toBeGreaterThanOrEqual(2);
+    const ids = result.sections.search.selectedIds.map((id: string) => id.split('::')[0]);
+    expect(new Set(ids).size).toBe(ids.length);
+    expect(result.sections.devices.devices).toHaveLength(3);
+  });
+  it('applies targets and picks in one controller operation, without cart or watch writes', () => {
+    const apply = vi.fn();
+    holder.instance.applyPicks = apply;
+    call('recommend_build', { budget: 1700, resolution: '1440p', targetFps: 144, quiet: true, apply: true, configure: true });
+    expect(apply).toHaveBeenCalledTimes(1);
+    expect(apply.mock.calls[0][2]).toEqual({ budget: 1700, res: '1440p', target: 144, quiet: true });
+  });
   it('combines search, comparisons and build inspection without navigation', () => {
     const result = call('read_shop', {
       search: { category: 'phones', brand: 'Pear', limit: 3 },

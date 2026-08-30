@@ -55,6 +55,12 @@ const bool = (description: string) => ({ type: "boolean", description });
 const schema = (properties: Record<string, unknown>, required?: string[]) =>
   ({ type: "object", properties, additionalProperties: false, ...(required ? { required } : {}) });
 const NO_INPUT = schema({});
+const QUICK_SEARCH = schema({
+  category: str("Catalog category.", CATEGORIES), brand: str("Catalog brand."), query: str("Search text."),
+  maxPrice: num("USD ceiling."), sort: str("Ordering.", SORTS), limit: num("1–5; default 5."),
+  inStockOnly: bool("Only products shipping within two days."),
+  compare: bool("Also compare up to three distinct models from these results."),
+});
 
 // Result shapes --------------------------------------------------------
 /** Anything past two days is the shop telling the shopper to wait. */
@@ -159,7 +165,8 @@ export const TOOLS: RigsmithTool[] = [
     annotations: { readOnlyHint: true },
     routes: [],
     inputSchema: schema({
-      search: schema({ category: str("Catalog category.", CATEGORIES), brand: str("Catalog brand."), query: str("Search text."), maxPrice: num("USD ceiling."), sort: str("Ordering.", SORTS), limit: num("1–5; default 5.") }),
+      search: QUICK_SEARCH,
+      compareDeviceSearch: QUICK_SEARCH,
       productIds: { type: "array", minItems: 1, maxItems: 3, items: { type: "string" }, description: "Details for up to three known product ids." },
       compareProductIds: { type: "array", minItems: 2, maxItems: 4, items: { type: "string" }, description: "Compare two to four known product ids." },
       compareDeviceIds: { type: "array", minItems: 1, maxItems: 3, items: { type: "string" }, description: "Compare the PC with up to three known console or phone ids." },
@@ -181,7 +188,25 @@ export const TOOLS: RigsmithTool[] = [
       };
       const validIds = (value: unknown, min: number, max: number): value is string[] =>
         Array.isArray(value) && value.length >= min && value.length <= max && value.every(id => typeof id === "string" && id.length > 0 && id.length <= 200);
-      if (args.search) read("search", "search_products", { ...args.search, limit: Math.min(5, Math.max(1, Number(args.search.limit) || 5)) });
+      const searchAndCompare = (query: Record<string, any>, devices: boolean) => {
+        const { compare, ...input } = query;
+        const section = devices ? "deviceSearch" : "search";
+        read(section, "search_products", { ...input, ...(devices ? { category: input.category ?? "consoles" } : {}), limit: Math.min(5, Math.max(1, Number(input.limit) || 5)) });
+        if (!compare && !devices) return;
+        const models = new Set<string>();
+        const ids: string[] = [];
+        for (const item of sections[section].items ?? []) {
+          const model = item.id.split("::")[0];
+          if (!models.has(model) && ids.length < 3) { models.add(model); ids.push(item.id); }
+        }
+        const output = devices ? "devices" : "searchComparison";
+        if (ids.length >= (devices ? 1 : 2)) read(output, devices ? "compare_build_to_product" : "compare_products", { productIds: ids, resolution: args.resolution });
+        else sections[output] = { error: "not_enough_matches", found: ids.length };
+        // Comparison already carries the ids, prices and names. Avoid duplicating them.
+        sections[section] = { total: sections[section].total, selectedIds: ids, selection: "first distinct models in requested search order" };
+      };
+      if (args.search) searchAndCompare(args.search, false);
+      if (args.compareDeviceSearch) searchAndCompare(args.compareDeviceSearch, true);
       if (args.compareProductIds) {
         if (validIds(args.compareProductIds, 2, 4)) read("comparison", "compare_products", { productIds: args.compareProductIds });
         else sections.comparison = { error: "invalid_ids", hint: "Provide two to four product ids." };
@@ -529,6 +554,7 @@ export const TOOLS: RigsmithTool[] = [
       return ok({
         compatible: model.fits,
         issues: model.issues,
+        price: model.price, priceLabel: money(model.price), arrives: shipDate(model.days),
         power: powerReport(instance.state.picks),
         socket: { cpu: model.cpu.socket, board: part(instance.state.picks, "board").socket },
         clearance: { gpuMm: model.gpu.len, caseMm: part(instance.state.picks, "case").clearance },
@@ -612,6 +638,7 @@ export const TOOLS: RigsmithTool[] = [
       quiet: bool("Prefer quieter parts on a close call."),
       targetFps: num("Stop upgrading once the build reaches this. Default: the shopper's setting."),
       apply: bool("Put it on screen. Default: false."),
+      configure: bool("With apply, also set budget, resolution, FPS and quiet target; saves set_build_target."),
     }, ["budget"]),
     execute(args) {
       const instance = app();
@@ -619,7 +646,8 @@ export const TOOLS: RigsmithTool[] = [
       const res = resolutionOf(args.resolution, "1440p");
       const target = typeof args.targetFps === "number" ? args.targetFps : instance.state.target;
       const proposal = recommendBuild(budget, res, args.quiet ?? instance.state.quiet, target);
-      if (args.apply) instance.applyPicks(proposal.picks, `Build for ${money(budget)} applied`);
+      if (args.apply) instance.applyPicks(proposal.picks, `Build for ${money(budget)} applied`,
+        args.configure ? { budget, res, target, quiet: args.quiet ?? instance.state.quiet } : undefined);
       return ok({
         applied: Boolean(args.apply),
         budget, resolution: res,
