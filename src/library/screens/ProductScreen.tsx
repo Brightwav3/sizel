@@ -12,12 +12,19 @@ import { ColorPicker } from "../shell/ColorPicker";
  * question in one column — brand, name, short description, stock, delivery,
  * price, action. Everything that is not part of that decision sits below.
  */
-export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => (
+export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => {
+  const [image, setImage] = React.useState(v.pColorways[0]?.imagePath ?? v.pImage);
+
+  React.useEffect(() => {
+    setImage(v.pColorways[0]?.imagePath ?? v.pImage);
+  }, [v.pSku, v.pImage, v.pColorways]);
+
+  return (
   <div className="t-page product-page">
     <div className="product-grid">
       <section className="product-gallery">
         <div className="product-gallery__main">
-          {v.pImage ? <img src={v.pImage} alt={v.pName} /> : <span className="ms">image</span>}
+          {image ? <img src={image} alt={v.pName} /> : <span className="ms">image</span>}
         </div>
         {v.pIsGpu && (
           <div className="product-panel">
@@ -52,7 +59,7 @@ export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => (
         </div>
 
         <div className="product-buy__options">
-          <ColorPicker key={v.pSku} colorways={v.pColorways} />
+          <ColorPicker key={v.pSku} colorways={v.pColorways} onChange={colorway => setImage(colorway.imagePath ?? v.pImage)} />
           <OptionPicker label="Storage" value={v.pStorageLabel} icon="sd_card" options={v.pStorageOptions} />
         </div>
 
@@ -150,4 +157,5 @@ export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => (
       </div>
     </section>
   </div>
-);
+  );
+};
