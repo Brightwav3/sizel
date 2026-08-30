@@ -4,6 +4,14 @@ Rigsmith is a fictional electronics shop and PC configurator built for a human-a
 
 All products, brands, logos, and product images are fictional. The application does not depend on an external catalog API.
 
+## Project origin
+
+The project started on 29 August 2026 by importing a design of my own from Claude
+Design, and has been extended in this repository ever since. The first commit
+therefore lands the imported baseline in one piece; everything after it is work
+done on top of it. Nothing in the repository predates the WebMCP Challenge
+submission period.
+
 ## Quick start
 
 1. Install Node.js 20 or newer.
@@ -19,7 +27,7 @@ All products, brands, logos, and product images are fictional. The application d
 | `npm run build` | Type-check and create a production build |
 | `npm run preview` | Preview the production build |
 | `npm run check:catalog` | Validate product IDs, category coverage, SQLite, brands, and image paths |
-| `npm run audit:prototype` | Validate the catalog adapter, routes, screens, and prototype CSS |
+| `npm run audit:catalog` | Validate the catalog adapter, routes, and screens |
 
 ## Product capabilities
 
