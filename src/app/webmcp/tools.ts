@@ -57,6 +57,28 @@ const schema = (properties: Record<string, unknown>, required?: string[]) =>
 const NO_INPUT = schema({});
 
 // Result shapes --------------------------------------------------------
+/** Anything past two days is the shop telling the shopper to wait. */
+const SLOW_DELIVERY_DAYS = 3;
+
+/**
+ * The reason a listing deserves a word before it is chosen.
+ *
+ * A delivery date buried in a field beside eleven others is a fact an agent
+ * can read and still not act on. Naming it as a concern, with the thing to
+ * offer instead, is what turns "ships in 8 days" into "this one is three
+ * weeks out, shall I watch it for you" — which is the honest move, and keeps
+ * the agent from quietly substituting a part the shopper actually wanted.
+ */
+const concernFor = (product: Part, category?: Slot) => {
+  if (category && listingStock(product, category) === 0) {
+    return { concern: "out_of_stock", offer: "create_watchdog" };
+  }
+  if (product.days >= SLOW_DELIVERY_DAYS) {
+    return { concern: `ships_in_${product.days}_days`, arrives: shipDate(product.days), offer: "create_watchdog" };
+  }
+  return null;
+};
+
 /** The listing fields an agent needs to choose. Anything more blows the budget. */
 const brief = (product: Part, category?: Slot) => {
   const summary = productSummary(product, category);
@@ -67,8 +89,12 @@ const brief = (product: Part, category?: Slot) => {
     price: summary.price,
     stock: summary.availability,
     shipsInDays: summary.shipsInDays,
+    ...(concernFor(product, category) ?? {}),
   };
 };
+
+/** One line for a result whose list carries something worth raising. */
+const WATCH_HINT = "Some of these are slow or out of stock. Say so, and offer create_watchdog rather than substituting.";
 
 /** The compatibility facts, only where the catalog actually carries them. */
 const facts = (product: Part) => {
@@ -121,7 +147,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "search_products",
     description:
-      "Search the catalog of PC parts, phones and consoles. Prices are US dollars. Returns compact listings; get_product has the full specifications.",
+      "Search the catalog of PC parts, phones and consoles. Prices are US dollars. Returns compact listings; get_product has the full specifications. A listing that is slow or out of stock says so: raise it with the shopper before choosing it.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
@@ -164,7 +190,13 @@ export const TOOLS: RigsmithTool[] = [
         const found = category ? { category } : locate(product.id);
         return brief(product, found?.category ?? category);
       });
-      return ok({ total: result.items.length, showing: items.length, items }, "items");
+      return ok(
+        { total: result.items.length, showing: items.length, items },
+        "items",
+        shown => (shown.some(item => "concern" in item)
+          ? { showing: shown.length, hint: WATCH_HINT }
+          : { showing: shown.length }),
+      );
     },
   },
 
@@ -372,7 +404,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "set_build_component",
     description:
-      "Fit a part into the build on screen, or reset a slot to its default. A new case brings its bundled fans. Reversible with undo_build_change.",
+      "Fit a part into the build on screen, or reset a slot to its default. A new case brings its bundled fans. Reversible with undo_build_change. If the part sets the delivery date, the result says so: pass that on rather than letting the shopper find out at checkout.",
     routes: ["category", "product", "builder"],
     inputSchema: schema({
       slot: str("Slot to change.", PC_SLOTS),
@@ -399,10 +431,12 @@ export const TOOLS: RigsmithTool[] = [
       instance.set(slot, found.product.id);
       if (slot === "case") instance.set("fans", fansForCase(found.product.id));
       const model = metrics(next, res);
+      const concern = concernFor(found.product, slot);
       return ok({
         slot, fitted: found.product.name,
         price: model.price, fps: model.fps, powerW: model.watt,
         compatible: model.fits, issues: model.issues.slice(0, 2),
+        ...(concern ? { ...concern, note: `This part sets the delivery date. Tell the shopper and offer to watch it.` } : {}),
       });
     },
   },
@@ -496,13 +530,15 @@ export const TOOLS: RigsmithTool[] = [
       budget: num("Budget for the whole machine."),
       resolution: str("Default: 1440p.", RESOLUTIONS),
       quiet: bool("Prefer quieter parts on a close call."),
+      targetFps: num("Stop upgrading once the build reaches this. Default: the shopper's setting."),
       apply: bool("Put it on screen. Default: false."),
     }, ["budget"]),
     execute(args) {
       const instance = app();
       const budget = Math.max(300, Number(args.budget) || 0);
       const res = resolutionOf(args.resolution, "1440p");
-      const proposal = recommendBuild(budget, res, args.quiet ?? instance.state.quiet);
+      const target = typeof args.targetFps === "number" ? args.targetFps : instance.state.target;
+      const proposal = recommendBuild(budget, res, args.quiet ?? instance.state.quiet, target);
       if (args.apply) instance.applyPicks(proposal.picks, `Build for ${money(budget)} applied`);
       return ok({
         applied: Boolean(args.apply),
@@ -510,8 +546,20 @@ export const TOOLS: RigsmithTool[] = [
         price: proposal.price, priceLabel: money(proposal.price),
         fps: proposal.fps, powerW: proposal.watt,
         headroom: proposal.headroom,
+        targetFps: target,
+        withinBudget: proposal.withinBudget,
+        ...(proposal.cheapestPossible ? { cheapestPossible: proposal.cheapestPossible } : {}),
         compatible: proposal.issues.length === 0,
         parts: PC_SLOTS.map(slot => ({ slot, id: proposal.picks[slot], name: part(proposal.picks, slot).name })),
+        ...(() => {
+          const late = PC_SLOTS
+            .map(slot => ({ slot, item: part(proposal.picks, slot) }))
+            .filter(entry => entry.item.days >= SLOW_DELIVERY_DAYS)
+            .sort((a, b) => b.item.days - a.item.days)[0];
+          return late
+            ? { heldUpBy: { slot: late.slot, name: late.item.name, arrives: shipDate(late.item.days), offer: "create_watchdog" } }
+            : {};
+        })(),
       }, "parts");
     },
   },

@@ -14,7 +14,9 @@ The build already has one owner (ADR 0002) and the catalog one query owner. Tool
 
 Tool definitions live in `src/app/webmcp`, beside the controller they bind to, not inside the features whose screens they mirror. A tool is an application-level capability: `set_build_component` belongs to no single screen, and `search_products` answers for a catalog the whole shop shares.
 
-Registration follows the route. Each tool declares the screens it makes sense on, and every route change registers what that screen supports and unregisters the rest. A tool with no declared routes is offered everywhere.
+Registration follows the route. Each tool declares the screens it makes sense on, and every route change registers what that screen supports and withdraws the rest. A tool with no declared routes is offered everywhere.
+
+A registration is withdrawn by aborting the `AbortSignal` it was made with. The specification offers no `unregisterTool`, and `registerTool` rejects a name that is already taken, so holding the controller is what makes route-scoped registration possible at all rather than a convenience.
 
 Tool handlers never write state directly. Four tool-facing write paths on `RigsmithApp` — `resetSlot`, `undoBuild`, `setTargets`, `applyPicks`, alongside the existing `set` — remain the only way in, so ADR 0002 still holds with agents in the picture.
 
@@ -43,6 +45,7 @@ Results are shaped in `webmcp/toolResult.ts` against the documented character bu
 
 - A new tool must state its routes, which is a judgment call that can be got wrong.
 - Registration is asynchronous and serialised, so a burst of route changes settles a tick behind the screen.
+- Every live registration holds an `AbortController` for as long as its screen is showing.
 - Handlers must compute their reply from values they hold rather than reading state back, because React applies state on its own schedule.
 
 ## Enforced in

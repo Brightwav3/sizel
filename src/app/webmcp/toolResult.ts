@@ -19,14 +19,38 @@ const json = (payload: unknown) => JSON.stringify(payload);
  * is too long; without it an oversized payload is reported as such instead of
  * being cut somewhere arbitrary.
  */
-export function ok(payload: Record<string, any>, listKey?: string): ToolCallResult {
+export function ok(
+  payload: Record<string, any>,
+  listKey?: string,
+  /**
+   * Fields derived from the list, applied after any shortening.
+   *
+   * A note that says "some of these are out of stock" is a lie once the
+   * shortening has dropped every out-of-stock row, so anything computed from
+   * the list is computed from the list that is actually sent.
+   */
+  summarise?: (items: any[]) => Record<string, any>,
+): ToolCallResult {
+  // Always derived from the base payload, never layered over a previous pass,
+  // so a note dropped by a shorter list does not survive into the next one.
+  const base = payload;
+  const apply = (list?: unknown[], omitted?: number) => {
+    const next: Record<string, any> = list && listKey
+      ? { ...base, [listKey]: list, ...(omitted ? { omitted } : {}) }
+      : { ...base };
+    return summarise && listKey && Array.isArray(next[listKey])
+      ? { ...next, ...summarise(next[listKey]) }
+      : next;
+  };
+
+  payload = apply();
   let body = json(payload);
-  if (body.length > OUTPUT_BUDGET && listKey && Array.isArray(payload[listKey])) {
-    const items = payload[listKey] as unknown[];
+  if (body.length > OUTPUT_BUDGET && listKey && Array.isArray(base[listKey])) {
+    const items = base[listKey] as unknown[];
     let keep = items.length;
     while (keep > 1 && body.length > OUTPUT_BUDGET) {
       keep = Math.max(1, Math.floor(keep * 0.6));
-      payload = { ...payload, [listKey]: items.slice(0, keep), omitted: items.length - keep };
+      payload = apply(items.slice(0, keep), items.length - keep);
       body = json(payload);
     }
   }

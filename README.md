@@ -79,7 +79,7 @@ sees, and results are held inside Chrome's 1.5K character budget.
 | `estimate_performance` | Frame rate, noise, price, power and delivery |
 | `explain_build_bottleneck` | The part holding the frame rate down, and what it costs |
 | `fix_build_issue` | Swaps that clear a conflict, smallest price change first |
-| `recommend_build` | A whole machine for a budget, proposed or applied |
+| `recommend_build` | A whole machine for a budget, proposed or applied, never more than ten per cent over |
 | `set_build_target` | Budget, resolution, frame rate and noise preference |
 | `undo_build_change` | Step the build back one change |
 | `create_watchdog` | Watch a listing for stock or a price drop |
