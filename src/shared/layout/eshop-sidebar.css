@@ -76,9 +76,8 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, #root::-webkit-scrollbar { wid
 .eshop-audience-service strong { color: var(--text-primary); font-size: var(--text-xs); font-weight: var(--weight-medium); }
 .eshop-audience-service small { color: var(--text-tertiary); font-size: 11px; line-height: var(--leading-normal); }
 .eshop-audience-service em { padding-top: 2px; color: var(--text-tertiary); font-size: 9px; font-style: normal; text-transform: uppercase; }
-.audience-icon { display: grid; place-items: center; width: 28px; height: 28px; color: var(--text-inverse); background: var(--accent-active); border-radius: var(--radius-nav); }
-.audience-icon.is-business { background: var(--success); }
-.audience-icon .ms { font-size: var(--text-sm); }
+.audience-icon { display: grid; place-items: center; width: 28px; height: 28px; }
+.audience-icon img { display: block; width: 28px; height: 28px; object-fit: contain; }
 
 .eshop-scrim { position: fixed; inset: 0; background: color-mix(in srgb, var(--surface-inverse) 32%, transparent); z-index: 1; }
 .eshop-scrim.is-passive { pointer-events: none; }
