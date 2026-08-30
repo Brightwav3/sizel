@@ -15,6 +15,8 @@ import type { PcSlot, Picks, Route } from "./types";
  * The whole shop. State, the metrics model, and the derived value bag are the
  * prototype's logic class; every screen below renders it.
  */
+// ADR 0002: this controller owns the active build for UI and future tool bindings.
+// docs/decisions/0002-single-build-state-and-domain-view-models.md
 export class RigsmithApp extends React.Component<{}, AppState> {
   state: AppState = {
     route: "home", pickerSlot: null, productId: DEFAULT_PICKS.gpu, category: "gpu", productSlot: "gpu",
