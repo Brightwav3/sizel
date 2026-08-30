@@ -1,56 +1,79 @@
 import React from "react";
 import { sx, type Vals } from "../sx";
+import "../cart.css";
 
-/** Cart: the build as one line item, delivery, and the summary. */
+/**
+ * Cart: line items on the left, the order summary pinned on the right — the
+ * layout an electronics shop uses. A configured PC is one line among the rest,
+ * not the point of the page.
+ */
 export const CartScreen: React.FC<{ v: Vals }> = ({ v }) => (
-  <div className="t-page" style={sx("padding:32px 36px 40px;max-width:960px;display:flex;flex-direction:column;gap:18px")}>
-    <div>
-      <div style={sx("font-size:24px;font-weight:500")}>Your cart</div>
-      <div style={sx("font-size:13px;color:var(--text-secondary);margin-top:3px")}>{v.cartSub}</div>
-    </div>
-    {v.cartEmpty && (
-      <div className="card" style={sx("padding:48px;display:flex;flex-direction:column;align-items:center;gap:12px;background:var(--gray-50)")}>
-        <span className="ms" style={sx("font-size:20px;color:var(--text-tertiary)")}>shopping_bag</span>
-        <div style={sx("font-size:13px;color:var(--text-secondary)")}>Nothing here yet.</div>
-        <div className="pill dark" onClick={v.goBuilder}>Go to my build</div>
+  <div className="t-page page-pad cart-page">
+    <header className="cart-head">
+      <h1>Your cart</h1>
+      <span>{v.cartTitleSub}</span>
+      {v.cartFilled && <button type="button" className="cart-clear" onClick={v.clearCart}>Empty cart</button>}
+    </header>
+
+    {v.cartEmpty ? (
+      <div className="cart-empty">
+        <span className="ms">shopping_bag</span>
+        <strong>Your cart is empty</strong>
+        <p>Browse the catalog, or put a machine together in the PC configurator.</p>
+        <div className="cart-empty__actions">
+          <button type="button" className="pill dark" onClick={v.goCategory}>Browse the catalog</button>
+          <button type="button" className="pill ghostb" onClick={v.goBuilder}>Open the configurator</button>
+        </div>
       </div>
-    )}
-    {v.cartFilled && (
-      <>
-        <div className="card" style={sx("padding:16px;display:flex;gap:16px")}>
-          <div className="ph" style={sx("width:128px;height:128px")}>{v.buildImage ? <img className="catalog-image" src={v.buildImage} alt="Selected graphics card" /> : <span className="ms" style={sx("font-size:20px")}>image</span>}</div>
-          <div style={sx("flex:1;display:flex;flex-direction:column;gap:8px")}>
-            <div style={sx("font-size:14px;font-weight:500")}>Quiet 1440p gaming PC</div>
-            <div style={sx("font-size:13px;color:var(--text-secondary);line-height:1.5")}>{v.cartParts}</div>
-            <div style={sx("display:flex;gap:6px;flex-wrap:wrap")}>
-              <span style={sx("font-size:12px;padding:2px 8px;border-radius:99px;background:var(--success-soft);color:var(--green-600);font-weight:500")}>Assembled and tested</span>
-              <span style={sx("font-size:12px;padding:2px 8px;border-radius:99px;background:var(--surface-sunken);color:var(--text-secondary)")}>2-year warranty</span>
-            </div>
-            <div onClick={v.goBuilder} style={sx("font-size:13px;color:var(--text-accent);cursor:pointer")}>Edit build</div>
-          </div>
-          <div style={sx("text-align:right;display:flex;flex-direction:column;gap:4px")}>
-            <div className="num" style={sx("font-size:24px;font-weight:500")}>{v.totalLabel}</div>
-            <div style={sx("font-size:12px;color:var(--text-tertiary)")}>Assembly included</div>
-            <div onClick={v.clearCart} style={sx("font-size:12px;color:var(--text-accent);cursor:pointer;margin-top:6px")}>Remove</div>
-          </div>
-        </div>
-        <div style={sx("display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;align-items:start")}>
-          <div className="card" style={sx("padding:16px;display:flex;flex-direction:column;gap:10px")}>
-            <div style={sx("font-size:14px;font-weight:500")}>Delivery</div>
-            <div style={sx("display:flex;align-items:center;gap:8px;font-size:13px")}><span className="ms" style={sx("font-size:20px;color:var(--success)")}>check_circle</span>{v.stockLine}</div>
-            <div style={sx("display:flex;align-items:center;gap:8px;font-size:13px")}><span className="ms" style={sx("font-size:20px;color:var(--amber-500)")}>schedule</span>{v.backorderLine}</div>
-            <div style={sx("font-size:13px;color:var(--text-secondary)")}>Complete PC ships <span style={sx("font-weight:500;color:var(--text-primary)")}>{v.shipLabel}</span></div>
-          </div>
-          <div className="card" style={sx("padding:16px;display:flex;flex-direction:column;gap:10px")}>
-            <div style={sx("display:flex;justify-content:space-between;font-size:13px")}><span style={sx("color:var(--text-secondary)")}>Parts</span><span className="num">{v.totalLabel}</span></div>
-            <div style={sx("display:flex;justify-content:space-between;font-size:13px")}><span style={sx("color:var(--text-secondary)")}>Assembly</span><span>Included</span></div>
-            <div style={sx("display:flex;justify-content:space-between;font-size:13px")}><span style={sx("color:var(--text-secondary)")}>Shipping</span><span>Free</span></div>
-            <div style={sx("height:1px;background:var(--border-subtle)")}></div>
-            <div style={sx("display:flex;justify-content:space-between;align-items:baseline")}><span style={sx("font-size:14px;font-weight:500")}>Total</span><span className="num" style={sx("font-size:24px;font-weight:500")}>{v.totalLabel}</span></div>
-            <div className="pill dark" onClick={v.goCheckout} style={sx("height:44px")}>Checkout</div>
-          </div>
-        </div>
-      </>
+    ) : (
+      <div className="cart-layout">
+        <section className="cart-lines" aria-label="Cart items">
+          {v.cartLines.map((line: Vals) => (
+            <article key={line.index} className="cart-line">
+              <button type="button" className="cart-line__image" onClick={line.open}>
+                {line.image ? <img src={line.image} alt="" /> : <span className="ms">image</span>}
+              </button>
+              <div className="cart-line__copy">
+                <small>{line.brand}</small>
+                <button type="button" className="cart-line__name" onClick={line.open}>{line.name}</button>
+                <p>{line.note}</p>
+                <span style={sx(`color:${line.stockFg}`)}>{line.stock}</span>
+              </div>
+              <div className="cart-line__qty">
+                {line.editable ? (
+                  <div className="qty-stepper">
+                    <button type="button" onClick={line.dec} aria-label="Decrease quantity"><span className="ms">remove</span></button>
+                    <span className="num">{line.qty}</span>
+                    <button type="button" onClick={line.inc} aria-label="Increase quantity"><span className="ms">add</span></button>
+                  </div>
+                ) : <span className="cart-line__single">1 unit</span>}
+                <button type="button" className="cart-line__remove" onClick={line.remove}>Remove</button>
+              </div>
+              <div className="cart-line__price">
+                <strong className="num">{line.totalLabel}</strong>
+                {line.qty > 1 && <small className="num">{line.unitLabel} each</small>}
+              </div>
+            </article>
+          ))}
+        </section>
+
+        <aside className="cart-summary" aria-label="Order summary">
+          <h2>Order summary</h2>
+          <dl>
+            <div><dt>Subtotal</dt><dd className="num">{v.cartSubtotal}</dd></div>
+            <div><dt>Delivery</dt><dd>{v.cartShipping}</dd></div>
+          </dl>
+          <p className="cart-summary__note">{v.cartShippingNote}</p>
+          <div className="cart-summary__total"><span>Total</span><strong className="num">{v.cartTotal}</strong></div>
+          <button type="button" className="pill dark cart-summary__cta" onClick={v.goCheckout}>Continue to checkout</button>
+          <button type="button" className="cart-summary__back" onClick={v.goCategory}>Keep shopping</button>
+          <ul className="cart-summary__facts">
+            <li><span className="ms">local_shipping</span>{v.cartDeliveryLine}</li>
+            <li><span className="ms">assignment_return</span>30-day returns</li>
+            <li><span className="ms">verified_user</span>2-year warranty on every product</li>
+          </ul>
+        </aside>
+      </div>
     )}
   </div>
 );
