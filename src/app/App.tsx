@@ -8,9 +8,7 @@ import { RigsmithView } from "./RigsmithView";
 import type { AppState } from "./state/AppState";
 import { stateFromLocation, urlForState } from "./routes";
 import { stopWebmcpTools, syncWebmcpTools } from "./webmcp";
-import {
-  CATALOG, DEFAULT_PICKS, ORDER,
-} from "../data/catalog/catalog";
+import { DEFAULT_PICKS, ORDER, partIn } from "../data/catalog/catalog";
 import { metrics, money, noiseWord, shipDate } from "../entities/build/metrics";
 import type { CartLine, PcSlot, Picks, Route, Slot, Watchdog } from "../shared/lib/types";
 
@@ -116,8 +114,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   }
 
   part(slot: PcSlot, picks?: Picks) {
-    const p = picks || this.state.picks;
-    return CATALOG[slot].find(x => x.id === p[slot])!;
+    return partIn(slot, (picks || this.state.picks)[slot])!;
   }
 
   /** Delegates to the one model in data/metrics.ts. ADR 0002. */
@@ -132,7 +129,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     const cart = at >= 0
       ? this.state.cart.map((line, index) => index === at ? { ...line, qty: line.qty + qty } : line)
       : [...this.state.cart, { kind: "product", id, slot, qty } as CartLine];
-    const name = CATALOG[slot].find(part => part.id === id)?.name ?? "Product";
+    const name = partIn(slot, id)?.name ?? "Product";
     this.setState({ cart, toast: `${name} added to cart` }, () => this.flash());
   }
 
@@ -162,7 +159,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
       this.setState({ watchdogs: this.state.watchdogs.filter((_, index) => index !== at), toast: "Watch removed" }, () => this.flash());
       return;
     }
-    const part = CATALOG[slot].find(item => item.id === id);
+    const part = partIn(slot, id);
     const watch: Watchdog = { productId: id, slot, kind, priceAtWatch: part?.price ?? 0 };
     this.setState({
       watchdogs: [...this.state.watchdogs, watch],
@@ -226,7 +223,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     const before = this.metrics();
     const picks = { ...this.state.picks, [slot]: id };
     const after = this.metrics(picks);
-    const item = CATALOG[slot].find(x => x.id === id)!;
+    const item = partIn(slot, id)!;
     const dp = after.price - before.price, df = after.fps - before.fps;
     this.setState({
       picks, chosen: this.withChosen(slot), prev: this.state.picks,
@@ -257,7 +254,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
       picks: { ...this.state.picks, [slot]: DEFAULT_PICKS[slot] },
       chosen: this.state.chosen.filter(item => item !== slot),
       prev: this.state.picks,
-      toast: `${CATALOG[slot].find(part => part.id === DEFAULT_PICKS[slot])?.name ?? "Part"} restored`,
+      toast: `${partIn(slot, DEFAULT_PICKS[slot])?.name ?? "Part"} restored`,
     });
     this.flash();
   }
@@ -310,7 +307,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
       builderSlot: next ?? slot,
       builderSearch: "",
       builderFacets: {},
-      toast: `${CATALOG[slot].find(part => part.id === id)?.name ?? "Part"} selected`,
+      toast: `${partIn(slot, id)?.name ?? "Part"} selected`,
     });
     this.flash();
   }

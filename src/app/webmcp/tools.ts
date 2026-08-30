@@ -45,8 +45,8 @@ const str = (description: string, values?: readonly string[]) =>
   values ? { type: "string", enum: [...values], description } : { type: "string", description };
 const num = (description: string) => ({ type: "number", description });
 const bool = (description: string) => ({ type: "boolean", description });
-const schema = (properties: Record<string, unknown>, required: string[] = []) =>
-  ({ type: "object", properties, required, additionalProperties: false });
+const schema = (properties: Record<string, unknown>, required?: string[]) =>
+  ({ type: "object", properties, additionalProperties: false, ...(required ? { required } : {}) });
 const NO_INPUT = schema({});
 
 // Result shapes --------------------------------------------------------
@@ -90,20 +90,20 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "search_products",
     description:
-      "Search the Rigsmith catalog: PC parts, phones and consoles. Filter by free text, category, brand, price, stock or sale. Returns compact listings; call get_product for full specifications. Ask for a small limit and refine rather than paging through everything.",
+      "Search the catalog of PC parts, phones and consoles. Prices are US dollars. Returns compact listings; get_product has the full specifications.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
     inputSchema: schema({
-      query: str("Free text across name, model, description and specifications."),
-      category: str("Category to search. Omit when using free text.", CATEGORIES),
-      brand: str("Brand name exactly as the catalog spells it."),
-      minPrice: num("Lowest price in US dollars."),
-      maxPrice: num("Highest price in US dollars."),
-      inStockOnly: bool("Keep only listings in stock that ship within two days."),
-      onSale: bool("Keep only listings currently on sale."),
-      sort: str("Result order. 'perf' ranks by frame rate or benchmark score.", SORTS),
-      limit: num("How many listings to return, 1 to 20. Defaults to 5."),
+      query: str("Free text over name, model, description and specifications."),
+      category: str("Omit when using free text.", CATEGORIES),
+      brand: str("Spelled as the catalog spells it."),
+      minPrice: num("Lowest price."),
+      maxPrice: num("Highest price."),
+      inStockOnly: bool("In stock and shipping within two days."),
+      onSale: bool("On sale only."),
+      sort: str("'perf' is frame rate or benchmark score.", SORTS),
+      limit: num("1 to 20, default 5."),
     }),
     execute(args) {
       const category = (args.category ?? undefined) as Slot | undefined;
@@ -129,11 +129,11 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "get_product",
     description:
-      "Full record for one catalog listing: price, availability, delivery, description and the compatibility facts used by check_build_compatibility. Use the id returned by search_products.",
+      "One listing in full: price, availability, delivery, description, and the facts check_build_compatibility reasons over.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
-    inputSchema: schema({ productId: str("Catalog id, exactly as returned by another tool.") }, ["productId"]),
+    inputSchema: schema({ productId: str("Id from another tool.") }, ["productId"]),
     execute(args) {
       const found = locate(args.productId);
       if (!found) return fail("product_not_found", "Call search_products to get a valid id.");
@@ -153,7 +153,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "get_current_build",
     description:
-      "The PC the shopper has on screen right now: the part in each of the nine slots, the total price, frame rate, power draw and whether anything clashes. Read this before changing the build.",
+      "The PC on screen: the part in each of the nine slots, total price, frame rate, power draw, and whether anything clashes. Read before changing the build.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
@@ -182,7 +182,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "list_filters",
     description:
-      "The filters a category actually supports, with the values in the catalog and how many listings each matches. Read this before guessing filter names for show_in_catalog.",
+      "The filters a category supports and the values in the catalog. Read before naming a filter for show_in_catalog.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: ["home", "category", "product", "builder"],
@@ -201,14 +201,14 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "compare_products",
     description:
-      "Compare two to four listings side by side: price, delivery and the specifications where they differ. Use it to answer 'which of these should I take' without pulling every full record.",
+      "Two to four listings side by side: price, delivery, and only the specifications where they differ.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: ["home", "category", "product", "builder"],
     inputSchema: schema({
       productIds: {
         type: "array", minItems: 2, maxItems: 4, items: { type: "string" },
-        description: "Two to four catalog ids to compare.",
+        description: "Two to four catalog ids.",
       },
     }, ["productIds"]),
     execute(args) {
@@ -232,11 +232,11 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "check_stock",
     description:
-      "Stock on hand and the delivery date for one listing. Say so plainly when a part is out of stock or slow, and offer create_watchdog instead of a silent substitution.",
+      "Stock on hand and delivery date. When a part is out of stock, say so and offer create_watchdog rather than substituting silently.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: ["category", "product", "builder", "cart"],
-    inputSchema: schema({ productId: str("Catalog id to check.") }, ["productId"]),
+    inputSchema: schema({ productId: str("Id from another tool.") }, ["productId"]),
     execute(args) {
       const found = locate(args.productId);
       if (!found) return fail("product_not_found", "Call search_products to get a valid id.");
@@ -255,14 +255,14 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "show_in_catalog",
     description:
-      "Put a search on the shopper's screen: open a category, product page, builder or cart, and apply a text query, brand or price range. Use it so the person can see what you looked at instead of only reading your summary.",
+      "Put your search on the shopper's screen so they see what you looked at: opens a category, product, builder or cart, with an optional query, brand and price range.",
     routes: [],
     inputSchema: schema({
-      view: str("Screen to open. Defaults to the category listing.", ["category", "product", "builder", "cart"]),
+      view: str("Default: category listing.", ["category", "product", "builder", "cart"]),
       category: str("Category to show.", CATEGORIES),
-      productId: str("Product to open. Required when view is 'product'."),
-      query: str("Text to put in the search box."),
-      brand: str("Brand to narrow to, or 'any'."),
+      productId: str("Required when view is 'product'."),
+      query: str("Text for the search box."),
+      brand: str("Brand name, or 'any'."),
       minPrice: num("Lowest price in US dollars."),
       maxPrice: num("Highest price in US dollars."),
     }),
@@ -300,14 +300,14 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "list_compatible_parts",
     description:
-      "Parts for one build slot that raise no compatibility issue against the build on screen. Different from search_products: this filters against what the shopper has already chosen, so nothing here can break the machine.",
+      "Parts for one slot that fit the build on screen. Unlike search_products this filters against what is already chosen, so nothing returned can break the machine.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: ["category", "product", "builder"],
     inputSchema: schema({
-      slot: str("Build slot to fill.", PC_SLOTS),
+      slot: str("Slot to fill.", PC_SLOTS),
       maxPrice: num("Highest price in US dollars."),
-      limit: num("How many parts to return, 1 to 10. Defaults to 5."),
+      limit: num("1 to 10, default 5."),
     }, ["slot"]),
     execute(args) {
       const instance = app();
@@ -330,12 +330,12 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "set_build_component",
     description:
-      "Put a part into the build on screen, or return a slot to its default. Changing the case brings its bundled fans with it. The change is visible immediately and can be reversed with undo_build_change.",
+      "Fit a part into the build on screen, or reset a slot to its default. A new case brings its bundled fans. Reversible with undo_build_change.",
     routes: ["category", "product", "builder"],
     inputSchema: schema({
-      slot: str("Build slot to change.", PC_SLOTS),
-      productId: str("Part to fit. Leave empty when action is 'reset'."),
-      action: str("'set' fits a part, 'reset' restores the default.", ["set", "reset"]),
+      slot: str("Slot to change.", PC_SLOTS),
+      productId: str("Omit when action is 'reset'."),
+      action: str("Default: set.", ["set", "reset"]),
     }, ["slot"]),
     execute(args) {
       const instance = app();
@@ -368,7 +368,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "check_build_compatibility",
     description:
-      "Check the build on screen for socket, memory, form factor, clearance, cooling and power conflicts. Returns one plain sentence per conflict plus the power headroom. When something clashes, call fix_build_issue rather than guessing at a replacement.",
+      "Check the build on screen for socket, memory, form factor, clearance, cooling and power conflicts. One sentence per conflict, plus power headroom. On a clash call fix_build_issue rather than guessing.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: ["product", "builder", "cart"],
@@ -387,11 +387,11 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "estimate_performance",
     description:
-      "Frame rate, noise, price, power and delivery for the build on screen at a chosen resolution. The numbers are the same ones the shopper sees, so quote them as they are.",
+      "Frame rate, noise, price, power and delivery for the build on screen. These are the numbers the shopper sees, so quote them as they are.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: ["product", "builder", "cart"],
-    inputSchema: schema({ resolution: str("Resolution to estimate at. Defaults to the shopper's setting.", RESOLUTIONS) }),
+    inputSchema: schema({ resolution: str("Default: the shopper's setting.", RESOLUTIONS) }),
     execute(args) {
       const instance = app();
       const res = resolutionOf(args.resolution, instance.state.res as Resolution);
@@ -413,11 +413,11 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "explain_build_bottleneck",
     description:
-      "Why the build on screen does not reach the frame rate its graphics card is capable of. Names the part that holds it back, the frames it costs, and the cheapest fitting upgrade that actually helps.",
+      "Why the build on screen misses the frame rate its graphics card could reach: the part holding it back, the frames it costs, and the cheapest upgrade that helps.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: ["product", "builder"],
-    inputSchema: schema({ resolution: str("Resolution to reason about. Defaults to the shopper's setting.", RESOLUTIONS) }),
+    inputSchema: schema({ resolution: str("Default: the shopper's setting.", RESOLUTIONS) }),
     execute(args) {
       const instance = app();
       const res = resolutionOf(args.resolution, instance.state.res as Resolution);
@@ -428,11 +428,11 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "fix_build_issue",
     description:
-      "Replacements that clear every open compatibility issue in the build on screen, smallest price change first, with the effect on frame rate. Returns nothing when the build is already clean. Offer the options; let the shopper pick.",
+      "Swaps that clear every open conflict in the build on screen, smallest price change first, with the effect on frame rate. Empty when the build already fits. Offer them; let the shopper pick.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: ["product", "builder"],
-    inputSchema: schema({ slot: str("Restrict fixes to this slot. Omit to consider every part the conflict names.", PC_SLOTS) }),
+    inputSchema: schema({ slot: str("Omit to consider every part the conflict names.", PC_SLOTS) }),
     execute(args) {
       const instance = app();
       const model = instance.metrics();
@@ -448,13 +448,13 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "recommend_build",
     description:
-      "Assemble a complete nine-part PC for a budget, resolution and noise preference. Returns the parts, price, frame rate and power. It only proposes; pass apply true to put it on screen, and say what it costs before you do.",
+      "Assemble a complete nine-part PC for a budget. Returns the parts, price, frame rate and power. It only proposes; apply puts it on screen, so say the cost first.",
     routes: ["home", "category", "builder"],
     inputSchema: schema({
-      budget: num("Total budget in US dollars for the whole machine."),
-      resolution: str("Resolution to build for. Defaults to 1440p.", RESOLUTIONS),
-      quiet: bool("Prefer quieter parts where the choice is close."),
-      apply: bool("Put the proposal into the build on screen. Defaults to false."),
+      budget: num("Budget for the whole machine."),
+      resolution: str("Default: 1440p.", RESOLUTIONS),
+      quiet: bool("Prefer quieter parts on a close call."),
+      apply: bool("Put it on screen. Default: false."),
     }, ["budget"]),
     execute(args) {
       const instance = app();
@@ -477,13 +477,13 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "set_build_target",
     description:
-      "Set what the shopper is aiming for: budget, resolution, frame rate and whether the machine should be quiet. The controls move on screen, and recommend_build and estimate_performance use these as their defaults.",
+      "Set what the shopper is aiming for. The controls move on screen, and recommend_build and estimate_performance take these as defaults.",
     routes: ["home", "category", "builder"],
     inputSchema: schema({
-      budget: num("Budget in US dollars."),
+      budget: num("Budget for the whole machine."),
       resolution: str("Resolution to build for.", RESOLUTIONS),
-      targetFps: num("Frame rate the shopper is aiming for."),
-      quiet: bool("Whether a quiet machine matters."),
+      targetFps: num("Frame rate aimed for."),
+      quiet: bool("Whether quiet matters."),
     }),
     execute(args) {
       const instance = app();
@@ -504,7 +504,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "undo_build_change",
     description:
-      "Step the build back to how it was before the last change. One level, the same as the button on screen. Use it when the shopper rejects a swap you just made.",
+      "Step the build back one change, the same as the button on screen. Use it when the shopper rejects a swap you just made.",
     routes: ["category", "product", "builder"],
     inputSchema: NO_INPUT,
     execute() {
@@ -519,11 +519,11 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "create_watchdog",
     description:
-      "Watch a listing and tell the shopper when it comes back in stock or its price drops. Everything stays on this device. Offer this instead of substituting a part the shopper actually wanted.",
+      "Watch a listing for stock or a price drop. Stays on this device. Offer it instead of substituting a part the shopper wanted.",
     routes: ["category", "product"],
     inputSchema: schema({
-      productId: str("Catalog id to watch."),
-      kind: str("'availability' watches for stock, 'price' for a drop.", ["availability", "price"]),
+      productId: str("Id from another tool."),
+      kind: str("Default: availability.", ["availability", "price"]),
     }, ["productId"]),
     execute(args) {
       const instance = app();
@@ -539,11 +539,11 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "add_to_cart",
     description:
-      "Add one catalog product to the cart. This spends the shopper's money, so confirm the exact product and price with them first and never add something they have not agreed to.",
+      "Add one product to the cart. This spends the shopper's money: confirm the product and price with them first, and never add what they have not agreed to.",
     routes: ["category", "product"],
     inputSchema: schema({
-      productId: str("Catalog id to add."),
-      quantity: num("How many, 1 to 5. Defaults to 1."),
+      productId: str("Id from another tool."),
+      quantity: num("1 to 5, default 1."),
     }, ["productId"]),
     execute(args) {
       const instance = app();
@@ -566,7 +566,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "add_build_to_cart",
     description:
-      "Put the assembled PC into the cart as one line and open the cart. Refuses while the build has an open compatibility issue. This spends the shopper's money, so confirm the total with them first.",
+      "Put the assembled PC in the cart as one line and open the cart. Refuses while a conflict is open. This spends the shopper's money: confirm the total first.",
     routes: ["product", "builder", "cart"],
     inputSchema: NO_INPUT,
     execute() {
