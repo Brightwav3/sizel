@@ -1,9 +1,10 @@
 import React from "react";
-import { sx, type Vals } from "../sx";
+import type { Vals } from "../types";
 import { TopBar } from "./TopBar";
 import { EshopSidebar } from "./EshopSidebar";
 import { CatalogMenu } from "./CatalogMenu";
 import "../responsive.css";
+import "./app-shell.css";
 
 /**
  * Page frame. Listing pages keep the sidebar rail for filters; a product page
@@ -12,7 +13,7 @@ import "../responsive.css";
  * Column widths reflow in responsive.css — see `.shell-grid`.
  */
 export const AppShell: React.FC<{ v: Vals; children: React.ReactNode }> = ({ v, children }) => (
-  <div style={sx("min-height:100vh;background:#fff")}>
+  <div className="app-shell">
     <TopBar v={v} />
     {v.isProduct ? (
       <>
@@ -24,14 +25,14 @@ export const AppShell: React.FC<{ v: Vals; children: React.ReactNode }> = ({ v, 
             <span>{v.pName}</span>
           </nav>
         </div>
-        <main style={sx("min-width:0;display:flex;flex-direction:column;position:relative")}>
+        <main className="app-shell__main">
           {children}
         </main>
       </>
     ) : (
       <div className="shell-grid">
         <EshopSidebar v={v} />
-        <main style={sx("min-width:0;display:flex;flex-direction:column;position:relative")}>
+        <main className="app-shell__main">
           {children}
         </main>
       </div>
