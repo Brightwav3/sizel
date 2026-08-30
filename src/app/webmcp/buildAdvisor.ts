@@ -7,7 +7,7 @@
  * stays the single write path.
  */
 import { CATALOG, DEFAULT_PICKS, partIn } from "../../data/catalog/catalog";
-import { RES, buildFits, buildNumbers, compatibilityIssues, metrics, part, powerDraw } from "../../entities/build/metrics";
+import { RES, buildFits, buildNumbers, compatibilityIssues, metrics, part, powerDraw, requiredPower } from "../../entities/build/metrics";
 import type { Resolution } from "../../entities/build/metrics";
 import { partFits } from "../../entities/product/queries";
 import type { Part, PcSlot, Picks } from "../../shared/lib/types";
@@ -88,7 +88,7 @@ function pickForSlot(slot: PcSlot, picks: Partial<Picks>, quiet: boolean, ceilin
   if (!pool.length) return undefined;
 
   if (slot === "psu") {
-    const required = Math.ceil(powerDraw(picks) * 1.15);
+    const required = requiredPower(picks);
     const enough = pool.filter(product => (product.watt ?? 0) >= required);
     const source = enough.length ? enough : pool;
     const affordable = source.filter(product => product.price <= ceiling);
@@ -156,7 +156,7 @@ function liftSupporting(picks: Picks, quiet: boolean, headroom: number): Picks {
     }
   }
 
-  const required = Math.ceil(powerDraw(next) * 1.15);
+  const required = requiredPower(next);
   const currentPsu = part(next, "psu");
   if ((currentPsu.watt ?? 0) < required) {
     const stronger = CATALOG.psu
@@ -476,6 +476,6 @@ export function fixOptions(picks: Picks, res: Resolution = "1440p", preferred?: 
 export function powerReport(picks: Picks) {
   const draw = powerDraw(picks);
   const psu = part(picks, "psu");
-  const required = Math.ceil(draw * 1.15);
-  return { drawW: draw, requiredW: required, psuW: psu.watt ?? 0, psu: psu.name, ok: (psu.watt ?? 0) >= required };
+  const required = requiredPower(picks);
+  return { headroomW: (psu.watt ?? 0) - draw, marginAboveRequiredW: (psu.watt ?? 0) - required, drawW: draw, requiredW: required, psuW: psu.watt ?? 0, psu: psu.name, ok: (psu.watt ?? 0) >= required };
 }

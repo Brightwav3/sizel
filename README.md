@@ -91,7 +91,7 @@ describes the UI layering.
 
 The interactive application, the local catalog, and the WebMCP tool set are working. Deployment, the public repository URL, and the demo video are still pending.
 
-Thirty-three tools are registered from `src/app/webmcp/`. They follow the
+Thirty-four tools are registered from `src/app/webmcp/`. They follow the
 screen: a route offers only the tools it can honour, so the cart never exposes
 a build editor and the checkout offers no catalog browsing. No screen presents
 more than twenty. Every handler reads and writes the same state the shopper
@@ -99,6 +99,7 @@ sees, and results are held inside Chrome's 1.5K character budget.
 
 | Tool | What it does |
 | --- | --- |
+| `read_shop` | Preferred read-only multi-section snapshot; no navigation needed |
 | `search_products` | Search the catalog by text, category, brand, price or stock |
 | `get_product` | One full record, with the facts compatibility checks use |
 | `get_current_build` | The nine slots on screen, with price, frame rate and power |

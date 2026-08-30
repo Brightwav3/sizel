@@ -31,8 +31,8 @@ import {
 import type { SortId } from "../../entities/product/queries";
 import type { Part, PcSlot, Picks, Route, Slot } from "../../shared/lib/types";
 import { bottleneck, fansForCase, fixOptions, powerReport, recommendBuild } from "./buildAdvisor";
-import { fail, ok } from "./toolResult";
-import type { ToolDescriptor } from "./webmcpApi";
+import { fail, ok, SNAPSHOT_OUTPUT_BUDGET } from "./toolResult";
+import type { ToolCallResult, ToolDescriptor } from "./webmcpApi";
 
 /** A tool, plus the routes it makes sense on. */
 export interface RigsmithTool extends ToolDescriptor {
@@ -104,6 +104,14 @@ const facts = (product: Part) => {
     storageInterface: product.storageInterface, storageInterfaces: product.storageInterfaces,
     lengthMm: product.len, clearanceMm: product.clearance, wattage: product.watt,
     cpuPowerW: product.cpuPowerW, fps1440p: product.fps, score: product.score, noiseDb: product.noise,
+    displayInches: spec(product, "display", "sizeInches"),
+    displayType: spec(product, "display", "type"),
+    refreshHz: spec(product, "display", "refreshRateHz"),
+    batteryMah: spec(product, "battery", "capacityMah"),
+    storageGB: spec(product, "storage", "capacityGB") ?? spec(product, "hardware", "storageGB"),
+    chip: spec(product, "performance", "chip"),
+    rearCameras: spec(product, "cameras", "rear")?.map((camera: any) =>
+      `${camera.type} ${camera.megapixels}MP${camera.opticalZoom ? ` ${camera.opticalZoom}` : ""}`).join(", "),
   };
   return Object.fromEntries(Object.entries(all).filter(([, value]) => value !== undefined));
 };
@@ -144,6 +152,62 @@ const readFilters = (category: Slot | undefined, raw: unknown) => {
 
 // Tools ----------------------------------------------------------------
 export const TOOLS: RigsmithTool[] = [
+  {
+    name: "read_shop",
+    description: "Preferred read entry point. Get search results, product comparisons, a full build report, console comparisons, cart and watches in one call. Request only needed sections. USD prices; performance is a catalog estimate, not a game benchmark. No mutations or navigation. Partial errors stay in their section. Use specific tools for edits; reread affected sections afterward.",
+    readOnlyHint: true,
+    annotations: { readOnlyHint: true },
+    routes: [],
+    inputSchema: schema({
+      search: schema({ category: str("Catalog category.", CATEGORIES), brand: str("Catalog brand."), query: str("Search text."), maxPrice: num("USD ceiling."), sort: str("Ordering.", SORTS), limit: num("1–5; default 5.") }),
+      productIds: { type: "array", minItems: 1, maxItems: 3, items: { type: "string" }, description: "Details for up to three known product ids." },
+      compareProductIds: { type: "array", minItems: 2, maxItems: 4, items: { type: "string" }, description: "Compare two to four known product ids." },
+      compareDeviceIds: { type: "array", minItems: 1, maxItems: 3, items: { type: "string" }, description: "Compare the PC with up to three known console or phone ids." },
+      include: { type: "array", uniqueItems: true, maxItems: 3, items: { type: "string", enum: ["build", "cart", "watchdogs"] }, description: "Optional current-state sections; build includes compatibility, stock and performance." },
+      resolution: str("Console comparison resolution; build uses the current target.", RESOLUTIONS),
+    }),
+    execute(args) {
+      // ADR 0006: an explicit read-only allowlist, never a generic tool executor.
+      const sections: Record<string, any> = {};
+      const read = (section: string, name: string, input: Record<string, any>) => {
+        try {
+          const tool = TOOLS.find(entry => entry.name === name)!;
+          if (!tool.readOnlyHint) throw new Error("Read-only section required");
+          const result = tool.execute(input) as ToolCallResult;
+          sections[section] = JSON.parse(result.content[0].text);
+        } catch {
+          sections[section] = { error: "section_unavailable", hint: "Retry this section with its individual read tool." };
+        }
+      };
+      const validIds = (value: unknown, min: number, max: number): value is string[] =>
+        Array.isArray(value) && value.length >= min && value.length <= max && value.every(id => typeof id === "string" && id.length > 0 && id.length <= 200);
+      if (args.search) read("search", "search_products", { ...args.search, limit: Math.min(5, Math.max(1, Number(args.search.limit) || 5)) });
+      if (args.compareProductIds) {
+        if (validIds(args.compareProductIds, 2, 4)) read("comparison", "compare_products", { productIds: args.compareProductIds });
+        else sections.comparison = { error: "invalid_ids", hint: "Provide two to four product ids." };
+      }
+      if (args.productIds) {
+        if (validIds(args.productIds, 1, 3)) args.productIds.forEach((productId: string) => read(`product:${productId}`, "get_product", { productId }));
+        else sections.products = { error: "invalid_ids", hint: "Provide one to three product ids." };
+      }
+      if (args.compareDeviceIds) read("devices", "compare_build_to_product", { productIds: args.compareDeviceIds, resolution: args.resolution });
+      for (const section of Array.isArray(args.include) ? new Set(args.include) : []) {
+        const tool = ({ build: "check_build_compatibility", cart: "get_cart", watchdogs: "list_watchdogs" } as Record<string, string>)[section as string];
+        if (tool) read(section as string, tool, {});
+      }
+      if (!Object.keys(sections).length) return fail("nothing_to_read", "Request search, product ids, comparisons or include sections.");
+      // Bound context cost while naming every section not delivered in full.
+      let body = JSON.stringify({ currency: "USD", sections });
+      while (body.length > SNAPSHOT_OUTPUT_BUDGET) {
+        const largest = Object.keys(sections).filter(key => !sections[key].error)
+          .sort((a, b) => JSON.stringify(sections[b]).length - JSON.stringify(sections[a]).length)[0];
+        if (!largest) break;
+        sections[largest] = { error: "section_too_large", hint: "Request this section separately." };
+        body = JSON.stringify({ currency: "USD", sections });
+      }
+      return { content: [{ type: "text", text: body }] };
+    },
+  },
   {
     name: "search_products",
     description:
@@ -278,7 +342,7 @@ export const TOOLS: RigsmithTool[] = [
       "Two to four listings side by side: price, delivery, and only the specifications where they differ.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
-    routes: ["category", "product", "builder"],
+    routes: [],
     inputSchema: schema({
       productIds: {
         type: "array", minItems: 2, maxItems: 4, items: { type: "string" },
@@ -286,12 +350,15 @@ export const TOOLS: RigsmithTool[] = [
       },
     }, ["productIds"]),
     execute(args) {
+      if (!Array.isArray(args.productIds) || args.productIds.length < 2 || args.productIds.length > 4)
+        return fail("product_not_found", "Provide two to four catalog ids.");
       const found = (args.productIds as string[]).map(locate);
       if (found.some(entry => !entry)) return fail("product_not_found", "Every id must come from search_products.");
       const entries = found as { product: Part; category: Slot }[];
       const keys = Array.from(new Set(entries.flatMap(entry => Object.keys(facts(entry.product)))));
       const differing = keys.filter(key => new Set(entries.map(entry => JSON.stringify((facts(entry.product) as any)[key]))).size > 1);
       return ok({
+        shared: Object.fromEntries(keys.filter(key => !differing.includes(key)).map(key => [key, facts(entries[0].product)[key]])),
         items: entries.map(entry => ({
           id: entry.product.id,
           name: productTitle(entry.product, entry.category),
@@ -309,7 +376,7 @@ export const TOOLS: RigsmithTool[] = [
       "Stock on hand and delivery date. When a part is out of stock, say so and offer create_watchdog rather than substituting silently.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
-    routes: ["category", "product", "cart"],
+    routes: [],
     inputSchema: schema({ productId: str("Id from another tool.") }, ["productId"]),
     execute(args) {
       const found = locate(args.productId);
@@ -451,10 +518,10 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "check_build_compatibility",
     description:
-      "Check the build on screen for socket, memory, form factor, clearance, cooling and power conflicts. One sentence per conflict, plus power headroom. On a clash call fix_build_issue rather than guessing.",
+      "One-call build report: compatibility, sockets, GPU clearance, PSU headroom, performance estimate, bottleneck and GPU stock. Replaces separate detail lookups. On a clash use fix_build_issue.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
-    routes: ["product", "builder", "cart"],
+    routes: [],
     inputSchema: NO_INPUT,
     execute() {
       const instance = app();
@@ -463,6 +530,11 @@ export const TOOLS: RigsmithTool[] = [
         compatible: model.fits,
         issues: model.issues,
         power: powerReport(instance.state.picks),
+        socket: { cpu: model.cpu.socket, board: part(instance.state.picks, "board").socket },
+        clearance: { gpuMm: model.gpu.len, caseMm: part(instance.state.picks, "case").clearance },
+        performance: { fps: model.fps, resolution: instance.state.res, basis: "catalog estimate; not a game benchmark" },
+        bottleneck: bottleneck(instance.state.picks, instance.state.res as Resolution).reason,
+        gpu: brief(model.gpu, "gpu"),
       }, "issues");
     },
   },
@@ -473,7 +545,7 @@ export const TOOLS: RigsmithTool[] = [
       "Frame rate, noise, price, power and delivery for the build on screen. These are the numbers the shopper sees, so quote them as they are.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
-    routes: ["builder", "cart"],
+    routes: [],
     inputSchema: schema({ resolution: str("Default: the shopper's setting.", RESOLUTIONS) }),
     execute(args) {
       const instance = app();
@@ -482,6 +554,7 @@ export const TOOLS: RigsmithTool[] = [
       return ok({
         resolution: res,
         fps: model.fps,
+        basis: "catalog estimate; no per-game benchmark available",
         noise: noiseWord(model.noise),
         noiseDb: Math.round(model.noise),
         price: model.price,
@@ -499,7 +572,7 @@ export const TOOLS: RigsmithTool[] = [
       "Why the build on screen misses the frame rate its graphics card could reach: the part holding it back, the frames it costs, and the cheapest upgrade that helps.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
-    routes: ["builder"],
+    routes: [],
     inputSchema: schema({ resolution: str("Default: the shopper's setting.", RESOLUTIONS) }),
     execute(args) {
       const instance = app();
@@ -750,7 +823,7 @@ export const TOOLS: RigsmithTool[] = [
       "Listings the shopper is watching, with the price at the time the watch was set and the price now. Read it before offering another watch on the same product.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
-    routes: ["product", "cart"],
+    routes: [],
     inputSchema: NO_INPUT,
     execute() {
       const instance = app();
@@ -973,13 +1046,29 @@ export const TOOLS: RigsmithTool[] = [
       "Set the PC on screen against a console or phone: price, delivery, and what each one states it can do. The catalog gives no frame rate for a console, so compare its stated output and say the numbers are not measured the same way.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
-    routes: ["builder", "product"],
+    routes: [],
     inputSchema: schema({
-      productId: str("A console or phone id."),
+      productId: str("One console or phone id; alternatively pass productIds."),
+      productIds: { type: "array", minItems: 1, maxItems: 3, items: { type: "string" }, description: "Compare up to three devices in one call." },
       resolution: str("Default: the shopper's setting.", RESOLUTIONS),
-    }, ["productId"]),
+    }),
     execute(args) {
       const instance = app();
+      const ids = args.productIds ?? [args.productId];
+      if (!Array.isArray(ids) || ids.length < 1 || ids.length > 3 || ids.some((id: unknown) => typeof id !== "string"))
+        return fail("product_not_found", "Provide productId or one to three productIds.");
+      if (args.productIds) {
+        const single = TOOLS.find(tool => tool.name === "compare_build_to_product")!;
+        const results = ids.map((productId: string) => {
+          const result = single.execute({ productId, resolution: args.resolution }) as ToolCallResult;
+          return JSON.parse(result.content[0].text);
+        });
+        const failed = results.find(result => result.error);
+        if (failed) return fail(failed.error, failed.hint);
+        return ok({ build: results[0].build,
+          devices: results.map(result => ({ ...result.device, priceDifference: result.priceDifference })),
+          note: results[0].note }, "devices");
+      }
       const found = locate(args.productId);
       if (!found) return fail("product_not_found", "Call search_products in the consoles or phones category.");
       if (found.category !== "consoles" && found.category !== "phones") {
