@@ -39,15 +39,15 @@ submission period.
 
 ## Architecture
 
-`RigsmithApp` owns application lifecycle and the single active build. `app/buildContext.ts` calculates shared derived data once. Domain modules under `app/vals/` expose route-specific view-models to screens.
+`RigsmithApp` owns application lifecycle and the single active build. Feature folders own route UI and view-models, entities own reusable product and build rules, and shared contains layout and UI primitives.
 
 ```text
-src/library/
-  app/          application state, navigation, shared calculations, domain view-models
-  data/         canonical catalog adapter and compatibility calculations
-  screens/      route-level UI
-  shell/        top bar, navigation, catalog filters, and page shell
-  overlays/     floating build summary and toast
+src/
+  app/          application composition, routes, and state
+  features/     catalog, product, search, cart, checkout, and PC builder
+  entities/     reusable product queries and build calculations
+  shared/       UI primitives, layout, styles, and shared types
+  data/catalog/ canonical catalog adapter and storefront listing data
 ```
 
 The canonical frontend catalog is `public/catalog/products.json`. Architectural decisions are recorded in `docs/decisions/`.
