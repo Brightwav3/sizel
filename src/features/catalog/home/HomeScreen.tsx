@@ -29,6 +29,7 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
 
   return (
   <div className="t-page home-page">
+    <div className="home-lead">
     <nav className="home-quick-categories" aria-label="Popular categories">
       {v.homeCategories.slice(0, 6).map((category: Vals) => (
         <button key={category.name} onClick={category.go}>
@@ -39,7 +40,7 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
       ))}
     </nav>
 
-    <section className="hero">
+      <section className="hero">
       <div className="hero-banner">
         <div className="hero-banner__track" style={{ transform: `translateX(-${offerIndex * 100}%)` }}>
           {(offers.length ? offers : [offer]).map((slide: Vals, index: number) => (
@@ -108,7 +109,8 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
           <span><strong>30-day returns</strong><small>Easy returns on every order</small></span>
         </div>
       </aside>
-    </section>
+      </section>
+    </div>
 
     <section className="home-section">
       <div className="home-section__head">
