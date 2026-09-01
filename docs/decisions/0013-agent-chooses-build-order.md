@@ -26,13 +26,14 @@ The agent decides where to start from the shopper's request. For a gaming
 request it may begin with the GPU, then choose a compatible CPU, memory,
 motherboard, cooler, case, power supply and storage in the order that best
 supports its reasoning. It can use `list_compatible_parts` and
-`inspect_build_options` to read candidates, then must apply each choice with
-`set_build_component`.
+`inspect_build_options` to read candidates, then applies its complete selection
+with `set_build_components`.
 
 The controller remains responsible for deterministic checks: catalog ids,
 stock, compatibility, bundled fans, budget and cart admission. Read tools may
-filter or structure facts, but they do not mutate the build. The existing
-ranked GPU read remains a candidate scan; it never selects the returned part.
+filter or structure facts, but they do not mutate the build. GPU alternatives
+are supplied by the agent to `compare_build_options`, which returns facts and
+simulations without selecting a winner or deciding whether to create a watch.
 
 ## Rejected alternatives
 
@@ -46,10 +47,11 @@ ranked GPU read remains a candidate scan; it never selects the returned part.
 
 ## Consequences
 
-The flow can require more tool calls and may take longer. In exchange, the
-agent's order and choices are visible in the builder and can be evaluated from
-the conversation and committed state. The catalog remains fictional, and
-compatibility checks still cover only the implemented rules.
+The agent still needs enough read calls to make an informed selection, but the
+demo can apply the finished selection in one batch. The agent's order and
+choices remain visible in the conversation and committed builder state. The
+catalog remains fictional, and compatibility checks still cover only the
+implemented rules.
 
 ## Enforced in
 

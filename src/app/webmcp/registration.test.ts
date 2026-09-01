@@ -91,4 +91,18 @@ describe('fast browser tool discovery', () => {
     expect(registerTool).toHaveBeenCalledTimes(2);
     expect(mockTools.execute).toHaveBeenCalledWith({}, { signal: controller.signal });
   });
+
+  it('records handler-only timing when debug logging is enabled', async () => {
+    const descriptors = new Map<string, any>();
+    const registerTool = vi.fn((tool: any) => { descriptors.set(tool.name, tool); return undefined; });
+    vi.stubGlobal('window', { location: { pathname: '/', search: '?debugWebMcp=1' } });
+    vi.stubGlobal('document', { modelContext: { registerTool } });
+    const info = vi.spyOn(console, 'info').mockImplementation(() => {});
+    syncWebmcpTools();
+    await descriptors.get('shared').execute({});
+    expect((window as any).__rigsmithWebmcpTimings).toEqual([
+      expect.objectContaining({ name: 'shared', ms: expect.any(Number), outcome: 'ok' }),
+    ]);
+    expect(info).toHaveBeenCalledWith(expect.stringContaining('[webmcp timing] shared:'));
+  });
 });

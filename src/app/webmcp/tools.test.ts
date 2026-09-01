@@ -41,10 +41,12 @@ describe("tool contract", () => {
     expect(demoTools().map(tool => tool.name)).toEqual([...DEMO_TOOL_NAMES]);
     expect(demoTools()).toHaveLength(13);
     expect(demoTools().some(tool => tool.name === "read_shop")).toBe(false);
+    expect(demoTools().map(tool => tool.name)).toContain("set_build_components");
+    expect(demoTools().map(tool => tool.name)).not.toContain("set_build_component");
   });
 
   it("marks every tool that changes nothing as read only", () => {
-    const writers = ["set_build_component", "add_to_cart", "add_build_to_cart", "create_watchdog",
+    const writers = ["set_build_component", "set_build_components", "add_to_cart", "add_build_to_cart", "create_watchdog",
       "begin_build", "inspect_build_options", "set_build_target", "undo_build_change", "show_in_catalog",
       "update_cart_line", "start_checkout", "remove_watchdog",
       "select_product_variant", "focus_builder_slot"];
@@ -63,6 +65,7 @@ describe("tool contract", () => {
 
   it("offers the build editors only on screens that show a build", () => {
     expect(toolsForRoute("checkout").map(tool => tool.name)).not.toContain("set_build_component");
+    expect(toolsForRoute("checkout").map(tool => tool.name)).not.toContain("set_build_components");
     expect(toolsForRoute("builder").map(tool => tool.name)).toContain("fix_build_issue");
     expect(toolsForRoute("home").map(tool => tool.name)).toContain("search_products");
   });
@@ -135,7 +138,8 @@ describe("search_products filters", () => {
     const available = CATALOG.gpu.find(product => (product.stock ?? 0) > 0)!;
     const result = JSON.parse(call("compare_products", { productIds: [available.id, unavailable.id] }));
     const row = result.items.find((item: any) => item.id === unavailable.id);
-    expect(row).toMatchObject({ inStock: false, concern: "out_of_stock", offer: "create_watchdog" });
+    expect(row).toMatchObject({ inStock: false, concern: "out_of_stock" });
+    expect(row).not.toHaveProperty("offer");
     expect(row.shipsInDays).toBeGreaterThan(2);
   });
 

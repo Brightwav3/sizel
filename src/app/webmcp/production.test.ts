@@ -153,15 +153,21 @@ describe('visible catalog flow', () => {
     expect(result.items.some((item: any) => item.id === 'pear-phone-16e')).toBe(true);
   });
 
-  it('allows harmless empty batch defaults alongside ranked GPU mode', async () => {
+  it('lists compatible GPU candidates without choosing one', async () => {
     await call('begin_build', {
       brief: 'A balanced gaming PC',
       budget: 1500,
       reset: true,
     });
-    const result = await call('list_compatible_parts', { slot: 'gpu', slots: [], mode: 'ranked', maxPrice: 800, includeDetails: false });
-    expect(result.mode).toBe('ranked');
-    expect(result.primary).toBeDefined();
+    const result = await call('list_compatible_parts', { slot: 'gpu', maxPrice: 800, sort: 'priceDesc', limit: 3 });
+    expect(result).toMatchObject({ slot: 'gpu' });
+    expect(result.items.length).toBeGreaterThan(0);
+    expect(result.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'northwind-gx-5070-ti', stock: expect.any(String), shipsInDays: expect.any(Number) }),
+      expect.objectContaining({ id: 'fabrikam-rx-9070-xt', stock: expect.any(String), shipsInDays: expect.any(Number) }),
+    ]));
+    expect(result).not.toHaveProperty('primary');
+    expect(result).not.toHaveProperty('fallback');
   });
 
   it('batches compatible options for every remaining slot', async () => {
@@ -169,17 +175,26 @@ describe('visible catalog flow', () => {
     const result = await call('list_compatible_parts', { allRemaining: true });
     expect(result).toMatchObject({ allRemaining: true, requested: BUILD_SLOTS.length });
     expect(result.slots.map((entry: any) => entry.slot).sort()).toEqual([...BUILD_SLOTS].sort());
-    expect(result.slots.every((entry: any) => entry.items.length <= 2)).toBe(true);
+    expect(result.slots.every((entry: any) => entry.items.length === Math.min(5, entry.fitting))).toBe(true);
+    expect(result.slots.filter((entry: any) => ['gpu', 'psu', 'case'].includes(entry.slot)).every((entry: any) => entry.items.length >= 5)).toBe(true);
     expect(result.slots.every((entry: any) => entry.items.every((item: any) => !item.details))).toBe(true);
   });
 
-  it('keeps a large batch complete when details or a high limit are requested', async () => {
+  it('honours a high per-slot limit in a complete batch while keeping it compact', async () => {
     await call('begin_build', { brief: 'A gaming PC under budget', budget: 1800 });
     const result = await call('list_compatible_parts', { allRemaining: true, limit: 10, includeDetails: true });
-    expect(result).toMatchObject({ allRemaining: true, requested: BUILD_SLOTS.length, candidateLimit: 2 });
+    expect(result).toMatchObject({ allRemaining: true, requested: BUILD_SLOTS.length });
+    expect(result).not.toHaveProperty('candidateLimit');
     expect(result.slots).toHaveLength(BUILD_SLOTS.length);
-    expect(result.slots.every((entry: any) => entry.items.length <= 2)).toBe(true);
+    expect(result.slots.every((entry: any) => entry.items.length === Math.min(10, entry.fitting))).toBe(true);
     expect(result.slots.every((entry: any) => entry.items.every((item: any) => !item.details))).toBe(true);
+  });
+
+  it('honours the batch limit independently for explicitly requested slots', async () => {
+    await call('begin_build', { brief: 'A gaming PC under budget', budget: 1800 });
+    const result = await call('list_compatible_parts', { slots: ['gpu', 'psu', 'case'], limit: 7 });
+    expect(result.slots).toHaveLength(3);
+    expect(result.slots.every((entry: any) => entry.items.length === Math.min(7, entry.fitting))).toBe(true);
   });
 
   it('returns shopper budget shares and uses them as candidate allowances', async () => {
@@ -214,30 +229,64 @@ describe('visible catalog flow', () => {
       resolution: '1440p',
     });
     expect(started).not.toHaveProperty('starter');
-    expect(started.next).toContain('starting slot yourself');
+    expect(started).not.toHaveProperty('next');
     expect(app.state.picks).toEqual(DEFAULT_PICKS);
     expect(app.state.chosen).toEqual([]);
   });
 
-  it('ranks a GPU primary and fallback, and derives the watchdog gate from the real listing', async () => {
+  it('applies a complete agent-selected build in one atomic command', async () => {
+    await call('begin_build', { brief: 'A compatible 1440p gaming PC', budget: 1700, resolution: '1440p', reset: true });
+    const picks = recommendBuild(1700, '1440p', true).picks;
+    const result = await call('set_build_components', {
+      components: {
+        cpu: picks.cpu, gpu: picks.gpu, board: picks.board, ram: picks.ram,
+        storage: picks.storage, cooler: picks.cooler, psu: picks.psu, case: picks.case,
+      },
+    });
+    expect(result).toMatchObject({
+      applied: true, selectedCount: BUILD_SLOTS.length, complete: true,
+      compatible: true, validationComplete: true, inStock: true, price: metrics(picks, '1440p').price,
+      bundledFans: bundledFans(picks.case),
+    });
+    expect(app.state.chosen).toEqual(BUILD_SLOTS);
+    expect(app.state.picks).toMatchObject({ ...picks, fans: bundledFans(picks.case) });
+    expect(app.state.route).toBe('builder');
+  });
+
+  it('rejects an invalid batch without partially changing the build', async () => {
+    await call('begin_build', { brief: 'A compatible gaming PC', budget: 1700, reset: true });
+    const before = { picks: structuredClone(app.state.picks), chosen: [...app.state.chosen], revision: app.state.buildRevision };
+    const picks = recommendBuild(1700, '1440p', true).picks;
+    const unavailable = CATALOG.gpu.find(item => listingStock(item, 'gpu') === 0)!;
+    const result = await call('set_build_components', {
+      components: {
+        cpu: picks.cpu, gpu: unavailable.id, board: picks.board, ram: picks.ram,
+        storage: picks.storage, cooler: picks.cooler, psu: picks.psu, case: picks.case,
+      },
+    });
+    expect(result).toMatchObject({ error: 'out_of_stock' });
+    expect(app.state.picks).toEqual(before.picks);
+    expect(app.state.chosen).toEqual(before.chosen);
+    expect(app.state.buildRevision).toBe(before.revision);
+  });
+
+  it('keeps the GPU candidate read separate from build selection', async () => {
     await call('begin_build', {
       brief: 'A 1440p gaming PC with the strongest GPU under 800 dollars',
       budget: 1500,
       resolution: '1440p',
       reset: true,
     });
-    const ranked = await call('list_compatible_parts', { slot: 'gpu', mode: 'ranked', maxPrice: 800 });
-    expect(ranked).toMatchObject({
-      mode: 'ranked',
-      slot: 'gpu',
-      rankingComplete: true,
-      primary: { id: 'northwind-gx-5070-ti', inStock: false, shipsInDays: 8 },
-      fallback: { id: 'fabrikam-rx-9070-xt', inStock: true },
-      watchdogOffer: null,
-      watchdogHint: 'Finish selecting the non-GPU parts before asking about a watchdog.',
-    });
-    expect(ranked.performanceBasis).toContain('not measured');
-    expect(JSON.stringify(ranked).length).toBeLessThanOrEqual(1500);
+    const candidates = await call('list_compatible_parts', { slot: 'gpu', maxPrice: 800, sort: 'priceDesc' });
+    expect(candidates).toMatchObject({ slot: 'gpu' });
+    expect(candidates.items).toEqual(expect.arrayContaining([
+      expect.objectContaining({ id: 'northwind-gx-5070-ti' }),
+      expect.objectContaining({ id: 'fabrikam-rx-9070-xt' }),
+    ]));
+    expect(candidates).not.toHaveProperty('primary');
+    expect(candidates).not.toHaveProperty('fallback');
+    expect(candidates).not.toHaveProperty('watchdogOffer');
+    expect(JSON.stringify(candidates).length).toBeLessThanOrEqual(1500);
     expect(app.state.chosen).not.toContain('gpu');
   });
 
@@ -279,44 +328,21 @@ describe('whole-build tradeoffs without automatic selection', () => {
     expect(result.simulations['counter-strike-2'].alternatives).toHaveLength(3);
     expect(result.simulations['cyberpunk-2077'].baseline.kind).toBe('simulation');
   });
-  it('derives a watchdog offer from a materially faster unavailable GPU', async () => {
+  it('returns comparison facts without deciding whether to create a watchdog', async () => {
     const proposal = recommendBuild(1500, '1440p', true);
     app.state = { ...app.state, picks: proposal.picks, budget: 1500, res: '1440p', chosen: [...BUILD_SLOTS] };
     const result = await call('compare_build_options', {
       alternatives: [{ gpu: 'fabrikam-rx-9080-xt', psu: 'adventure-core-850g' }],
       games: ['fortnite', 'counter-strike-2', 'cyberpunk-2077'],
     });
-    expect(result.watchdogOffer).toMatchObject({
-      eligible: true,
-      candidateId: 'fabrikam-rx-9080-xt',
-      comparedTo: proposal.picks.gpu,
-      availability: 'out_of_stock',
+    expect(result).not.toHaveProperty('watchdogOffer');
+    expect(result).not.toHaveProperty('watchdogOffers');
+    expect(result.alternatives[0]).toMatchObject({
+      inStock: false,
       shipsInDays: 8,
-      askBeforeCreate: true,
+      blockedBy: 'out_of_stock',
     });
-    expect(result.watchdogOffer.improvementPct).toBeGreaterThanOrEqual(10);
-    expect(result.watchdogOffer.minGameImprovementPct).toBeGreaterThan(0);
-    expect(result.watchdogOffer.averageDeltaFps).toBeGreaterThan(0);
-    expect(result.watchdogOffers).toHaveLength(1);
-  });
-  it('does not offer a watchdog for a slower GPU, a stocked GPU, or a partial game comparison', async () => {
-    const proposal = recommendBuild(1500, '1440p', true);
-    app.state = { ...app.state, picks: proposal.picks, budget: 1500, res: '1440p', chosen: [...BUILD_SLOTS] };
-    const slower = await call('compare_build_options', {
-      alternatives: [{ gpu: 'northwind-gx-5070-ti' }],
-      games: ['fortnite', 'counter-strike-2', 'cyberpunk-2077'],
-    });
-    expect(slower.watchdogOffer).toBeNull();
-    const stocked = await call('compare_build_options', {
-      alternatives: [{ gpu: 'fabrikam-rx-9090-xtx' }],
-      games: ['fortnite', 'counter-strike-2', 'cyberpunk-2077'],
-    });
-    expect(stocked.watchdogOffer).toBeNull();
-    const partial = await call('compare_build_options', {
-      alternatives: [{ gpu: 'fabrikam-rx-9080-xt' }],
-      games: ['cyberpunk-2077'],
-    });
-    expect(partial.watchdogOffer).toBeNull();
+    expect(result.simulations.fortnite.alternatives[0].delta.simulatedAverageFps).toBeGreaterThan(0);
   });
   it.each(['counter-strike-2', 'fortnite', 'cyberpunk-2077'] as const)('keeps compact provenance metadata for %s comparisons', async game => {
     fullBuild();
@@ -347,6 +373,7 @@ describe('whole-build tradeoffs without automatic selection', () => {
     const report = await call('check_build_compatibility');
     expect(report).not.toHaveProperty('error');
     expect(report.simulation.kind).toBe('simulation');
+    expect(report).not.toHaveProperty('decisionReview');
   });
   it('requires a real complete baseline and rejects malformed or duplicate alternatives', async () => {
     expect(await call('compare_build_options', { alternatives: [{ gpu: CATALOG.gpu[0].id }] })).toMatchObject({ error: 'build_incomplete' });

@@ -1,11 +1,11 @@
 import { partIn } from '../../data/catalog/catalog';
+import { listingStock } from '../../data/catalog/listingStock';
 import { NOISE_UNAVAILABLE, PERFORMANCE_UNAVAILABLE, metrics } from '../../entities/build/metrics';
 import { BUILD_SLOTS, buildBlocker, bundledFans, ShopError } from '../../entities/build/selection';
 import type { Picks } from '../../shared/lib/types';
 import type { AppState } from '../state/AppState';
 import { simulatedBenchmarks, SIMULATION_BASIS } from '../../entities/build/simulatedBenchmarks';
 import type { BenchmarkScenario, SimulatedGame } from '../../data/benchmarks/types';
-import { watchdogOfferFor, WATCHDOG_REQUIRED_GAMES, type WatchdogComparison, type WatchdogOffer } from './watchdogGate';
 
 /** Counterfactuals supplied by the agent, never generated, ranked or applied by the shop. */
 function compareSingleBuildOptions(state: AppState, alternatives: unknown, scenario: BenchmarkScenario, game?: SimulatedGame) {
@@ -17,9 +17,13 @@ function compareSingleBuildOptions(state: AppState, alternatives: unknown, scena
   const summarize = (picks: Picks, includeDisclaimer = true) => {
     const model = metrics(picks, state.res);
     const blocker = buildBlocker(picks, BUILD_SLOTS, state.budget);
+    const inStock = BUILD_SLOTS.every(slot => {
+      const item = partIn(slot, picks[slot]);
+      return item ? listingStock(item, slot) > 0 : false;
+    });
     return {
       priceUSD: model.price, remainingUSD: state.budget - model.price,
-      withinBudget: model.price <= state.budget, eligible: !blocker,
+      withinBudget: model.price <= state.budget, inStock, eligible: !blocker,
       blockedBy: blocker?.code ?? null, issues: model.issues,
       performance: { fps: null, basis: PERFORMANCE_UNAVAILABLE },
       simulation: (() => {
@@ -76,8 +80,7 @@ function compareSingleBuildOptions(state: AppState, alternatives: unknown, scena
     revision: state.buildRevision, brief: state.buildBrief, budgetUSD: state.budget, resolution: state.res,
     baseline, alternatives: options,
     simulationBasis: SIMULATION_BASIS,
-    limitations: 'Measured performance and noise remain unknown. Simulation supports choices within this fictional scenario only. Eligibility is separate from simulated performance; do not select ineligible options. No global optimum is certified.',
-    next: 'Maximize benefit for the shopper use within the whole budget; do not prioritize savings by default. Test a relevant upgrade near the limit (especially GPU for gaming), deriving slot price caps from the remaining build cost. Explain any unspent budget. Apply your own choices with set_build_component and compare again after changes. Missing simulation data do not mean equal performance.',
+    limitations: 'Measured performance and noise remain unknown. Simulation supports choices within this fictional scenario only. Eligibility and simulated performance are separate facts. No global optimum is calculated.',
   };
 }
 
@@ -98,29 +101,7 @@ export function compareBuildOptions(
   const runs = selected.map(selectedGame => compareSingleBuildOptions(state, alternatives, scenario, selectedGame));
   const first = runs[0];
 
-  // A watchdog gate is only meaningful after the complete, same-resolution
-  // game comparison. A single-game read remains backwards compatible and
-  // explicitly reports that no gate was evaluated.
-  const watchdogOffers: WatchdogOffer[] = WATCHDOG_REQUIRED_GAMES.every(requiredGame => selected.includes(requiredGame))
-    ? first.alternatives.flatMap((option, optionIndex) => {
-        const candidateId = typeof option.changes.gpu === 'string' ? option.changes.gpu : null;
-        if (!candidateId) return [];
-        const comparisons: WatchdogComparison[] = WATCHDOG_REQUIRED_GAMES.map(game => {
-          const run = runs[selected.indexOf(game)];
-          const candidate = run.alternatives[optionIndex];
-          return {
-            game,
-            baseline: run.baseline.simulation,
-            candidate: candidate.simulation,
-          };
-        });
-        const candidatePicks = { ...state.picks, ...option.changes } as Picks;
-        const offer = watchdogOfferFor(state, candidateId, comparisons, candidatePicks);
-        return offer ? [offer] : [];
-      })
-    : [];
-
-  if (runs.length === 1) return { ...first, watchdogOffer: null, watchdogOffers: [] };
+  if (runs.length === 1) return first;
 
   const compactSimulation = (simulation: any, provenance = false) => ({
     kind: simulation.kind,
@@ -146,13 +127,14 @@ export function compareBuildOptions(
     resolution: first.resolution,
     simulationBasis: first.simulationBasis,
     limitations: first.limitations,
-    next: first.next,
   };
   return {
     ...summary,
     baseline: {
       priceUSD: baseline.priceUSD,
       remainingUSD: baseline.remainingUSD,
+      inStock: baseline.inStock,
+      shipsInDays: baseline.shipsInDays,
       withinBudget: baseline.withinBudget,
       eligible: baseline.eligible,
       blockedBy: baseline.blockedBy,
@@ -163,6 +145,8 @@ export function compareBuildOptions(
       changes: option.changes,
       priceUSD: option.priceUSD,
       remainingUSD: option.remainingUSD,
+      inStock: option.inStock,
+      shipsInDays: option.shipsInDays,
       withinBudget: option.withinBudget,
       eligible: option.eligible,
       blockedBy: option.blockedBy,
@@ -170,18 +154,6 @@ export function compareBuildOptions(
       delta: { priceUSD: option.delta.priceUSD, powerW: option.delta.powerW },
     })),
     games: selected,
-    watchdogOffer: watchdogOffers[0] ?? null,
-    // Keep the first offer detailed above.  The legacy plural field is still
-    // useful when more than one candidate qualifies, but repeating the full
-    // offer for every candidate wastes the response budget and caused the
-    // two-candidate demo call to fall into `result_too_large`.
-    watchdogOffers: watchdogOffers.map(offer => ({
-      candidateId: offer.candidateId,
-      comparedTo: offer.comparedTo,
-      improvementPct: offer.improvementPct,
-      availability: offer.availability,
-      shipsInDays: offer.shipsInDays,
-    })),
     simulations: Object.fromEntries(runs.map(run => {
       const gameId = run.baseline.simulation.game;
       return [gameId, {

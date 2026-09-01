@@ -6,7 +6,7 @@ The previous four-call workflow used `recommend_build` and no longer exists. Its
 
 1. `begin_build` opens the existing builder before any selections and records the brief and hard USD budget. No new page panel is added.
 2. Search the catalog and use `inspect_build_options` when candidate facts or a focused comparison are useful. It focuses the existing slot listing, without choosing a product. Inspection is optional; selection still validates the current catalog state. Follow `search_products.nextOffset` when more results are needed.
-3. Use `set_build_component` to select each part with the agent's own reason, tradeoff and inspected alternative. The selection appears in the existing build sheet. Explain choices in the conversation. A case includes its fans.
+3. Apply the complete agent-selected build with `set_build_components`. The command validates all eight non-fan slots atomically, and the case includes its fans. The selection appears in the existing build sheet. Explain choices in the conversation.
 4. Verify completion, price, stock and known conflicts with `check_build_compatibility`, then visually verify the builder. Do not add to cart, create watches or open checkout unless requested.
 
 ## Measurement and quality

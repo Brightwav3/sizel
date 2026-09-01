@@ -22,6 +22,24 @@ import type { ToolCallResult, ToolExecuteOptions } from "./webmcpApi";
 
 /** Live registrations, each with the controller that withdraws it. */
 const registered = new Map<string, AbortController>();
+const WEBMCP_TIMINGS_KEY = "__rigsmithWebmcpTimings";
+type WebmcpTiming = { name: string; ms: number; outcome: "ok" | "error" };
+
+const timingNow = () => typeof performance !== "undefined" ? performance.now() : Date.now();
+
+/**
+ * Record handler-only duration. This intentionally excludes model planning,
+ * browser transport, registration and UI paint time, which lets the demo
+ * distinguish local handler work from WebMCP/client overhead.
+ */
+function recordTiming(name: string, startedAt: number, outcome: WebmcpTiming["outcome"]) {
+  if (typeof window === "undefined") return;
+  const target = window as Window & { [WEBMCP_TIMINGS_KEY]?: WebmcpTiming[] };
+  const ms = Math.round((timingNow() - startedAt) * 100) / 100;
+  target[WEBMCP_TIMINGS_KEY] = [...(target[WEBMCP_TIMINGS_KEY] ?? []), { name, ms, outcome }].slice(-200);
+  const query = typeof window.location?.search === "string" ? new URLSearchParams(window.location.search) : null;
+  if (query?.get("debugWebMcp") === "1") console.info(`[webmcp timing] ${name}: ${ms}ms (${outcome})`);
+}
 // Claim names synchronously, so slow browser acknowledgements never block
 // discovery of other tools or a newer route. AbortSignal owns cancellation.
 let retry: ReturnType<typeof setTimeout> | undefined;
@@ -40,14 +58,22 @@ const guard = (
   execute: (args: Record<string, any>, options?: ToolExecuteOptions) => Promise<ToolCallResult> | ToolCallResult,
 ) =>
   async (args: Record<string, any>, options?: ToolExecuteOptions): Promise<ToolCallResult> => {
+    const startedAt = timingNow();
     const given = args ?? {};
     const missing = required.filter(key => given[key] === undefined || given[key] === null);
-    if (missing.length) return fail("missing_argument", `Required: ${missing.join(", ")}.`);
+    if (missing.length) {
+      const result = fail("missing_argument", `Required: ${missing.join(", ")}.`);
+      recordTiming(name, startedAt, "error");
+      return result;
+    }
     try {
-      return await execute(given, options);
+      const result = await execute(given, options);
+      recordTiming(name, startedAt, result.isError ? "error" : "ok");
+      return result;
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       console.error(`[webmcp] ${name} failed`, error);
+      recordTiming(name, startedAt, "error");
       return fail("tool_failed", reason.slice(0, 140));
     }
   };

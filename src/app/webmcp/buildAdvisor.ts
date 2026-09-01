@@ -363,7 +363,7 @@ export interface Bottleneck {
 
 /**
  * A measured bottleneck cannot be inferred from the catalog. The old version
- * ranked CPU and memory using the demo FPS formula, which made a synthetic
+ * ranked CPU and memory using the old demo FPS formula, which made a synthetic
  * result look like a hardware diagnosis. Keep the stable shape for callers,
  * but make every performance claim explicitly unavailable.
  */

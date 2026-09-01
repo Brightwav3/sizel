@@ -18,8 +18,8 @@ export function buildHomeVals(context: BuildContext) {
       promotions: [
         {
           kind: "service",
-          name: "Rigsmith PC configurator",
-          brand: "Rigsmith service",
+          name: "Sizel PC configurator",
+          brand: "Sizel service",
           price: "Free to use",
           image: "/catalog/promos/hero-configurator-transparent.webp",
           availability: "Compatibility checked as you build",

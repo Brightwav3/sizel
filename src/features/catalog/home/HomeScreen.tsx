@@ -115,7 +115,7 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
         <h2>Brands in the catalog</h2>
         <span className="home-section__note">{v.catalogCount} products from {v.brandCount} fictional brands</span>
       </div>
-      <div className="brand-ribbon" aria-label="Rigsmith brands">
+      <div className="brand-ribbon" aria-label="Sizel brands">
         <div className="brand-ribbon__track">
           {[0, 1].map(set => (
             <div className="brand-ribbon__set" key={set} aria-hidden={set === 1}>
@@ -215,7 +215,7 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
         </div>
       </div>
       <div className="card home-why">
-        <div className="eyebrow">Why Rigsmith</div>
+        <div className="eyebrow">Why Sizel</div>
         <div className="home-why__point"><span className="ms">verified</span><span>Every PC part is checked against the rest of your build.</span></div>
         <div className="home-why__point"><span className="ms">inventory_2</span><span>Stock and delivery dates shown before you order.</span></div>
         <div className="home-why__point"><span className="ms">photo_library</span><span>Real photos and full specifications on every product.</span></div>

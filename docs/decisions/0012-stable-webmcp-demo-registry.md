@@ -4,6 +4,7 @@
 - **Date:** 2026-08-31
 - **Supersedes:** The route-registration part of ADR 0006 for the demo profile
 - **Superseded in part by:** [ADR 0013](0013-agent-chooses-build-order.md), which removes the automatic build starter
+- **Superseded in part by:** [ADR 0014](0014-atomic-batch-build-commit.md), which replaces the demo's single-slot write with an atomic batch write
 
 ## Context
 
@@ -19,7 +20,7 @@ context and selection cost.
 The demo registers one stable allowlist of thirteen tools at mount time:
 
 `search_products`, `get_product`, `compare_products`, `show_in_catalog`,
-`begin_build`, `list_compatible_parts`, `set_build_component`,
+`begin_build`, `list_compatible_parts`, `set_build_components`,
 `check_build_compatibility`, `compare_build_options`, `create_watchdog`,
 `add_to_cart`, `add_build_to_cart`, and `get_cart`.
 
@@ -43,9 +44,13 @@ slot-specific selection tools. `begin_build` may accept shopper percentages
 such as `{cpu: 20, gpu: 40}` and returns dollar hints for every slot. It does
 not select a starting slot or part; the agent owns the build order.
 `list_compatible_parts` reports the current allowance beside fitting
-candidates, or its ranked GPU mode returns a primary, an in-stock fallback and
-a watchdog gate derived from the actual comparison. The hints never override
-whole-build budget, stock or compatibility checks.
+candidates, for one slot or a bounded batch. `set_build_components` applies the
+agent's complete selection atomically after the agent has chosen the parts.
+`compare_build_options` evaluates
+the alternatives supplied by the agent and returns deterministic eligibility,
+availability and simulation facts without selecting a winner or deciding
+whether to create a watch. The hints never override whole-build budget, stock
+or compatibility checks.
 
 ## Consequences
 

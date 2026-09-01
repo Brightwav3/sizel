@@ -10,7 +10,11 @@ Requiring inspect/select pairs and reinspection after every change increases cal
 
 ## Decision
 
-`set_build_component` requires slot and productId for selection, not a prior inspection. Reason, tradeoff and alternativeId are optional. If supplied, notes and alternative ids are validated. Fresh inspection provenance is recorded only when available; stale or absent inspection never blocks a selection. Controller validation of current stock, compatibility and hard budget remains mandatory at commit time. Tools still update the existing builder visibly.
+`set_build_component` remains the single-slot command for the full storefront
+profile. The judge-facing demo uses `set_build_components` after the agent has
+chosen the complete set; it requires no prior inspection and validates current
+stock, compatibility and hard budget atomically. Tools still update the
+existing builder visibly.
 
 The full descriptor list retains route metadata for a future storefront
 profile. The judge-facing demo uses the stable allowlist in ADR 0012, so its

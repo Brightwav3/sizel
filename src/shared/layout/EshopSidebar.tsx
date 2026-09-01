@@ -115,9 +115,9 @@ export const EshopSidebar: React.FC<{ v: Vals }> = ({ v }) => {
           ) : (
             <nav aria-label="Shop categories" className="eshop-rail-list">{departmentItems}</nav>
           )}
-          {v.isHome && <div className="eshop-audience-services" aria-label="Upcoming Rigsmith services">
-            <div className="eshop-audience-service" aria-disabled="true"><span className="audience-icon"><img src="/rigsmith-promos/students.webp" alt="" /></span><span><strong>Rigsmith for students</strong><small>Student pricing and study-ready tech</small></span><em>Soon</em></div>
-            <div className="eshop-audience-service" aria-disabled="true"><span className="audience-icon"><img src="/rigsmith-promos/firms.webp" alt="" /></span><span><strong>Rigsmith for firms</strong><small>Bulk orders and company hardware</small></span><em>Soon</em></div>
+          {v.isHome && <div className="eshop-audience-services" aria-label="Upcoming Sizel services">
+            <div className="eshop-audience-service" aria-disabled="true"><span className="audience-icon"><img src="/rigsmith-promos/students.webp" alt="" /></span><span><strong>Sizel for students</strong><small>Student pricing and study-ready tech</small></span><em>Soon</em></div>
+            <div className="eshop-audience-service" aria-disabled="true"><span className="audience-icon"><img src="/rigsmith-promos/firms.webp" alt="" /></span><span><strong>Sizel for firms</strong><small>Bulk orders and company hardware</small></span><em>Soon</em></div>
           </div>}
         </div>
         {(v.isCategory || v.isProduct) && (

@@ -18,6 +18,8 @@ import { listingStock } from "../data/catalog/listingStock";
 import { budgetPlan, validateBudgetShares } from "../entities/build/budgetPlan";
 
 type Mutation = { patch?: Partial<AppState>; result?: Record<string, any> };
+type BatchComponentSlot = Exclude<PcSlot, "fans">;
+const BATCH_COMPONENT_SLOTS = BUILD_SLOTS.filter((slot): slot is BatchComponentSlot => slot !== "fans");
 
 /**
  * The whole shop. State, the metrics model, and the derived value bag are the
@@ -305,6 +307,51 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     });
   }
 
+  // ADR 0014: the judge-facing demo can apply the agent's complete selection atomically.
+  // docs/decisions/0014-batch-build-commit.md
+  setComponents(components: unknown) {
+    return this.mutate(state => {
+      if (!components || typeof components !== "object" || Array.isArray(components))
+        throw new ShopError('invalid_components', 'Provide one catalog id for every PC slot except fans.');
+      const supplied = components as Record<string, unknown>;
+      const keys = Object.keys(supplied);
+      if (keys.length !== BATCH_COMPONENT_SLOTS.length || keys.some(slot => !BATCH_COMPONENT_SLOTS.includes(slot as BatchComponentSlot)))
+        throw new ShopError('invalid_components', 'Provide exactly one id for cpu, gpu, board, ram, storage, cooler, psu and case. Fans are bundled with the case.');
+
+      const picks = { ...state.picks };
+      for (const slot of BATCH_COMPONENT_SLOTS) {
+        const id = supplied[slot];
+        if (typeof id !== 'string' || !partIn(slot, id))
+          throw new ShopError('wrong_slot', `Choose a catalog product from the ${slot} slot.`);
+        picks[slot] = id;
+      }
+      picks.fans = bundledFans(picks.case);
+      const chosen: PcSlot[] = [...BUILD_SLOTS];
+      const blocked = buildBlocker(picks, chosen, state.budget);
+      if (blocked) throw blocked;
+      const model = metrics(picks, state.res);
+      const rows = BATCH_COMPONENT_SLOTS.map(slot => {
+        const item = partIn(slot, picks[slot])!;
+        return { slot, id: item.id, name: item.name, price: item.price };
+      });
+      return {
+        patch: {
+          picks, chosen, decisions: {}, inspected: null,
+          prev: this.snapshot(state), buildRevision: state.buildRevision + 1,
+          lastChange: null, route: 'builder', builderSlot: state.builderSlot,
+          toast: 'PC build applied',
+        },
+        result: {
+          applied: true, components: rows, bundledFans: picks.fans,
+          selectedCount: chosen.length, complete: true, compatible: model.fits,
+          validationComplete: true,
+          inStock: true, price: model.price,
+          budgetRemainingUSD: state.budget - model.price, shipsInDays: model.days,
+        },
+      };
+    });
+  }
+
   resetSlot(slot: PcSlot) {
     return this.mutate(state => {
       if (!BUILD_SLOTS.includes(slot)) throw new ShopError('wrong_slot', 'Choose a build slot.');
@@ -356,7 +403,6 @@ export class RigsmithApp extends React.Component<{}, AppState> {
         ...patch },
         result: { opened: 'builder', budget, resolution: res, reset,
           budgetAllocation: { source: plan.source, slots: plan.rows },
-          next: 'Choose the starting slot yourself from the shopper brief. Use list_compatible_parts for candidates and set_build_component to apply each choice. Compatibility, stock and the exact whole-build budget always win.',
         } };
     });
   }

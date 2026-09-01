@@ -17,10 +17,10 @@ const DEMO_ERROR_CODES = [
   "conflicting_arguments", "conflicting_workload", "duplicate_alternative",
   "filters_require_one_slot", "insufficient_stock", "invalid_alternative",
   "invalid_alternatives", "invalid_brief", "invalid_budget",
-  "invalid_budget_allocation", "invalid_game", "invalid_mode",
+  "invalid_budget_allocation", "invalid_game",
   "invalid_quantity", "invalid_reason", "invalid_scenario", "invalid_slot",
-  "missing_argument", "no_compatible_gpu", "out_of_stock", "over_budget",
-  "product_not_found", "ranked_requires_gpu", "unknown_filter", "wrong_fan_pack", "wrong_slot",
+  "missing_argument", "out_of_stock", "over_budget",
+  "product_not_found", "unknown_filter", "wrong_fan_pack", "wrong_slot",
   "command_failed", "tool_failed", "result_too_large",
 ].sort();
 
@@ -36,7 +36,7 @@ describe("README", () => {
     const written = readme.match(/^([A-Z][a-z-]+(?:-[a-z]+)?) tool descriptors are implemented/m)?.[1];
     const demoWritten = readme.match(/registers ([a-z-]+) stable tools/m)?.[1];
     const words: Record<string, number> = {
-      Thirteen: 13, Nineteen: 19, "Twenty-seven": 27, "Thirty-three": 33, "Thirty-four": 34, "Thirty-five": 35, "Thirty-six": 36,
+      Thirteen: 13, Nineteen: 19, "Twenty-seven": 27, "Thirty-three": 33, "Thirty-four": 34, "Thirty-five": 35, "Thirty-six": 36, "Thirty-seven": 37,
     };
     expect(written, "implemented tool count sentence not found in README").toBeDefined();
     expect(words[written!], `README says "${written}"`).toBe(TOOLS.length);

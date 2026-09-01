@@ -13,6 +13,11 @@ import type { ToolCallResult } from "./webmcpApi";
 export const OUTPUT_BUDGET = 1500;
 // A multi-section snapshot replaces several separate round trips (ADR 0006).
 export const SNAPSHOT_OUTPUT_BUDGET = 6000;
+// A compatibility batch is deliberately compact, but can contain up to ten
+// candidates for each of the nine build slots. Keeping this separate from the
+// ordinary snapshot ceiling makes `limit` honest instead of silently reducing
+// it to two candidates.
+export const BATCH_CANDIDATE_OUTPUT_BUDGET = 18000;
 /**
  * The full build report: nine slots, each with its own availability, plus
  * totals, compatibility, clearance and power.
