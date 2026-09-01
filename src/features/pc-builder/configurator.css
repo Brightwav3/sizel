@@ -73,7 +73,13 @@
 .forge-primary:disabled,
 .forge-select:disabled {
   cursor: default;
-  opacity: .45;
+  opacity: 1;
+}
+
+.forge-primary:disabled {
+  color: var(--text-secondary);
+  background: var(--surface-active);
+  border-color: var(--border-default);
 }
 
 .forge-product {
