@@ -106,6 +106,7 @@
    the next two offers stacked beside it, and delivery plus returns promises in
    the rail — the shape a large electronics retailer puts above the fold.
 --------------------------------------------------------------------------- */
+.home-lead { display: flex; flex-direction: column; gap: var(--space-4); }
 .hero { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--space-4); align-items: stretch; }
 
 .hero-banner { position: relative; overflow: hidden; min-height: 396px; border: 1px solid var(--border-subtle); border-radius: var(--radius-card); background: var(--surface-sunken); }
@@ -171,6 +172,13 @@
 @media (max-width: 1240px) {
   .hero-banner__slide { grid-template-columns: minmax(0, 1fr) minmax(0, 38%); gap: var(--space-4); }
   .hero-banner__art .catalog-image { height: 220px; max-height: 220px; }
+}
+
+@media (min-width: 1440px) {
+  .home-lead { display: grid; grid-template-columns: 220px minmax(0, 1fr); gap: var(--space-4); align-items: stretch; }
+  .home-quick-categories { display: flex; flex-direction: column; align-self: stretch; }
+  .home-quick-categories button { flex: 1 1 0; grid-template-columns: 32px minmax(0, 1fr) 16px; border-right: 0; border-bottom: 1px solid var(--border-subtle); }
+  .home-quick-categories button:last-child { border-bottom: 0; }
 }
 
 @media (max-width: 1000px) {
