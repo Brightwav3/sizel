@@ -5,6 +5,7 @@ import "./product.css";
 import { RatingLine, Stars } from "../../shared/ui/Stars";
 import { OptionPicker } from "../../shared/ui/OptionPicker";
 import { ColorPicker } from "./ColorPicker";
+import { GamePerformanceRail } from "./GamePerformanceRail";
 
 /**
  * Product detail laid out the way a large electronics retailer does it: the
@@ -27,23 +28,7 @@ export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => {
         <div className="product-gallery__main">
           {image ? <img src={image} alt={v.pName} /> : <span className="ms">image</span>}
         </div>
-        {v.pIsGpu && (
-          <div className="product-panel">
-            <div className="product-panel__head">
-              <strong>How well will it play?</strong>
-              <small>estimated from catalog specs</small>
-            </div>
-            <div className="product-fps">
-              {v.pFpsCards.map((f: Vals, i: number) => (
-                <div key={i} className="product-fps__card">
-                  <span>{f.res}</span>
-                  <strong className="num">{f.fps}</strong>
-                </div>
-              ))}
-            </div>
-            <p>Averages across the current Rigsmith performance model.</p>
-          </div>
-        )}
+        {v.pIsGpu && <GamePerformanceRail key={v.pSku} productId={v.pSku} kind="gpu" />}
       </section>
 
       <aside className="product-buy" aria-label="Purchase">
@@ -110,12 +95,6 @@ export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => {
             <div key={i}><dt>{f.k}</dt><dd>{f.v}</dd></div>
           ))}
         </dl>
-      </div>
-      <div className="product-detail__tags">
-        <h2>At a glance</h2>
-        <div>
-          {v.pSpecs.map((spec: string, i: number) => <span key={i}>{spec}</span>)}
-        </div>
       </div>
     </section>
 

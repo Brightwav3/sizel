@@ -7,7 +7,7 @@ import type { Part, PcSlot, Picks, Slot } from "../../shared/lib/types";
 import { FACETS, FIT_FACET_IDS } from "../../features/catalog/catalogFacets";
 import {
   allProducts as allCatalogProducts, applyProductFilters, brandOf, brandLogo,
-  candidatePool, facetSummary, facetValues, priceBounds, sortProducts,
+  candidatePool, facetSummary, facetValues, findProduct, priceBounds, sortProducts,
 } from "../product/queries";
 import type { ProductQuery, SortId } from "../product/queries";
 
@@ -65,6 +65,7 @@ export function createBuildContext(app: RigsmithApp) {
       facets: s.facetFilters,
       maxDays: s.fastShip ? 2 : undefined,
       fitsWith: s.fitOnly ? app.chosenPicks() : null,
+      scopeSearchToCategory: shopping,
       sort: s.sort as SortId,
     };
     const UNUSED_wantRes = s.useFilter.split(" ")[0];
@@ -94,8 +95,11 @@ export function createBuildContext(app: RigsmithApp) {
     const visible = sortProducts(applyProductFilters(catList, query), query.sort);
     const hidden = catList.length - visible.length;
 
-    const pSlot = s.productSlot || "gpu";
-    const pick = (CATALOG[pSlot] || CATALOG.gpu).find(g => g.id === s.productId) || CATALOG[pSlot][0];
+    // Product ids are authoritative. If an older route or search card left
+    // productSlot stale, do not fall back to the first graphics card.
+    const locatedProduct = route === "product" && s.productId ? findProduct(s.productId) : null;
+    const pSlot = (locatedProduct?.category ?? s.productSlot) || "gpu";
+    const pick = locatedProduct?.product || CATALOG[pSlot][0];
     const buildableProduct = ["gpu", "cpu", "board", "ram", "storage", "cooler", "psu", "case", "fans"].includes(pSlot);
     /**
      * There is a build only once the shopper has chosen a part for themselves.

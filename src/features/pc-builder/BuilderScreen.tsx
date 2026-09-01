@@ -92,7 +92,7 @@ export function BuilderScreen({ v }: { v: Vals }) {
         </div>
         <div className={`forge-bar__status ${v.builderIssues.length ? "is-danger-badge" : v.builderComplete ? "is-success-badge" : ""}`}>
           <span className="material-symbols-outlined">{v.builderIssues.length ? "error" : v.builderComplete ? "check_circle" : "checklist"}</span>
-          {v.builderIssues.length ? v.builderIssues[0] : v.builderComplete ? "Everything fits" : v.builderStatusLabel}
+          {v.builderIssues.length ? v.builderIssues[0] : v.builderComplete ? "No known conflicts" : v.builderStatusLabel}
         </div>
         <div className="forge-bar__actions">
           {v.addBuildReason && <small>{v.addBuildReason}</small>}

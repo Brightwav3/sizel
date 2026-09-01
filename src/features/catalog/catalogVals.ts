@@ -152,7 +152,7 @@ export function buildCatalogVals(context: BuildContext) {
           desc: (DESCS[cat] || (() => CAT_META[cat].blurb))(g),
           specs: (SPECS[cat] || (() => []))(g),
           cta: out ? "Notify me" : "Add to cart",
-          add: () => out ? app.setState({ toast: "We'll email you when it's back" }, () => app.flash())
+          add: () => out ? app.setState({ toast: "Out of stock. Demo only — email alerts are not available." }, () => app.flash())
             : app.addToCart(cat, g.id),
           good: g.good || g.note || g.meaning || CAT_META[cat].blurb, price: money(g.price),
           tag: s.chosen.includes(cat as PcSlot) && g.id === (s.picks as any)[cat] ? "In your build" : g.tag,
@@ -197,7 +197,7 @@ export function buildCatalogVals(context: BuildContext) {
           desc: (DESCS[cardCategory] || (() => CAT_META[cardCategory].blurb))(g),
           specs: (SPECS[cardCategory] || (() => []))(g),
           cta: out ? "Notify me" : "Add to cart",
-          add: () => out ? app.setState({ toast: "We'll email you when it's back" }, () => app.flash()) : app.addToCart(cardCategory, g.id),
+          add: () => out ? app.setState({ toast: "Out of stock. Demo only — email alerts are not available." }, () => app.flash()) : app.addToCart(cardCategory, g.id),
           good: g.good || g.note || g.meaning || CAT_META[cardCategory].blurb,
           price: money(g.price), tag: g.tag, tagFg: "var(--text-tertiary)", bd: "var(--border-subtle)",
           stock: out ? "Out of stock" : g.days <= 2 ? `In stock · ${stockLabel(stockCount)} pcs` : "Ships in " + g.days + " days",

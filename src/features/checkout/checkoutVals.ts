@@ -5,13 +5,21 @@ import { FREE_SHIPPING_OVER, cartTotals } from "../../entities/cart/cartTotals";
 import type { PcSlot } from "../../shared/lib/types";
 import type { BuildContext } from "../../entities/build/buildContext";
 
+/** `days` is the catalog's shipping lead time, so keep it numeric in shipping copy. */
+const shippingLabel = (days: number) =>
+  days === 0 ? "Ships today" : `Ships in ${days} day${days === 1 ? "" : "s"}`;
+
+/** The shipping date is derived from the same lead time exposed by the tools. */
+const shippingDateLabel = (app: BuildContext["app"], days: number) =>
+  days === 0 ? "Ships today" : `Ships ${app.shipDate(days)}`;
+
 export function buildCheckoutVals(context: BuildContext) {
   const { app, s, m, route, over, st } = context;
   const findPart = (line: { id: string; slot?: any }) =>
     line.slot ? CATALOG[line.slot as keyof typeof CATALOG]?.find(part => part.id === line.id) : undefined;
 
   /** Prices come from the cart entity, so this screen and the tools agree. */
-  const totals = cartTotals(s.cart, m);
+  const totals = cartTotals(s.cart, m, s.picks);
 
   /** One row per cart line. A build is priced and shipped as a single unit. */
   const cartLines = totals.rows.map((row) => {
@@ -33,7 +41,7 @@ export function buildCheckoutVals(context: BuildContext) {
       qty: line.qty,
       unitLabel: money(row.unit),
       totalLabel: money(row.total),
-      stock: out ? "Out of stock" : days <= 2 ? "In stock · ships tomorrow" : `Ships in ${days} days`,
+      stock: out ? "Out of stock" : `In stock · ${shippingLabel(days)}`,
       stockFg: out ? "var(--danger)" : days <= 2 ? "var(--green-600)" : "var(--amber-600)",
       editable: line.kind === "product",
       inc: () => app.setCartQty(index, line.qty + 1),
@@ -56,7 +64,7 @@ export function buildCheckoutVals(context: BuildContext) {
       cartShipping: shipping === 0 ? "Free" : money(shipping),
       cartShippingNote: shipping === 0 ? "Orders over $99 ship free" : `Free over $99 — add ${money(99 - subtotal)}`,
       cartTotal: money(subtotal + shipping),
-      cartDeliveryLine: slowestLine <= 2 ? "Everything ships tomorrow" : `Complete order ships ${app.shipDate(slowestLine)}`,
+      cartDeliveryLine: shippingDateLabel(app, slowestLine),
       clearCart: () => app.setState({ cart: [], toast: "Cart emptied" }, () => app.flash()),
       buildImage: m.gpu.imagePath,
       totalLabel: money(subtotal + shipping),
@@ -69,7 +77,7 @@ export function buildCheckoutVals(context: BuildContext) {
         sh: i === s.step ? "0 1px 3px rgba(41,41,41,.10)" : "none",
       })),
       stepTitle: st.title, stepCta: st.cta, stepFields: st.fields,
-      stepNext: () => s.step < 2 ? app.setState({ step: s.step + 1 }) : app.setState({ route: "done" }),
+      stepNext: () => s.step < 2 ? app.setState({ step: s.step + 1 }) : app.setState({ toast: "Demo only — no payment taken and no order placed." }, () => app.flash()),
       stepBack: () => s.step > 0 ? app.setState({ step: s.step - 1 }) : app.go("cart"),
       restart: () => app.setState({ route: "home", cart: [], step: 0, lastChange: null }),
   };

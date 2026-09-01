@@ -1,5 +1,6 @@
 {
   "name": "rigsmith",
+  "description": "A demo electronics storefront for phones, gaming consoles and PC components, with product comparisons and a custom PC builder.",
   "private": true,
   "version": "0.1.0",
   "type": "module",
