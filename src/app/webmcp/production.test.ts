@@ -309,9 +309,10 @@ describe('whole-build tradeoffs without automatic selection', () => {
     expect(comparison.baseline.simulation).toEqual(estimate.simulation);
     for (const alternative of comparison.alternatives) expect(alternative.simulation.game).toBe('cyberpunk-2077');
     for (const tool of ['estimate_performance', 'compare_build_options']) {
-      expect(await call(tool, { game: 'invented', alternatives })).toMatchObject({ error: 'invalid_game' });
+      expect(await call(tool, { game: 'invented', alternatives })).toMatchObject({ game: 'invented', benchmark: 'no benchmark', status: 'unavailable', message: 'invented - no benchmark' });
       expect(await call(tool, { game: 'fortnite', scenario: 'competitive', alternatives })).toMatchObject({ error: 'conflicting_workload' });
     }
+    expect(await call('compare_build_options', { games: ['fortnite', 'invented'], alternatives })).toMatchObject({ game: 'invented', benchmark: 'no benchmark', message: 'invented - no benchmark' });
     expect(app.state).toEqual(before);
   });
 

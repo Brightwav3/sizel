@@ -54,6 +54,14 @@ const SORTS: SortId[] = ["popular", "price", "priceDesc", "new"];
 
 const app = (): RigsmithApp => requireRigsmithApp();
 const commandResult = (result: Record<string, any>) => result.error ? fail(result.error, result.hint) : ok(result);
+const isSimulatedGame = (value: unknown): value is SimulatedGame =>
+  typeof value === "string" && (SIMULATED_GAMES as readonly string[]).includes(value);
+const noGameBenchmark = (game: string) => ok({
+  game,
+  benchmark: "no benchmark",
+  status: "unavailable",
+  message: `${game} - no benchmark`,
+});
 
 // Schema helpers -------------------------------------------------------
 const str = (description: string, values?: readonly string[]) =>
@@ -704,16 +712,17 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "estimate_performance",
     description:
-      "Return explicitly SIMULATED performance for a complete build. Choose game (CS2, Fortnite, Cyberpunk) OR generic scenario; default cinematic. Game-labeled fixtures are invented, not measurements or predictions for those real games. Returns fixed preset, average FPS and 1% lows. Measured FPS/noise remain unknown. Compare alternatives with compare_build_options.",
+      "Return explicitly SIMULATED performance for a complete build. Choose game (CS2, Fortnite, Cyberpunk) OR generic scenario; default cinematic. Game-labeled fixtures are invented, not measurements or predictions for those real games. Unknown game names return the requested game with benchmark: no benchmark. Returns fixed preset, average FPS and 1% lows for known games. Measured FPS/noise remain unknown. Compare alternatives with compare_build_options.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
-    inputSchema: schema({ resolution: str("Default: the shopper's setting.", RESOLUTIONS), scenario: str("Generic fictional workload; default cinematic. Do not combine with game.", BENCHMARK_SCENARIOS), game: str("Optional game-labeled simulation, not real measured performance. Do not combine with scenario.", SIMULATED_GAMES) }),
+    inputSchema: schema({ resolution: str("Default: the shopper's setting.", RESOLUTIONS), scenario: str("Generic fictional workload; default cinematic. Do not combine with game.", BENCHMARK_SCENARIOS), game: str("Optional game-labeled simulation. Known games use fixtures; any other game returns benchmark: no benchmark. Do not combine with scenario.") }),
     execute(args) {
       const instance = app();
+      if (args.game !== undefined && typeof args.game !== "string") return fail("invalid_game", "Game must be a string.");
+      if (typeof args.game === "string" && !isSimulatedGame(args.game)) return noGameBenchmark(args.game);
       if (!BUILD_SLOTS.every(slot => instance.state.chosen.includes(slot))) return fail("build_incomplete", "Select every slot first; default parts are not your build.");
       if (args.scenario !== undefined && !BENCHMARK_SCENARIOS.includes(args.scenario)) return fail("invalid_scenario", "Use competitive or cinematic.");
-      if (args.game !== undefined && !SIMULATED_GAMES.includes(args.game)) return fail("invalid_game", "Use a listed game id.");
       if (args.game !== undefined && args.scenario !== undefined) return fail("conflicting_workload", "Choose game or scenario, not both.");
       const res = resolutionOf(args.resolution, instance.state.res as Resolution);
       const model = metrics(instance.state.picks, res);
@@ -794,7 +803,7 @@ export const TOOLS: RigsmithTool[] = [
   },
   {
     name: "compare_build_options",
-    description: "Baseline is always the current build. Do not include the current build as an alternative. Compare one to three agent-supplied PC alternatives by cost, eligibility, availability and explicitly simulated performance. This tool does not apply changes.",
+    description: "Baseline is always the current build. Do not include the current build as an alternative. Compare one to three agent-supplied PC alternatives by cost, eligibility, availability and explicitly simulated performance. Known games use fixtures; any other game returns the requested game with benchmark: no benchmark. This tool does not apply changes.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
@@ -802,12 +811,17 @@ export const TOOLS: RigsmithTool[] = [
       type: "array", minItems: 1, maxItems: 3,
       description: "Changes vs current build; unchanged slots are inherited. Each must change one slot; current build is baseline.",
       items: { ...schema(Object.fromEntries(PC_SLOTS.map(slot => [slot, str("Catalog product id for this slot.")]))), minProperties: 1 },
-    }, scenario: str("Generic fictional workload, default cinematic. Do not combine with game(s).", BENCHMARK_SCENARIOS), game: str("One game simulation; use games for a batch.", SIMULATED_GAMES), games: { type: "array", minItems: 1, maxItems: 3, uniqueItems: true, items: str("Game simulation to include.", SIMULATED_GAMES), description: "One to three game simulations in one read." } }, ["alternatives"]),
+    }, scenario: str("Generic fictional workload, default cinematic. Do not combine with game(s).", BENCHMARK_SCENARIOS), game: str("One game simulation; known games use fixtures and any other game returns benchmark: no benchmark. Use games for a batch."), games: { type: "array", minItems: 1, maxItems: 3, uniqueItems: true, items: str("Known game simulation; any other game returns benchmark: no benchmark."), description: "One to three game simulations in one read." } }, ["alternatives"]),
     execute(args) {
       if (args.scenario !== undefined && !BENCHMARK_SCENARIOS.includes(args.scenario)) return fail("invalid_scenario", "Use competitive or cinematic.");
-      if (args.game !== undefined && !SIMULATED_GAMES.includes(args.game)) return fail("invalid_game", "Use a listed game id.");
-      if (args.games !== undefined && (!Array.isArray(args.games) || args.games.length < 1 || args.games.length > 3 || args.games.some((game: unknown) => !SIMULATED_GAMES.includes(game as any))))
-        return fail("invalid_game", "Use one to three listed game ids.");
+      if (args.game !== undefined && typeof args.game !== "string") return fail("invalid_game", "Game must be a string.");
+      if (typeof args.game === "string" && !isSimulatedGame(args.game)) return noGameBenchmark(args.game);
+      if (args.games !== undefined && (!Array.isArray(args.games) || args.games.length < 1 || args.games.length > 3 || args.games.some((game: unknown) => typeof game !== "string")))
+        return fail("invalid_game", "Games must contain one to three strings.");
+      if (Array.isArray(args.games)) {
+        const unknownGame = args.games.find((game: unknown) => typeof game === "string" && !isSimulatedGame(game));
+        if (unknownGame !== undefined) return noGameBenchmark(unknownGame);
+      }
       if (args.game !== undefined && args.games !== undefined) return fail("conflicting_workload", "Choose game, games or scenario, not more than one.");
       if ((args.game !== undefined || args.games !== undefined) && args.scenario !== undefined) return fail("conflicting_workload", "Choose game(s) or scenario, not both.");
       try {
