@@ -207,17 +207,17 @@ Open the PC configurator with a shopper brief, resolution and hard budget, retur
 
 ### `compare_build_options`
 
-Baseline is always the current build. Do not include the current build as an alternative. Compare one to three agent-supplied PC alternatives by cost, eligibility, availability and explicitly simulated performance. This tool does not apply changes.
+Baseline is always the current build. Do not include the current build as an alternative. Compare one to three agent-supplied PC alternatives by cost, eligibility, availability and explicitly simulated performance. Known games use fixtures; any other game returns the requested game with benchmark: no benchmark. This tool does not apply changes.
 
 **Descriptor hints:** `readOnlyHint: true`.
 
-**Result and behavior:** The current build is always the unchanged baseline; do not include it as an alternative. Returns one to three agent-supplied counterfactuals with price, budget, eligibility, compatibility blockers, availability, simulated results and deltas. It never recommends, creates a watch or mutates the current build.
+**Result and behavior:** The current build is always the unchanged baseline; do not include it as an alternative. Returns one to three agent-supplied counterfactuals with price, budget, eligibility, compatibility blockers, availability, simulated results and deltas. An unknown game returns `{ game, benchmark: "no benchmark", status: "unavailable" }` instead of invented FPS. It never recommends, creates a watch or mutates the current build.
 
 | Parameter | Type | Meaning |
 | --- | --- | --- |
 | `alternatives` | array | Changes vs current build; unchanged slots are inherited. Each must change one slot; current build is baseline. |
 | `scenario` | string | Generic fictional workload, default cinematic. Do not combine with game(s). Values: competitive, cinematic. |
-| `game` | string | One game simulation; use games for a batch. Values: counter-strike-2, fortnite, cyberpunk-2077. |
+| `game` | string | One game simulation; known games use fixtures and any other game returns benchmark: no benchmark. Use games for a batch. |
 | `games` | array | One to three game simulations in one read. |
 
 ### `create_watchdog`
