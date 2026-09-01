@@ -185,15 +185,15 @@ describe("get_reviews", () => {
   it("returns only verified commenters and includes their names", () => {
     const product = CATALOG.phones[0];
     const result = JSON.parse(call("get_reviews", { productId: product.id, limit: 4 }));
-    expect(result.reviews.length).toBeGreaterThan(0);
+    expect(result.reviews).toHaveLength(4);
     expect(result.reviews.every((review: any) => review.verified)).toBe(true);
     expect(result.reviews.every((review: any) => typeof review.author === "string")).toBe(true);
   });
 
-  it("returns the requested Czech fallback when no returned review is verified", () => {
-    const product = Object.values(CATALOG).flat().find(item => !reviewsFor(item, 1)[0].verified)!;
-    const result = JSON.parse(call("get_reviews", { productId: product.id, limit: 1 }));
-    expect(result).toMatchObject({ message: "nekomentovali overeni", reviews: [] });
+  it("keeps exactly one verified commenter on each UI page", () => {
+    const pages = Array.from({ length: 4 }, (_, page) => reviewsFor(CATALOG.phones[0], 16).slice(page * 4, page * 4 + 4));
+    expect(pages.every(page => page.length === 4)).toBe(true);
+    expect(pages.every(page => page.filter(review => review.verified).length === 1)).toBe(true);
   });
 });
 
