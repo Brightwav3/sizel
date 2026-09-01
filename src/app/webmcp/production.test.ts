@@ -157,7 +157,6 @@ describe('visible catalog flow', () => {
     await call('begin_build', {
       brief: 'A balanced gaming PC',
       budget: 1500,
-      starter: 'balanced',
       reset: true,
     });
     const result = await call('list_compatible_parts', { slot: 'gpu', slots: [], mode: 'ranked', maxPrice: 800, includeDetails: false });
@@ -202,24 +201,22 @@ describe('visible catalog flow', () => {
     expect(gpu.items[0]).toHaveProperty('withinBudgetAllocation');
   });
 
-  it('can open a balanced non-GPU starter and leave GPU selection to the agent', async () => {
+  it('opens a blank build and leaves the starting slot to the agent', async () => {
     const started = await call('begin_build', {
       brief: 'A balanced 1440p gaming PC',
       budget: 1500,
       resolution: '1440p',
-      starter: 'balanced',
       reset: true,
     });
     expect(started).toMatchObject({
       opened: 'builder',
-      starter: 'balanced',
-      starterPriceUSD: expect.any(Number),
+      budget: 1500,
+      resolution: '1440p',
     });
-    expect(started.starterSelected).toEqual(expect.arrayContaining(['cpu', 'board', 'ram', 'storage', 'cooler', 'psu', 'case', 'fans']));
-    expect(app.state.chosen).not.toContain('gpu');
-    expect(app.state.builderSlot).toBe('gpu');
-    expect(app.state.picks.gpu).toBe(DEFAULT_PICKS.gpu);
-    expect(metrics(app.state.picks, '1440p').fits).toBe(true);
+    expect(started).not.toHaveProperty('starter');
+    expect(started.next).toContain('starting slot yourself');
+    expect(app.state.picks).toEqual(DEFAULT_PICKS);
+    expect(app.state.chosen).toEqual([]);
   });
 
   it('ranks a GPU primary and fallback, and derives the watchdog gate from the real listing', async () => {
@@ -227,7 +224,6 @@ describe('visible catalog flow', () => {
       brief: 'A 1440p gaming PC with the strongest GPU under 800 dollars',
       budget: 1500,
       resolution: '1440p',
-      starter: 'balanced',
       reset: true,
     });
     const ranked = await call('list_compatible_parts', { slot: 'gpu', mode: 'ranked', maxPrice: 800 });
@@ -237,12 +233,8 @@ describe('visible catalog flow', () => {
       rankingComplete: true,
       primary: { id: 'northwind-gx-5070-ti', inStock: false, shipsInDays: 8 },
       fallback: { id: 'fabrikam-rx-9070-xt', inStock: true },
-      watchdogOffer: {
-        eligible: true,
-        candidateId: 'northwind-gx-5070-ti',
-        availability: 'out_of_stock',
-        askBeforeCreate: true,
-      },
+      watchdogOffer: null,
+      watchdogHint: 'Finish selecting the non-GPU parts before asking about a watchdog.',
     });
     expect(ranked.performanceBasis).toContain('not measured');
     expect(JSON.stringify(ranked).length).toBeLessThanOrEqual(1500);

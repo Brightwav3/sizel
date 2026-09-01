@@ -8,7 +8,7 @@ All products, brands, logos, and product images are fictional. The application d
 
 ## Agent-led building (31 August 2026)
 
-`recommend_build` is no longer exposed. For PC requests, agents start with `begin_build` and select catalog products with `set_build_component`. `begin_build` accepts optional `budgetShares`, such as {cpu: 20, gpu: 40}, and returns dollar allowances for every slot. It also accepts `starter: "balanced"` to fill only compatible, in-stock non-GPU support parts while leaving the GPU for the agent. Omitted slots receive the resolution-aware remainder; these are planning hints, not hard caps. `list_compatible_parts` repeats the current slot allowance next to fitting candidates, or its `mode: "ranked"` GPU path returns a simulated-performance primary, an in-stock fallback and a watchdog gate based on the actual listing. Phone searches group storage variants by model by default, so one search can supply distinct comparison candidates. `inspect_build_options` is optional when more facts are needed, as are reason and tradeoff fields. The existing builder opens before selection and shows the selected parts as the agent works. Material tradeoffs belong in the agent conversation, not an additional page panel.
+`recommend_build` is no longer exposed. For PC requests, agents start with `begin_build`, decide which slot to solve first, and select catalog products with `set_build_component`. `begin_build` accepts optional `budgetShares`, such as {cpu: 20, gpu: 40}, and returns dollar allowances for every slot. It never selects a starting slot or part. Omitted slots receive the resolution-aware remainder; these are planning hints, not hard caps. `list_compatible_parts` repeats the current slot allowance next to fitting candidates, or its `mode: "ranked"` GPU path returns a simulated-performance primary, an in-stock fallback and a watchdog gate based on the actual listing. Phone searches group storage variants by model by default, so one search can supply distinct comparison candidates. `inspect_build_options` is optional when more facts are needed, as are reason and tradeoff fields. The existing builder opens before selection and shows the selected parts as the agent works. Material tradeoffs belong in the agent conversation, not an additional page panel.
 
 Build and cart writes share UI validation and finish after React commits. A complete build must fit the exact budget and stock limits before checkout. Catalog data remain synthetic; checkout is a preview, not a payment or order service. See [ADR 0007](docs/decisions/0007-agents-select-and-explain-parts.md).
 
@@ -135,7 +135,7 @@ are held inside Chrome's 1.5K character budget.
 | `estimate_performance` | Frame rate, noise, price, power and delivery |
 | `explain_build_bottleneck` | The part holding the frame rate down, and what it costs |
 | `fix_build_issue` | Swaps that clear a conflict, smallest price change first |
-| `begin_build` | Open the builder with the brief, hard budget and optional slot shares or balanced non-GPU starter |
+| `begin_build` | Open the builder with the brief, hard budget and optional slot-share hints |
 | `inspect_build_options` | Return candidate facts and focus the existing builder slot |
 | `compare_build_options` | Compare agent-proposed whole-build alternatives without ranking or applying them |
 | `set_build_target` | Budget, resolution, frame rate and noise preference |

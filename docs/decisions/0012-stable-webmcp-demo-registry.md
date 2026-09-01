@@ -3,6 +3,7 @@
 - **Status:** Accepted
 - **Date:** 2026-08-31
 - **Supersedes:** The route-registration part of ADR 0006 for the demo profile
+- **Superseded in part by:** [ADR 0013](0013-agent-chooses-build-order.md), which removes the automatic build starter
 
 ## Context
 
@@ -39,13 +40,12 @@ call's `AbortSignal`, to handlers. Unmounting still aborts each registration.
 
 The stable build flow also carries bounded planning data instead of adding
 slot-specific selection tools. `begin_build` may accept shopper percentages
-such as `{cpu: 20, gpu: 40}` and returns dollar hints for every slot. An
-explicit `starter: "balanced"` fills only compatible, in-stock non-GPU support
-parts and leaves GPU choice to the agent. `list_compatible_parts` reports the
-current allowance beside fitting candidates, or its ranked GPU mode returns a
-primary, an in-stock fallback and a watchdog gate derived from the actual
-comparison. The hints never override whole-build budget, stock or
-compatibility checks.
+such as `{cpu: 20, gpu: 40}` and returns dollar hints for every slot. It does
+not select a starting slot or part; the agent owns the build order.
+`list_compatible_parts` reports the current allowance beside fitting
+candidates, or its ranked GPU mode returns a primary, an in-stock fallback and
+a watchdog gate derived from the actual comparison. The hints never override
+whole-build budget, stock or compatibility checks.
 
 ## Consequences
 

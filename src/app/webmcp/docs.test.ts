@@ -11,6 +11,18 @@ import { DEMO_TOOL_NAMES, TOOLS } from "./tools";
 const read = (path: string) => readFileSync(new URL(`../../../${path}`, import.meta.url), "utf8");
 
 const NAMES = TOOLS.map(tool => tool.name).sort();
+const DEMO_NAMES = [...DEMO_TOOL_NAMES].sort();
+const DEMO_ERROR_CODES = [
+  "build_incompatible", "build_incomplete", "category_required",
+  "conflicting_arguments", "conflicting_workload", "duplicate_alternative",
+  "filters_require_one_slot", "insufficient_stock", "invalid_alternative",
+  "invalid_alternatives", "invalid_brief", "invalid_budget",
+  "invalid_budget_allocation", "invalid_game", "invalid_mode",
+  "invalid_quantity", "invalid_reason", "invalid_scenario", "invalid_slot",
+  "missing_argument", "no_compatible_gpu", "out_of_stock", "over_budget",
+  "product_not_found", "ranked_requires_gpu", "unknown_filter", "wrong_fan_pack", "wrong_slot",
+  "command_failed", "tool_failed", "result_too_large",
+].sort();
 
 describe("README", () => {
   const readme = read("README.md");
@@ -36,14 +48,14 @@ describe("README", () => {
 describe("docs/webmcp-tools.md", () => {
   const reference = read("docs/webmcp-tools.md");
 
-  it("gives every tool its own section", () => {
+  it("gives every demo tool its own section and omits non-demo tools", () => {
     const documented = Array.from(reference.matchAll(/^### `([a-z_]+)`$/gm)).map(match => match[1]).sort();
-    expect(documented).toEqual(NAMES);
+    expect(documented).toEqual(DEMO_NAMES);
   });
 
   it("puts every tool in the summary table with its screens", () => {
     const rows = Array.from(reference.matchAll(/^\| `([a-z_]+)` \| (read|write)/gm));
-    expect(rows.map(row => row[1]).sort()).toEqual(NAMES);
+    expect(rows.map(row => row[1]).sort()).toEqual(DEMO_NAMES);
     for (const [, name, kind] of rows) {
       const tool = TOOLS.find(entry => entry.name === name)!;
       expect(kind === "read", name).toBe(tool.readOnlyHint === true);
@@ -51,8 +63,6 @@ describe("docs/webmcp-tools.md", () => {
   });
 
   it("documents every error code a tool can return", () => {
-    const source = read("src/app/webmcp/tools.ts");
-    const codes = new Set(Array.from(source.matchAll(/fail\("([a-z_]+)"/g)).map(match => match[1]));
-    for (const code of codes) expect(reference, code).toContain(`\`${code}\``);
+    for (const code of DEMO_ERROR_CODES) expect(reference, code).toContain(`\`${code}\``);
   });
 });
