@@ -26,8 +26,8 @@
 body:has(.topbar-search-wrap.is-open) .topbar { z-index: 110; border-bottom-color: transparent; }
 
 /* Logo ------------------------------------------------------------------- */
-.topbar__logo { display: flex; align-items: center; gap: var(--space-2); width: auto; padding: 0; background: transparent; border: 0; cursor: pointer; }
-.topbar__logo img { display: block; width: 96px; height: auto; object-fit: contain; }
+.topbar__logo { display: flex; align-items: center; justify-self: start; gap: var(--space-2); width: auto; padding: 0; background: transparent; border: 0; cursor: pointer; }
+.topbar__logo img { display: block; width: 112px; height: auto; object-fit: contain; }
 
 /* Search ----------------------------------------------------------------- */
 .topbar-search-wrap { position: relative; width: 100%; min-width: 0; z-index: 22; }
