@@ -34,6 +34,14 @@ describe("tool contract", () => {
     }
   });
 
+  it("lets unknown game names reach the explicit no-benchmark response", () => {
+    const estimate = TOOLS.find(tool => tool.name === "estimate_performance")!;
+    const compare = TOOLS.find(tool => tool.name === "compare_build_options")!;
+    expect((estimate.inputSchema as any).properties.game.enum).toBeUndefined();
+    expect((compare.inputSchema as any).properties.game.enum).toBeUndefined();
+    expect((compare.inputSchema as any).properties.games.items.enum).toBeUndefined();
+  });
+
   it("registers each name once", () => {
     expect(new Set(TOOLS.map(tool => tool.name)).size).toBe(TOOLS.length);
   });
