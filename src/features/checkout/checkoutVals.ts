@@ -33,7 +33,7 @@ export function buildCheckoutVals(context: BuildContext) {
       kind: line.kind,
       // A phone in the cart has to say which storage tier it is.
       name: row.name,
-      brand: line.kind === "build" ? "Rigsmith assembly service" : part?.brand ?? "",
+      brand: line.kind === "build" ? "Sizel assembly service" : part?.brand ?? "",
       note: line.kind === "build"
         ? [m.cpu.name, m.gpu.name, m.ram.name].join(" · ") + " · 6 more"
         : (part?.specs ?? []).slice(0, 3).join(" · "),

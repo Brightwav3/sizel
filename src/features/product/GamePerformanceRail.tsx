@@ -77,7 +77,7 @@ export function GamePerformanceRail({ productId, kind }: { productId: string; ki
       <div className="game-performance__dialog-content">
         <button type="button" className="game-performance__close" aria-label="Close benchmark explanation" onClick={() => dialog.current?.close()}><span className="ms" aria-hidden="true">close</span></button>
         <h2 id={`${id}-help`}>How do these benchmarks work?</h2>
-        <p>Rigsmith uses fictional products and hand-authored game fixtures. The GPU average is calibrated to an external measured real-GPU reference; the displayed result is still derived and fictional, not a test of this rig or a prediction for the real game.</p>
+        <p>Sizel uses fictional products and hand-authored game fixtures. The GPU average is calibrated to an external measured real-GPU reference; the displayed result is still derived and fictional, not a test of this rig or a prediction for the real game.</p>
         <p>Choose a game to see its average FPS. GPU results change with resolution. A complete build uses the lower of its authored CPU limit and this calibrated GPU demo value; 1% lows remain synthetic.</p>
         <dl className="game-performance__tiers">
           <div><dt><i className="game-performance__dot game-performance__score--high" />144 FPS and above</dt><dd>Highest demo performance tier.</dd></div>

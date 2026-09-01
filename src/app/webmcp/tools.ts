@@ -16,9 +16,6 @@ import { BUILD_SLOTS, selectedPrice, selectedPicks, ShopError } from "../../enti
 import { compareBuildOptions } from "./compareBuildOptions";
 import { BENCHMARK_SCENARIOS, SIMULATED_GAMES, SIMULATION_BASIS, simulatedBenchmarks } from "../../entities/build/simulatedBenchmarks";
 import type { BenchmarkScenario, SimulatedGame } from "../../data/benchmarks/types";
-import { GPU_GAME_BENCHMARKS } from "../../data/benchmarks/gpuGames";
-import { WATCHDOG_REQUIRED_GAMES, watchdogOfferFor } from "./watchdogGate";
-import type { WatchdogComparison } from "./watchdogGate";
 import { compatibilityIssues } from "../../entities/build/metrics";
 import { cartBlocker } from "../../entities/cart/cartValidation";
 import type { RigsmithApp } from "../App";
@@ -41,7 +38,7 @@ import type { SortId } from "../../entities/product/queries";
 import type { Part, PcSlot, Picks, Route, Slot } from "../../shared/lib/types";
 import { bottleneck, fixOptions, powerReport } from "./buildAdvisor";
 import { budgetPlan } from "../../entities/build/budgetPlan";
-import { BUILD_REPORT_BUDGET, fail, ok, SNAPSHOT_OUTPUT_BUDGET } from "./toolResult";
+import { BATCH_CANDIDATE_OUTPUT_BUDGET, BUILD_REPORT_BUDGET, fail, ok, SNAPSHOT_OUTPUT_BUDGET } from "./toolResult";
 import type { ToolCallResult, ToolDescriptor, ToolExecuteOptions } from "./webmcpApi";
 
 /** A tool, plus the routes it makes sense on. */
@@ -69,7 +66,7 @@ const NO_INPUT = schema({});
 const QUICK_SEARCH = schema({
   category: str("Category scope; omit for whole-catalog text search.", CATEGORIES), brand: str("Catalog brand."), query: str("Search text."),
   maxPrice: num("USD ceiling."), sort: str("Ordering.", SORTS), limit: num("1–5; default 5."),
-  inStockOnly: bool("Only products shipping within two days."),
+  inStockOnly: bool("Limit results to currently available listings."),
   compare: bool("Also compare up to three distinct models from these results."),
 });
 
@@ -78,21 +75,15 @@ const QUICK_SEARCH = schema({
 const SLOW_DELIVERY_DAYS = 3;
 
 /**
- * The reason a listing deserves a word before it is chosen.
- *
- * A delivery date buried in a field beside eleven others is a fact an agent
- * can read and still not act on. Naming it as a concern, with the thing to
- * offer instead, is what turns "ships in 8 days" into "this one is three
- * weeks out, shall I watch it for you" — which is the honest move, and keeps
- * the agent from quietly substituting a part the shopper actually wanted.
+ * Make stock and delivery facts easy to notice without making a decision for
+ * the agent.
  */
 const concernFor = (product: Part, category?: Slot) => {
   if (category && listingStock(product, category) === 0) {
-    return { concern: "out_of_stock", offer: "create_watchdog" };
+    return { concern: "out_of_stock" };
   }
-  if (product.days >= SLOW_DELIVERY_DAYS) {
-    return { concern: `ships_in_${product.days}_days`, shipsOn: shipDate(product.days), arrival: null, offer: "create_watchdog" };
-  }
+  if (product.days >= SLOW_DELIVERY_DAYS)
+    return { concern: `ships_in_${product.days}_days`, shipsOn: shipDate(product.days), arrival: null };
   return null;
 };
 
@@ -148,13 +139,13 @@ const availabilityOf = (slots: ReturnType<typeof slotReport>) => {
   const slow = slots.filter(entry => entry.inStock && entry.shipsInDays >= SLOW_DELIVERY_DAYS).map(entry => entry.slot);
   return {
     allInStock: outOfStock.length === 0,
-    ...(outOfStock.length ? { outOfStock, offer: "create_watchdog" } : {}),
+    ...(outOfStock.length ? { outOfStock } : {}),
     ...(slow.length ? { slowSlots: slow } : {}),
   };
 };
 
 /** One line for a result whose list carries something worth raising. */
-const WATCH_HINT = "Some of these are slow or out of stock. Say so rather than substituting silently. create_watchdog is an optional offer; skip it if the shopper has declined watches.";
+const WATCH_HINT = "Some listings are slow or out of stock; availability and delivery are part of the comparison.";
 
 /** The compatibility facts, only where the catalog actually carries them. */
 const facts = (product: Part) => {
@@ -175,25 +166,6 @@ const facts = (product: Part) => {
   };
   return Object.fromEntries(Object.entries(all).filter(([, value]) => value !== undefined));
 };
-
-/** Average of the authored game fixtures used by the honest comparison gate. */
-const rankedGpuScore = (product: Part, resolution: Resolution) => {
-  const values = WATCHDOG_REQUIRED_GAMES
-    .map(game => GPU_GAME_BENCHMARKS[product.id]?.[game]?.[resolution]?.averageFps)
-    .filter((value): value is number => Number.isFinite(value));
-  return values.length === WATCHDOG_REQUIRED_GAMES.length
-    ? values.reduce((sum, value) => sum + value, 0) / values.length
-    : -1;
-};
-
-const rankedGpuBrief = (product: Part, resolution: Resolution) => ({
-  id: product.id,
-  name: product.name,
-  price: product.price,
-  inStock: listingStock(product, "gpu") > 0,
-  shipsInDays: product.days,
-  simulatedAverageFps: Math.round(rankedGpuScore(product, resolution)),
-});
 
 /**
  * Compact detail payload shared by the pure product read and visible product
@@ -337,7 +309,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "search_products",
     description:
-      "Search the catalog of PC parts, phones and consoles. Prices are US dollars. Phone results group storage variants by model by default; set distinctModels false when a tier is needed. Use show_in_catalog to put a matching product on screen. Keep inStockOnly off while comparing so slow or unavailable options stay visible.",
+      "Search the catalog of PC parts, phones and consoles by text, category, price, availability and product filters. Phone results group storage variants by model by default.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
@@ -347,7 +319,7 @@ export const TOOLS: RigsmithTool[] = [
       brand: str("Spelled as the catalog spells it."),
       minPrice: num("Lowest price."),
       maxPrice: num("Highest price."),
-      inStockOnly: bool("Final-selection filter. Omit while comparing so slow or unavailable candidates remain visible."),
+      inStockOnly: bool("Limit results to currently available listings."),
       onSale: bool("On sale only."),
       sort: str("Ordering by catalog order, price or delivery time.", SORTS),
       filters: {
@@ -400,7 +372,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "get_product",
     description:
-      "Return one listing's price, availability, delivery, description and compatibility facts. Use show_in_catalog separately when the shopper should see its detail page.",
+      "Return current price, availability, delivery, description and compatibility facts for one catalog listing.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
@@ -458,7 +430,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "compare_products",
     description:
-      "Compare two to four listings by price, stock, delivery and differing specifications. Set includeDetails for compact descriptions and facts in the same read. Use show_in_catalog separately when the shopper should follow a product page. If a stronger listing is slow or unavailable, ask before creating a watchdog or silently substituting it.",
+      "Compare two to four catalog listings by price, stock, delivery and differing specifications.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
@@ -497,7 +469,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "check_stock",
     description:
-      "Stock on hand and ship date. Arrival timing is unknown. When a part is out of stock, say so rather than substituting silently. create_watchdog is an optional offer, not a step: skip it if the shopper has declined watches.",
+      "Return current stock, shipping time and ship date for one catalog listing. Arrival timing is not modeled.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
@@ -521,7 +493,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "show_in_catalog",
     description:
-      "Change only the visible page so the shopper can follow along: open a category, product, builder or cart. A product view also returns its compact detail data, so do not call get_product for the same id unless a field is missing. Use one visible product call per candidate; it does not edit the build, cart or watch list.",
+      "Change the visible storefront view to a category, product, builder or cart without editing shopping state.",
     routes: [],
     inputSchema: schema({
       view: str("Default: category listing.", ["category", "product", "builder", "cart"]),
@@ -566,13 +538,13 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "list_compatible_parts",
     description:
-      "Parts that fit the current build. Use mode ranked with slot gpu and maxPrice to scan every matching compatible GPU and return the strongest simulated-game card plus the next in-stock fallback in one read; no second price-sorted call is needed. Use list mode for ordinary candidates or allRemaining. Nothing returned can break the machine.",
+      "List catalog parts that fit the current PC build, optionally for several slots at once. Results include candidate prices, stock, delivery and budget-share hints; in a batch, limit applies independently to each slot; this tool does not choose a part.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: ["category", "product", "builder"],
     inputSchema: schema({
       slot: str("One slot to fill; use slots or allRemaining for a batch.", PC_SLOTS),
-      slots: { type: "array", minItems: 1, maxItems: PC_SLOTS.length, uniqueItems: true, items: str("Build slot to include.", PC_SLOTS), description: "Bounded batch of slots to fill." },
+      slots: { type: "array", minItems: 1, maxItems: PC_SLOTS.length, uniqueItems: true, items: str("Build slot to include.", PC_SLOTS), description: "Bounded batch of slots to fill; limit applies independently to each slot." },
       allRemaining: bool("Return every currently unselected build slot."),
       maxPrice: num("Highest price."),
       filters: {
@@ -581,73 +553,10 @@ export const TOOLS: RigsmithTool[] = [
         description: "Facet id to values for a single slot; use list_filters first.",
       },
       sort: str("Ordering; default catalog order.", SORTS),
-      mode: str("Use ranked for one GPU primary and fallback; default list.", ["list", "ranked"]),
-      includeDetails: bool("Include compact descriptions and compatibility facts."),
-      limit: num("1 to 10, default 5."),
+      includeDetails: bool("Include compact descriptions and compatibility facts for a single slot; batches stay compact."),
+      limit: num("1 to 10 candidates per requested slot, default 5."),
     }),
     execute(args) {
-      const mode = args.mode === undefined ? "list" : args.mode;
-      if (mode !== "list" && mode !== "ranked") return fail("invalid_mode", "Use list or ranked.");
-      if (mode === "ranked") {
-        // Ranked mode is intentionally forgiving: generic list callers often
-        // carry slots, allRemaining or includeDetails defaults. The explicit
-        // mode wins and those read-only hints are ignored; only an explicitly
-        // different slot is a real contradiction.
-        if (args.slot !== undefined && args.slot !== "gpu")
-          return fail("ranked_requires_gpu", "Ranked mode ranks GPUs; pass slot gpu or omit slot.");
-        const filterResult = readFilters("gpu", args.filters);
-        if (filterResult.unknown.length) return fail("unknown_filter", "No gpu filter named " + filterResult.unknown.join(", ") + ". Call list_filters.");
-        const buildApp = app();
-        const resolution = buildApp.state.res as Resolution;
-        const plan = budgetPlan(buildApp.state.budget, resolution, buildApp.state.budgetShares);
-        const allowance = plan.rows.find(row => row.slot === "gpu")?.budgetUSD ?? buildApp.state.budget;
-        const requestedCeiling = Number(args.maxPrice);
-        const ceiling = Number.isFinite(requestedCeiling) && requestedCeiling > 0 ? requestedCeiling : allowance;
-        const build = buildApp.chosenPicks();
-        const pool = searchProducts({ category: "gpu", maxPrice: ceiling, sort: "perf", facets: filterResult.facets })
-          .items
-          .filter(product => partFits(product, "gpu", build))
-          .sort((a, b) => rankedGpuScore(b, resolution) - rankedGpuScore(a, resolution)
-            || (b.fps ?? 0) - (a.fps ?? 0) || a.price - b.price);
-        const primary = pool[0];
-        if (!primary) return fail("no_compatible_gpu", "No compatible GPU found at or below $" + ceiling + ".");
-        const fallback = pool.find(product => product.id !== primary.id && listingStock(product, "gpu") > 0) ?? null;
-        const nonGpuComplete = PC_SLOTS.filter(slot => slot !== "gpu").every(slot => buildApp.state.chosen.includes(slot));
-        const candidatePicks = { ...buildApp.state.picks, gpu: primary.id };
-        const comparisons: WatchdogComparison[] = WATCHDOG_REQUIRED_GAMES.map(game => {
-          const baseline = simulatedBenchmarks(buildApp.state.picks, resolution, "cinematic", game);
-          const candidate = simulatedBenchmarks(candidatePicks, resolution, "cinematic", game);
-          return {
-            game,
-            baseline: { status: baseline.status, averageFps: baseline.averageFps },
-            candidate: { status: candidate.status, averageFps: candidate.averageFps },
-          };
-        });
-        const offer = nonGpuComplete ? watchdogOfferFor(buildApp.state, primary.id, comparisons, candidatePicks) : null;
-        const primaryStock = listingStock(primary, "gpu");
-        return ok({
-          mode: "ranked", slot: "gpu", maxPrice: ceiling,
-          rankingComplete: true, candidatesExamined: pool.length,
-          performanceBasis: "Fictional game simulation averages at the current resolution; not measured benchmarks.",
-          primary: rankedGpuBrief(primary, resolution),
-          fallback: fallback ? rankedGpuBrief(fallback, resolution) : null,
-          ...(offer ? {
-            watchdogOffer: {
-              eligible: true, candidateId: offer.candidateId, comparedTo: offer.comparedTo,
-              improvementPct: offer.improvementPct, availability: offer.availability,
-              shipsInDays: offer.shipsInDays, candidateBuildPriceUSD: offer.candidateBuildPriceUSD,
-              askBeforeCreate: true, reason: offer.reason,
-            },
-          } : {
-            watchdogOffer: null,
-            ...((primaryStock === 0 || primary.days >= SLOW_DELIVERY_DAYS) && !nonGpuComplete
-              ? { watchdogHint: "Finish selecting the non-GPU parts before asking about a watchdog." } : {}),
-          }),
-          next: offer
-            ? "Show the primary GPU, then ask before create_watchdog. If declined, choose the fallback."
-            : "Show the primary GPU and choose it if its stock and shipping work for the shopper.",
-        });
-      }
       const hasSlot = typeof args.slot === "string";
       const hasSlots = Array.isArray(args.slots);
       if (hasSlot && hasSlots) return fail("conflicting_arguments", "Pass slot, slots or allRemaining, not more than one.");
@@ -670,13 +579,11 @@ export const TOOLS: RigsmithTool[] = [
       const filterResult = requested.length ? readFilters(requested[0], args.filters) : { facets: undefined, unknown: [] as string[] };
       if (filterResult.unknown.length) return fail("unknown_filter", `No ${requested[0]} filter named ${filterResult.unknown.join(", ")}. Call list_filters.`);
       const requestedLimit = Math.min(10, Math.max(1, Math.round(args.limit ?? 5)));
-      // A batch is the fast path for a new build. Keep every requested slot in
-      // the response instead of letting the generic list truncator drop whole
-      // rows when an agent asks for includeDetails or a large limit. A focused
-      // one-slot call remains available for a longer list or full product
-      // details.
+      // A batch is the fast path for a new build. `limit` is per slot, not a
+      // global candidate budget, and is never silently reduced. Batch rows
+      // stay compact; a focused one-slot call remains available for details.
       const batch = requested.length > 1;
-      const limit = batch ? Math.min(requestedLimit, 2) : requestedLimit;
+      const limit = requestedLimit;
       const includeDetails = args.includeDetails === true && !batch;
       const buildApp = instance ?? app();
       const build = buildApp.chosenPicks();
@@ -704,14 +611,13 @@ export const TOOLS: RigsmithTool[] = [
         slots: rows,
         requested: requested.length,
         allRemaining: args.allRemaining === true,
-        ...(batch && requestedLimit > limit ? { candidateLimit: limit, detailHint: "For more candidates or full details, request one slot." } : {}),
-      }, "slots", undefined, SNAPSHOT_OUTPUT_BUDGET);
+      }, "slots", undefined, batch ? BATCH_CANDIDATE_OUTPUT_BUDGET : SNAPSHOT_OUTPUT_BUDGET);
     },
   },
 
   {
     name: "set_build_component",
-    description: "Select a catalog part you chose. No prior inspection call required: current stock, compatibility and hard budget are checked when applying. Opens the selected builder slot. Explain material tradeoffs in conversation; reason, tradeoff and alternativeId are optional notes. A case includes its fans atomically. Reset clears a slot. No automatic recommendations.",
+    description: "Set or reset one PC build slot. The command validates the catalog id, stock, compatibility and hard budget; a case includes its fans atomically.",
     routes: ["category", "product", "builder"],
     inputSchema: schema({
       slot: str("Slot to change.", PC_SLOTS), productId: str("Chosen catalog product id. Required for set."),
@@ -732,9 +638,31 @@ export const TOOLS: RigsmithTool[] = [
   },
 
   {
+    name: "set_build_components",
+    // ADR 0014: the stable demo applies a complete agent-selected build in one atomic command.
+    // docs/decisions/0014-batch-build-commit.md
+    description: "Apply a complete PC selection in one atomic command. The command validates every catalog id, stock, compatibility and hard budget; fans are bundled with the case. A successful result has validationComplete: true.",
+    routes: ["category", "product", "builder"],
+    inputSchema: schema({
+      components: {
+        type: "object",
+        properties: Object.fromEntries(PC_SLOTS.filter(slot => slot !== "fans").map(slot => [slot, str("Catalog product id for this slot.")])),
+        required: PC_SLOTS.filter(slot => slot !== "fans"),
+        minProperties: PC_SLOTS.length - 1,
+        maxProperties: PC_SLOTS.length - 1,
+        additionalProperties: false,
+        description: "One id for cpu, gpu, board, ram, storage, cooler, psu and case. The case supplies fans.",
+      },
+    }, ["components"]),
+    async execute(args) {
+      return commandResult(await app().setComponents(args.components));
+    },
+  },
+
+  {
     name: "check_build_compatibility",
     description:
-      "One-call build report: all nine selected slots with price, stock and delivery, plus total, compatibility, sockets, GPU clearance, PSU headroom and performance availability. Use begin_build or list_compatible_parts for budget allocation hints. On a clash, choose another compatible part with list_compatible_parts.",
+      "Report the current PC build's selected slots, price, stock, delivery, completeness and known compatibility issues. Do not call immediately after a successful set_build_components unless selections changed.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
@@ -755,7 +683,6 @@ export const TOOLS: RigsmithTool[] = [
       const slots = slotReport(instance.state.picks);
       return ok({
         complete: true, withinBudget: model.price <= instance.state.budget,
-        decisionReview: "Compatibility is not value assessment. Before finalizing, compare_build_options with agent-proposed upgrade and cheaper alternatives; explain whether spending the remaining budget helps the brief.",
         compatible: model.fits,
         issues: model.issues,
          price: model.price, priceLabel: money(model.price), shipsOn: shipDate(model.days), arrival: null,
@@ -849,7 +776,7 @@ export const TOOLS: RigsmithTool[] = [
     name: "begin_build",
     // ADR 0013: this tool opens the workspace but never chooses a starting slot or part.
     // docs/decisions/0013-agent-chooses-build-order.md
-    description: "Open the configurator with the brief and hard budget. Optional budgetShares gives slot percentages as planning hints. Choose the starting slot and every part yourself with candidate reads and set_build_component. Preserve selections unless reset is requested. Compatibility, stock and the exact whole-build budget win.",
+    description: "Open the PC configurator with a shopper brief, resolution and hard budget, returning optional slot-share planning hints.",
     routes: ["home", "category", "product", "builder"],
     inputSchema: schema({
       brief: { ...str("Shopper needs and constraints, 5–500 characters."), minLength: 5, maxLength: 500 },
@@ -867,13 +794,13 @@ export const TOOLS: RigsmithTool[] = [
   },
   {
     name: "compare_build_options",
-    description: "Compare 1–3 alternatives YOU propose: cost, eligibility and SIMULATED FPS/1% lows. For the watchdog scenario, pass all three games in one call and usually compare only 1–2 GPU alternatives. The gate appears only for an under-budget compatible baseline when a GPU averages >=10% more across all games, regresses in none, and is out of stock or ships in 3+ days. Ask before create_watchdog. Fixtures are not measurements; this does not apply changes.",
+    description: "Baseline is always the current build. Do not include the current build as an alternative. Compare one to three agent-supplied PC alternatives by cost, eligibility, availability and explicitly simulated performance. This tool does not apply changes.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
     inputSchema: schema({ alternatives: {
       type: "array", minItems: 1, maxItems: 3,
-      description: "Alternative slot-to-product-id changes relative to the current build; unchanged slots are inherited.",
+      description: "Changes vs current build; unchanged slots are inherited. Each must change one slot; current build is baseline.",
       items: { ...schema(Object.fromEntries(PC_SLOTS.map(slot => [slot, str("Catalog product id for this slot.")]))), minProperties: 1 },
     }, scenario: str("Generic fictional workload, default cinematic. Do not combine with game(s).", BENCHMARK_SCENARIOS), game: str("One game simulation; use games for a batch.", SIMULATED_GAMES), games: { type: "array", minItems: 1, maxItems: 3, uniqueItems: true, items: str("Game simulation to include.", SIMULATED_GAMES), description: "One to three game simulations in one read." } }, ["alternatives"]),
     execute(args) {
@@ -895,7 +822,7 @@ export const TOOLS: RigsmithTool[] = [
   },
   {
     name: "inspect_build_options",
-    description: "Optional detailed comparison: open the existing builder slot and return facts, stock and current fit for one to four candidates. Does not rank or select. Use when existing data are insufficient, not before every selection. Fit may change after edits; set_build_component always revalidates against current state. Explain material tradeoffs and unknowns.",
+    description: "Return detailed facts, stock and current fit for one to four candidates in a PC build slot without selecting one.",
     routes: ["builder", "category", "product"],
     inputSchema: schema({
       slot: str("Build slot to inspect.", PC_SLOTS),
@@ -971,7 +898,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "create_watchdog",
     description:
-      "Watch a listing for stock or a price drop. Stays on this device. If a comparison marks a stronger listing as slow or unavailable, ask the shopper first; create the watchdog only after they agree.",
+      "Watch a listing locally for a stock or price change.",
     routes: ["category", "product"],
     inputSchema: schema({
       productId: str("Id from another tool."),
@@ -991,7 +918,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "add_to_cart",
     description:
-      "Add one product to the cart. Does not purchase anything: use only when the shopper requested a cart change, and never add what they have not agreed to.",
+      "Add one catalog product to the cart without purchasing it.",
     routes: ["category", "product"],
     inputSchema: schema({
       productId: str("Id from another tool."),
@@ -1007,7 +934,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "add_build_to_cart",
     description:
-      "Put the assembled PC in the cart as one line and open the cart. Requires all parts selected, compatible, available and within budget. Does not place an order.",
+      "Add the assembled PC to the cart as one line after checking completeness, compatibility, availability and budget.",
     routes: ["builder", "cart"],
     inputSchema: NO_INPUT,
     async execute() { return commandResult(await app().addBuildToCart());
@@ -1017,7 +944,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "get_cart",
     description:
-      "Final cart check: every line with quantity and price, subtotal, shipping, total and delivery. Call after the requested phone and PC have been added, or when the shopper asks. Do not call at the start just to inspect an unchanged cart. Never checks out or pays.",
+      "Return cart lines, quantities, prices, shipping, total and delivery without checking out.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
@@ -1403,7 +1330,7 @@ export const DEMO_TOOL_NAMES = [
   "show_in_catalog",
   "begin_build",
   "list_compatible_parts",
-  "set_build_component",
+  "set_build_components",
   "check_build_compatibility",
   "compare_build_options",
   "create_watchdog",

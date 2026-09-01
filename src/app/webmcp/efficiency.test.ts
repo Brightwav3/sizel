@@ -116,7 +116,6 @@ describe('fewer WebMCP round trips', () => {
     expect(cooler.concern).toBe('out_of_stock');
     expect(result.availability.allInStock).toBe(false);
     expect(result.availability.outOfStock).toEqual(['cooler']);
-    expect(result.availability.offer).toBe('create_watchdog');
     expect((await call('check_stock', { productId: cooler.id })).inStock).toBe(false);
   });
 

@@ -45,8 +45,8 @@ const WatchBell: React.FC<{ v: Vals }> = ({ v }) => {
 
 export const TopBar: React.FC<{ v: Vals }> = ({ v }) => (
   <div className="topbar topbar-grid">
-    <button type="button" className="topbar__logo" onClick={v.goHome} aria-label="Go to Rigsmith home">
-      <img src="/rigsmith-logo/rigsmith-logo.webp" alt="Rigsmith" />
+    <button type="button" className="topbar__logo" onClick={v.goHome} aria-label="Go to Sizel home">
+      <img src="/branding/Sizel.png" alt="Sizel" />
     </button>
     <SearchBox v={v} />
     <div className="topbar-actions">

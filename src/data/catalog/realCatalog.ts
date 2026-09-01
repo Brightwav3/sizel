@@ -207,7 +207,7 @@ const categoryNames: Record<Slot, string> = {
 };
 
 export const CAT_META: Record<Slot, CategoryMeta> = Object.fromEntries(
-  (Object.keys(CATALOG) as Slot[]).map(slot => [slot, { name: categoryNames[slot], count: count(slot), blurb: `Real ${categoryNames[slot].toLowerCase()} from the canonical Rigsmith catalog.` }]),
+  (Object.keys(CATALOG) as Slot[]).map(slot => [slot, { name: categoryNames[slot], count: count(slot), blurb: `Real ${categoryNames[slot].toLowerCase()} from the canonical Sizel catalog.` }]),
 ) as Record<Slot, CategoryMeta>;
 
 export const CAT_ICON: Record<Slot, string> = {

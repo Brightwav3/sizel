@@ -15,21 +15,22 @@ const demoTools = TOOLS.filter(tool => demoNames.has(tool.name));
 // Keep them here so regenerating the reference does not erase the contract.
 const returns = {
   read_shop: '`{ currency: "USD", sections }`. Each requested section contains the result of its corresponding read tool. A section can be `{ error: "section_unavailable" }`; oversized snapshots replace the largest droppable section with `{ error: "section_too_large" }`. No navigation or state change.',
-  search_products: '`{ total, showing, offset, items, nextOffset }`, plus `distinctModels: true` for grouped phone searches. Each item is a compact listing with `id`, `name`, `brand`, `price`, `stock`, and `shipsInDays`; slow or unavailable items carry a concern and watchdog offer. Results are truncated with `omitted` when necessary.',
+  search_products: '`{ total, showing, offset, items, nextOffset }`, plus `distinctModels: true` for grouped phone searches. Each item is a compact listing with `id`, `name`, `brand`, `price`, `stock`, and `shipsInDays`; slow or unavailable items carry an availability concern. Results are truncated with `omitted` when necessary.',
   get_product: 'A compact product detail object: listing identity, synthetic flag, category, price, stock, shipping date, description, up to six specs, normalized compatibility/device facts, and a relative product URL.',
   get_current_build: '`slots`, `selectedSlots`, `complete`, `price`, `budget`, `withinBudget`, `budgetRemainingUSD`, `compatible`, `issueCount`, `fps: null`, `resolution`, and an explicit unavailable-performance basis. Only explicitly chosen slots count; defaults do not.',
   list_filters: '`{ category, facets }`. Every facet includes its id, label, whether it affects compatibility, and up to six catalog values.',
   compare_products: '`{ shared, items }`. Each item has identity, price, stock, delivery, only the differing normalized facts, and optional compact details. The comparison is read-only.',
   check_stock: '`{ id, name, inStock, units, shipsInDays, shipsOn, arrival }`; `arrival` is always `null` because arrival timing is not modeled.',
   show_in_catalog: 'Returns which view was shown. Product view also returns the same compact detail payload as `get_product`; category view returns the number of matching listings. It changes only visible navigation/filter state.',
-  list_compatible_parts: 'List mode returns one row per requested slot with fitting count, catalog count, budget share/allowance, and candidate items. Ranked GPU mode returns a complete ranking scan, `primary`, optional in-stock `fallback`, and a guarded `watchdogOffer`; it never selects a part.',
+  list_compatible_parts: 'Returns one row per requested slot with fitting count, catalog count, budget share/allowance, and candidate items. `limit` is applied independently to every requested slot, including `slots` and `allRemaining` batches. Candidates include price, stock and delivery facts; the tool does not rank or select a part. Batch rows stay compact and omit full details.',
   set_build_component: 'Returns the changed slot, selected part, selected price, remaining budget, selected count, completeness and compatibility. Selecting a case also returns its bundled fan id. The successful command navigates to the builder and focuses the changed slot.',
-  check_build_compatibility: 'For an incomplete build, returns selected slots, missing slots, partial price, compatibility issues and no performance estimate. For a complete build, returns all nine slots with stock/delivery, total, availability, seven-rule compatibility, PSU/power, socket, clearance, simulated benchmark payload and unavailable measured-performance fields.',
+  set_build_components: 'Returns the complete applied selection, bundled fans, price, remaining budget, shipping and compatibility after atomically validating all eight non-fan slots. A successful result includes `validationComplete: true`. It applies no partial build when a check fails.',
+  check_build_compatibility: 'For an incomplete build, returns selected slots, missing slots, partial price, compatibility issues and no performance estimate. For a complete build, returns all nine slots with stock/delivery, total, availability, seven-rule compatibility, PSU/power, socket, clearance, simulated benchmark payload and unavailable measured-performance fields. Do not call immediately after a successful `set_build_components` unless selections changed.',
   estimate_performance: 'For a complete build, returns price, power, shipping, compatibility, `fps: null`, `noise: null`, and a versioned explicitly simulated result containing average FPS/1% lows where fixtures are available. It does not claim measured or real-game performance.',
   explain_build_bottleneck: 'Returns a stable bottleneck shape with `slot`, `currentFps`, `ceilingFps`, `lostFps`, and `upgrade` all `null`, plus an explicit reason/basis that measured performance is unavailable.',
   fix_build_issue: 'Returns `{ compatible, issues, options }`. Each option is a concrete compatible replacement with slot, id, name, price, priceDelta and `fpsDelta: null`; options are limited and ordered by smallest absolute price change. It never applies a swap.',
-  begin_build: 'Returns the opened route, exact budget/resolution, full resolution-aware or shopper-supplied slot allocation, and next-step guidance. It never selects a starting slot or part; the agent owns the build order.',
-  compare_build_options: 'Returns an unchanged baseline and one to three agent-supplied counterfactuals with price, budget, eligibility, compatibility blockers, simulated results and deltas. It may return a watchdog offer only when the complete gate passes. It never mutates the current build.',
+  begin_build: 'Returns the opened route, exact budget/resolution and full resolution-aware or shopper-supplied slot allocation. It never selects a starting slot or part; the agent owns the build order.',
+  compare_build_options: 'The current build is always the unchanged baseline; do not include it as an alternative. Returns one to three agent-supplied counterfactuals with price, budget, eligibility, compatibility blockers, availability, simulated results and deltas. It never recommends, creates a watch or mutates the current build.',
   inspect_build_options: 'Returns the current brief, budget, selected price, build revision, and one to four requested candidates with listing data, specs, normalized facts and current fit issues. It records the inspection in UI state and opens/focuses the builder slot, but does not select a candidate.',
   set_build_target: 'Returns the merged budget, resolution, target FPS, quiet flag and recalculated slot allocation. At least one of these four fields must be supplied; the command invalidates stale inspection state.',
   undo_build_change: 'Returns `{ restored: true }` after restoring the previous build snapshot, or an actionable error when there is no previous change. Only one previous build snapshot is retained.',
@@ -75,15 +76,14 @@ const errorNotes = {
   invalid_budget: 'The budget must be a finite positive number.',
   invalid_budget_allocation: '`budgetShares` is not a valid PC-slot percentage map, contains an unknown slot/value, or exceeds 100% total.',
   invalid_candidates: 'Candidate inspection needs one to four distinct product ids.',
+  invalid_components: 'The batch build selection needs exactly one valid product id for cpu, gpu, board, ram, storage, cooler, psu and case. Fans are supplied by the case.',
   invalid_game: 'Use one of the listed game ids: `counter-strike-2`, `fortnite`, or `cyberpunk-2077`.',
-  invalid_mode: 'Use `list` or `ranked` for `list_compatible_parts`.',
   invalid_quantity: 'Quantity must be a whole number from zero through the allowed maximum.',
   invalid_reason: 'Optional build-decision notes must be strings no longer than 600 characters for `reason` and 400 for `tradeoff`.',
   invalid_scenario: 'Use the generic scenario `competitive` or `cinematic`.',
   invalid_slot: 'The requested value is not one of the nine PC build slots.',
   invalid_target: 'The target FPS must be a finite positive number.',
   missing_argument: 'A required field or selection mode is missing. Read the schema and pass the named field(s).',
-  no_compatible_gpu: 'No compatible GPU exists at or below the ranked-mode ceiling. Raise the ceiling only if it remains within the shopper budget.',
   no_such_finish: 'The requested finish is not offered for this product. Use the finish ids from `get_product_variants`.',
   no_such_line: 'The cart line index is stale or invalid. Call `get_cart` again.',
   not_a_device: '`compare_build_to_product` accepts phones or consoles, not PC parts.',
@@ -94,7 +94,6 @@ const errorNotes = {
   out_of_stock: 'The product or a selected build part has zero available units. Do not silently substitute it.',
   over_budget: 'The selected or proposed complete build exceeds the agreed whole-build budget.',
   product_not_found: 'The id is not a current catalog listing. Re-search and use an id returned by a tool.',
-  ranked_requires_gpu: 'Ranked mode is defined only for the GPU slot; pass `slot: "gpu"` or omit `slot`.',
   unknown_filter: 'The facet id is not supported by that category. Call `list_filters` and reuse its ids.',
   wrong_fan_pack: 'Fans bundled with another case cannot be selected independently. Select the case that owns the pack.',
   wrong_slot: 'The product id does not belong to the requested PC slot.',
@@ -111,11 +110,11 @@ const DEMO_ERROR_CODES = [
   'build_incompatible', 'build_incomplete', 'category_required',
   'conflicting_arguments', 'conflicting_workload', 'duplicate_alternative',
   'filters_require_one_slot', 'insufficient_stock', 'invalid_alternative',
-  'invalid_alternatives', 'invalid_brief', 'invalid_budget',
-  'invalid_budget_allocation', 'invalid_game', 'invalid_mode',
+  'invalid_alternatives', 'invalid_brief', 'invalid_budget', 'invalid_components',
+  'invalid_budget_allocation', 'invalid_game',
   'invalid_quantity', 'invalid_reason', 'invalid_scenario', 'invalid_slot',
-  'missing_argument', 'no_compatible_gpu', 'out_of_stock', 'over_budget',
-  'product_not_found', 'ranked_requires_gpu', 'unknown_filter', 'wrong_fan_pack', 'wrong_slot',
+  'missing_argument', 'out_of_stock', 'over_budget',
+  'product_not_found', 'unknown_filter', 'wrong_fan_pack', 'wrong_slot',
   'command_failed', 'tool_failed', 'result_too_large',
 ];
 const errorTable = DEMO_ERROR_CODES.sort().map(code => `| \`${code}\` | ${errorNotes[code] ?? 'See the tool-specific recovery hint.'} |`).join('\n');
@@ -136,12 +135,13 @@ Rigsmith is a local demo electronics storefront. This reference covers the demo 
 - Every registered handler receives the browser-provided \`AbortSignal\`. Ordinary domain commands are serialized and resolve after the React state commit.
 - Required fields are checked before handler execution. Missing \`undefined\` or \`null\` values return \`missing_argument\`. The browser also sees the JSON Schema, whose object schemas reject additional properties.
 - A handler exception is converted into \`{ error: "tool_failed", hint }\`; it is not allowed to escape as an opaque rejected tool call. Domain command failures use \`command_failed\` only for non-domain exceptions.
+- Add \`?debugWebMcp=1\` to log handler-only durations and expose the last 200 samples as \`window.__rigsmithWebmcpTimings\`. These timings exclude model planning, browser transport, registration and UI rendering.
 
 ## Response envelope and limits
 
 Every result is a WebMCP result whose first content block is JSON text: \`{ content: [{ type: "text", text: "..." }] }\`. Error results additionally set \`isError: true\`. Callers must parse the text before using the payload.
 
-Successful ordinary results target a 1,500-character JSON budget. Build reports target 3,000 characters; batched and detailed comparison results target 6,000. A result with a declared list is shortened from the end and reports \`omitted\`; derived summaries are recalculated from the items actually returned. If a result cannot be safely shortened, it returns \`result_too_large\` with a recovery hint.
+Successful ordinary results target a 1,500-character JSON budget. Build reports target 3,000 characters; batched compatibility results allow up to 18,000 compact characters so a per-slot \`limit\` is not silently reduced; detailed comparison results target 6,000. A result with a declared list is shortened from the end and reports \`omitted\`; derived summaries are recalculated from the items actually returned. If a result cannot be safely shortened, it returns \`result_too_large\` with a recovery hint.
 
 ## Shared domain rules
 
@@ -158,17 +158,17 @@ Successful ordinary results target a 1,500-character JSON budget. Build reports 
 
 1. Search with \`search_products\`. Use catalog ids returned by tools; do not invent ids.
 2. For a PC, call \`begin_build\` with the shopper's brief and exact budget. Optionally pass \`budgetShares\` as allocation hints. Choose the first slot yourself from the shopper's goals; the tool does not choose one for you.
-3. Use \`list_compatible_parts\` for fitting candidates. For the focused GPU pass, \`mode: "ranked"\` with \`slot: "gpu"\` scans the full compatible pool within its ceiling and returns a simulated primary plus an in-stock fallback. It is not an automatic recommendation.
-4. Apply the agent's own choice using \`set_build_component\`. No prior inspection is required because stock, fit and budget are rechecked at commit. Explain trade-offs to the shopper; optional \`reason\`, \`tradeoff\` and \`alternativeId\` fields are notes, not proof of reasoning.
+3. Use \`list_compatible_parts\` for fitting candidates. Request one slot, a bounded batch or \`allRemaining\`; use compact details or \`inspect_build_options\` when more compatibility facts are needed. Choose candidates from the returned data yourself.
+4. Once the agent has chosen every part, apply the complete selection with \`set_build_components\`. The command validates all eight non-fan slots atomically; stock, fit and budget are rechecked at commit.
 5. Verify with \`check_build_compatibility\`. Use \`compare_build_options\` for explicit counterfactual swaps; it does not apply them and does not certify a global optimum.
 6. Only after the shopper requests the cart action, use \`add_to_cart\` or \`add_build_to_cart\`. Use \`get_cart\` for the final line, price and stock review.
 
 ## Agent selects the build
 
 1. Call \`begin_build\` with the shopper brief and exact USD budget. This opens the existing builder without selecting any slot or part. If the shopper gives slot shares, pass \`budgetShares\` such as \`{cpu: 20, gpu: 40}\`; the response returns dollar hints for every slot and allocates the remainder by resolution. Decide the first slot from the shopper's goals, then select parts in the order that makes sense for the build. Existing selections remain unless reset is explicitly requested.
-2. Search products. For a PC, \`list_compatible_parts\` can return one slot, a bounded \`slots\` batch or \`allRemaining\`, with the current slot allowance and optional \`maxPrice\`, \`sort\` and compact details. For the focused GPU decision, pass \`mode: "ranked"\`, \`slot: "gpu"\` and an optional \`maxPrice\`; it returns the strongest fictional-game-simulation primary, the next in-stock fallback and a watchdog gate when the real listing qualifies.
-3. Choose a product with \`set_build_component\` using slot and productId. Reason, tradeoff and alternativeId are optional notes. Explain material tradeoffs in conversation. Current stock, fit and budget are validated on every selection, without requiring reinspection after changes.
-4. Repeat for the remaining slots; choosing a case includes its fans. Read \`check_build_compatibility\` to verify the complete build, stock and budget. Cart and checkout remain separate requested actions.
+2. Search products. For a PC, \`list_compatible_parts\` can return one slot, a bounded \`slots\` batch or \`allRemaining\`, with the current slot allowance and optional \`maxPrice\`, \`sort\` and compact details. Choose every component yourself, then use \`compare_build_options\` for one or two agent-supplied alternatives and their simulated performance data.
+3. Apply the chosen ids with \`set_build_components\`. The case supplies its fans, and the command validates the complete selection atomically against current stock, fit and budget.
+4. Read \`check_build_compatibility\` to verify the complete build, stock and budget. Cart and checkout remain separate requested actions.
 5. Maximize benefit for shopper use within the whole budget, not savings by default. Use \`compare_build_options\` with a relevant upgrade near the limit, especially GPU for gaming. Derive component price limits from the rest of the build rather than arbitrary caps. Choose the same fictional scenario for all options and explain assumptions. Apply your own changes and compare again. Explain unused budget; missing data are not proof of equal performance.
 
 The site cannot prove an agent understands a component or that every sentence it writes is true. Domain safety checks remain mandatory. See ADR 0009 and ADR 0013.
@@ -181,7 +181,7 @@ UI and tools share controller commands for selections, quantity and build/cart a
 
 Catalog prices and stock are synthetic. Measured FPS and noise remain unavailable. \`compare_build_options\` returns versioned, explicitly labeled simulated benchmarks for competitive or cinematic workloads. These use authored category fixtures and an explicit CPU/GPU minimum-ceiling protocol, not the old clock/core formula. GPU averages use calibrated review anchors only for comparable source protocols; unmeasured tiers, 1% lows, CPU limits and whole-build limits remain fictional. Storage loading time is separate from FPS. See ADR 0010 and the category benchmark documents. Simulation can support choices inside the fictional scenario, never real-world performance claims. Seven compatibility rules are implemented; a pass is not complete physical/BIOS certification.
 
-Read-only tools do not move the UI; \`show_in_catalog\`, \`begin_build\` and \`set_build_component\` do. The demo registers a stable allowlist from \`DEMO_TOOL_NAMES\`; route changes do not churn it. Results normally have a 1500-character budget; build reports and counterfactual comparisons use 3000 or 6000 as documented below. Truncated lists disclose omitted entries. Agent reasons stay in command state; there is no additional explanation panel in the storefront. Existing build lines track the editable build and are revalidated before cart admission.
+Read-only tools do not move the UI; \`show_in_catalog\`, \`begin_build\` and \`set_build_components\` do. The demo registers a stable allowlist from \`DEMO_TOOL_NAMES\`; route changes do not churn it. Results normally have a 1500-character budget; build reports and counterfactual comparisons use 3000 or 6000 as documented below. Truncated lists disclose omitted entries. Agent reasons stay in command state; there is no additional explanation panel in the storefront. Existing build lines track the editable build and are revalidated before cart admission.
 
 ## Tools
 

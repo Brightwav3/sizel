@@ -1,20 +1,22 @@
-# Rigsmith
+# Sizel
+
+> **Naming note:** Sizel was developed under the working title **Rigsmith**. Some internal identifiers and historical documentation still use Rigsmith.
 
 > Current selection contract (ADR 0009): inspection and explanation fields are optional. Select known catalog ids directly; current stock, compatibility and budget checks remain mandatory. Earlier descriptions of required inspection below are historical.
 
-Rigsmith is a demo electronics store for phones, gaming consoles and PC components, designed for shoppers and browser agents. Product browsing, comparisons and a shopping cart form the storefront; a custom PC builder is one of its shopping tools. It carries a local catalog of 135 product records, shown as 164 listings once phones and consoles expand into their storage tiers. The catalog and shopping actions are exposed through 36 WebMCP tools.
+Sizel is a demo electronics store for phones, gaming consoles and PC components, designed for shoppers and browser agents. Product browsing, comparisons and a shopping cart form the storefront; a custom PC builder is one of its shopping tools. It carries a local catalog of 135 product records, shown as 164 listings once phones and consoles expand into their storage tiers. The catalog and shopping actions are exposed through 37 WebMCP tools.
 
 All products, brands, logos, and product images are fictional. The application does not depend on an external catalog API.
 
 ## Agent-led building (31 August 2026)
 
-`recommend_build` is no longer exposed. For PC requests, agents start with `begin_build`, decide which slot to solve first, and select catalog products with `set_build_component`. `begin_build` accepts optional `budgetShares`, such as {cpu: 20, gpu: 40}, and returns dollar allowances for every slot. It never selects a starting slot or part. Omitted slots receive the resolution-aware remainder; these are planning hints, not hard caps. `list_compatible_parts` repeats the current slot allowance next to fitting candidates, or its `mode: "ranked"` GPU path returns a simulated-performance primary, an in-stock fallback and a watchdog gate based on the actual listing. Phone searches group storage variants by model by default, so one search can supply distinct comparison candidates. `inspect_build_options` is optional when more facts are needed, as are reason and tradeoff fields. The existing builder opens before selection and shows the selected parts as the agent works. Material tradeoffs belong in the agent conversation, not an additional page panel.
+`recommend_build` is no longer exposed. For PC requests, agents start with `begin_build`, decide which slot to solve first, choose catalog products, and apply the complete selection with `set_build_components`. `begin_build` accepts optional `budgetShares`, such as {cpu: 20, gpu: 40}, and returns dollar allowances for every slot. It never selects a starting slot or part. Omitted slots receive the resolution-aware remainder; these are planning hints, not hard caps. `list_compatible_parts` repeats the current slot allowance next to fitting candidates and can batch several slots, while `compare_build_options` calculates explicit simulated results and deltas for alternatives supplied by the agent. Phone searches group storage variants by model by default, so one search can supply distinct comparison candidates. `inspect_build_options` is optional when more facts are needed, as are reason and tradeoff fields. The existing builder opens before selection and shows the selected parts as the agent works. Material tradeoffs belong in the agent conversation, not an additional page panel.
 
 Build and cart writes share UI validation and finish after React commits. A complete build must fit the exact budget and stock limits before checkout. Catalog data remain synthetic; checkout is a preview, not a payment or order service. See [ADR 0007](docs/decisions/0007-agents-select-and-explain-parts.md).
 
 `compare_build_options` evaluates whole-build alternatives supplied by the agent, including multiple-part platform changes, without choosing or applying them. It compares cost, budget and known orderability checks; unavailable benchmark evidence must not be treated as proof of equal performance or value. It does not certify the best build. See [ADR 0008](docs/decisions/0008-whole-build-counterfactual-comparison.md) and the [agent decision test](docs/agent-choice-test.md). That test prompt is an evaluation harness, not a required shopper prompt: the workflow is also described in the tools themselves.
 
-When the agent passes all three game simulations, the same comparison can return a dynamic `watchdogOffer`. It is present only for an under-budget, compatible baseline when a candidate GPU has at least a 10% higher average GPU-fixture score across the games, regresses in none, and is out of stock or ships in three or more days. The offer identifies the real catalog listing, reports whether the alternative build also fits the budget, and tells the agent to ask before calling `create_watchdog`; no product, delay or FPS result is hardcoded into the gate.
+When the agent compares alternatives across all three game simulations, the result includes their availability, delivery and performance deltas. The agent decides whether a slow or unavailable option matters for the shopper and asks before calling `create_watchdog`; the comparison tool does not make that decision.
 
 ## Start here
 
@@ -109,7 +111,7 @@ describes the UI layering.
 
 The interactive application, the local catalog, and the WebMCP tool set are working. Deployment, the public repository URL, and the demo video are still pending.
 
-Thirty-six tool descriptors are implemented in `src/app/webmcp/`; the
+Thirty-seven tool descriptors are implemented in `src/app/webmcp/`; the
 judge-facing demo registers thirteen stable tools from that list. The demo
 keeps the same descriptors while the shopper moves between the catalogue,
 product pages and the builder. `show_in_catalog` makes visible navigation
@@ -129,8 +131,9 @@ are held inside Chrome's 1.5K character budget.
 | `compare_products` | Two to four listings, showing only where they differ; use `show_in_catalog` for pages |
 | `check_stock` | Stock on hand and the delivery date |
 | `show_in_catalog` | Put a category, product, builder or cart on the shopper's screen |
-| `list_compatible_parts` | Fitting parts for one slot or a bounded batch, with budget-share hints; ranked GPU primary/fallback |
+| `list_compatible_parts` | Fitting parts for one slot or a bounded batch, with budget-share hints |
 | `set_build_component` | Fit a part, or return a slot to its default |
+| `set_build_components` | Apply the agent's complete PC selection atomically |
 | `check_build_compatibility` | All nine slots with stock and delivery, conflicts in plain sentences, power headroom |
 | `estimate_performance` | Frame rate, noise, price, power and delivery |
 | `explain_build_bottleneck` | The part holding the frame rate down, and what it costs |
