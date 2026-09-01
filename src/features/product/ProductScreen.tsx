@@ -16,9 +16,13 @@ import { GamePerformanceRail } from "./GamePerformanceRail";
 export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => {
   const selectedColor = v.pColorways.find((colorway: Vals) => colorway.id === v.pSelectedColorId) ?? v.pColorways[0];
   const [image, setImage] = React.useState(selectedColor?.imagePath ?? v.pImage);
+  const [reviewPage, setReviewPage] = React.useState(0);
+  const reviewPageCount = Math.max(1, Math.ceil(v.pReviews.length / 4));
+  const visibleReviews = v.pReviews.slice(reviewPage * 4, reviewPage * 4 + 4);
 
   React.useEffect(() => {
     setImage(selectedColor?.imagePath ?? v.pImage);
+    setReviewPage(0);
   }, [v.pSku, v.pSelectedColorId, v.pImage]);
 
   return (
@@ -126,7 +130,7 @@ export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => {
       <div>
         <h2>What buyers say</h2>
         <div className="reviews__list">
-          {v.pReviews.map((review: Vals) => (
+          {visibleReviews.map((review: Vals) => (
             <article key={review.id} className="review">
               <span className="review__avatar">{review.initials}</span>
               <div>
@@ -144,6 +148,17 @@ export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => {
             </article>
           ))}
         </div>
+        {reviewPageCount > 1 && (
+          <nav className="reviews__pager" aria-label="Review pages">
+            <button type="button" disabled={reviewPage === 0} onClick={() => setReviewPage(page => Math.max(0, page - 1))} aria-label="Previous reviews">
+              <span className="ms">arrow_back</span>
+            </button>
+            <span aria-live="polite">{reviewPage + 1} / {reviewPageCount}</span>
+            <button type="button" disabled={reviewPage === reviewPageCount - 1} onClick={() => setReviewPage(page => Math.min(reviewPageCount - 1, page + 1))} aria-label="Next reviews">
+              <span className="ms">arrow_forward</span>
+            </button>
+          </nav>
+        )}
       </div>
     </section>
   </div>

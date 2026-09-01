@@ -72,7 +72,8 @@ export function buildProductVals(context: BuildContext) {
       // so slotting a part into a build is the secondary action.
       pTitle: productTitle(pick, pSlot),
       pRating: ratingFor(pick),
-      pReviews: reviewsFor(pick),
+      // Four review pages, with one verified purchase on each page.
+      pReviews: reviewsFor(pick, 16),
       // An out-of-stock product is watched for its return, one in stock for a
       // price drop. The check and the toggle have to agree on which.
       pWatched: app.isWatched(pick.id, watchKind),
