@@ -1083,7 +1083,9 @@ export const TOOLS: RigsmithTool[] = [
       if (!found) return fail("product_not_found", "Call search_products to get a valid id.");
       const rating = ratingFor(found.product);
       const limit = Math.min(4, Math.max(1, Math.round(args.limit ?? 3)));
-      const verifiedReviews = reviewsFor(found.product, limit).filter(review => review.verified);
+      // The UI pages four reviews at a time; the tool skips those pages and
+      // gives the agent only the verified entries it asked for.
+      const verifiedReviews = reviewsFor(found.product, 16).filter(review => review.verified).slice(0, limit);
       return ok({
         synthetic: true,
         id: found.product.id,
