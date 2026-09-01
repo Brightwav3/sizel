@@ -30,6 +30,12 @@ describe("candidatePool", () => {
       .toEqual(candidatePool({ search: "woodgrove" }));
   });
 
+  it("can keep category-page text search inside the active category", () => {
+    const hits = candidatePool({ category: "phones", search: "phone", scopeSearchToCategory: true });
+    expect(hits.length).toBeGreaterThan(0);
+    expect(hits.every(product => findProduct(product.id)?.category === "phones")).toBe(true);
+  });
+
   it("flattens a department into its categories", () => {
     const pc = DEPTS.find(d => d.id === "pc")!;
     expect(candidatePool({ departmentId: "pc" }))

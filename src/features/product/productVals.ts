@@ -11,6 +11,14 @@ import { ratingFor, reviewsFor } from "../../data/catalog/reviews";
 import type { PcSlot } from "../../shared/lib/types";
 import type { BuildContext } from "../../entities/build/buildContext";
 
+/** `days` is the catalog's shipping lead time, not a transit or arrival promise. */
+const shippingLabel = (days: number) =>
+  days === 0 ? "Ships today" : `Ships in ${days} day${days === 1 ? "" : "s"}`;
+
+/** The shipping date is derived from the same catalog lead time used by the tools. */
+const shippingDateLabel = (app: BuildContext["app"], days: number) =>
+  days === 0 ? "Ships today" : `Ships ${app.shipDate(days)}`;
+
 export function buildProductVals(context: BuildContext) {
   const { app, s, route, openDept, pSlot, pick, buildableProduct, hasBuild, chosenCount, candidateIssues, pFits } = context;
   const watchKind = pick.stock === 0 ? "availability" as const : "price" as const;
@@ -31,7 +39,7 @@ export function buildProductVals(context: BuildContext) {
       pModel: pick.brand ? pick.name.replace(pick.brand + " ", "") : pick.name.split(" ").slice(1).join(" ") || pick.name,
       pIsGpu: pSlot === "gpu", pCatName: CAT_META[pSlot].name,
       pPrice: money(pick.price),
-      pStock: stockCount === 0 ? "Out of stock" : pick.days <= 2 ? `In stock · ${stockLabel(stockCount)} pcs · ships tomorrow` : "Ships in " + pick.days + " days",
+      pStock: stockCount === 0 ? "Out of stock" : `In stock · ${stockLabel(stockCount)} pcs · ${shippingLabel(pick.days)}`,
       pStockFg: stockCount === 0 ? "var(--danger)" : pick.days <= 2 ? "var(--green-600)" : "var(--amber-600)",
       pBlurb: pick.blurb || [pick.note || pick.meaning, CAT_META[pSlot].blurb].filter(Boolean).join(". ").replace("..", "."),
       pSpecs: (SPECS[pSlot] || (() => []))(pick),
@@ -48,7 +56,7 @@ export function buildProductVals(context: BuildContext) {
       ] : [
         { k: "Category", v: CAT_META[pSlot].name },
         { k: "Key specification", v: ((SPECS[pSlot] || (() => []))(pick)[0] || "Catalog specification") },
-        { k: "Delivery", v: pick.days <= 2 ? "1–2 days" : pick.days + " days" },
+        { k: "Shipping", v: shippingLabel(pick.days) },
         { k: "Availability", v: pick.stock === 0 ? "Out of stock" : "In stock" },
       ],
       // The compatibility box is only meaningful for a part that goes into a
@@ -88,7 +96,7 @@ export function buildProductVals(context: BuildContext) {
       pColorways: colorways,
       pSelectedColorId: selectedColor?.id ?? null,
       pSelectColor: (colorId: string) => app.setState({ productColorId: colorId }),
-      pDelivery: pick.days <= 2 ? "Delivery tomorrow" : `Delivery in ${pick.days} days`,
+      pDelivery: shippingDateLabel(app, pick.days),
       pPriceExVat: money(Math.round(pick.price / 1.21)),
       pAllFromBrand: () => app.setState({ route: "category", category: pSlot, productSlot: pSlot, brand: pick.brand ?? "any", openDept: null }),
       pAddToCart: () => app.addToCart(pSlot, pick.id),

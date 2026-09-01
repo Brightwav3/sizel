@@ -9,6 +9,8 @@ import type { BuildContext } from "../../entities/build/buildContext";
 
 export function buildShellVals(context: BuildContext) {
   const { app, s, route, on, shopping, dept, depts, openDept, categories, cat, catList, brandOf, brandLogo } = context;
+  const searchCategory = shopping ? s.category : "gpu";
+  const searchDept = searchCategory === "phones" ? "phone" : searchCategory === "consoles" ? "gaming" : "pc";
   return {
       depts, catalog: categories,
       deptName: s.brand === "any" ? dept.name : `${s.brand} ${dept.name}`,
@@ -31,7 +33,7 @@ export function buildShellVals(context: BuildContext) {
       ],
       goHome: () => app.go("home"), goBuilder: () => app.go("builder"),
       goCategory: () => app.go("category"), goCart: () => app.go("cart"),
-      goCheckout: () => app.setState({ route: "checkout", step: 0 }),
+      goCheckout: () => app.startCheckout(),
       isHome: on("home"), isCategory: on("category"), isProduct: on("product"),
       isBuilder: on("builder"), isCart: on("cart"),
       isCheckout: on("checkout"), isDone: on("done"),
@@ -60,7 +62,15 @@ export function buildShellVals(context: BuildContext) {
       cartDotFg: s.cart.length ? "#fff" : "var(--text-tertiary)",
       toastText: s.toast || "", toastOpacity: s.toast ? 1 : 0,
       searchValue: s.search,
-      searchChange: (e: React.ChangeEvent<HTMLInputElement>) => app.setState({ search: e.target.value, route: e.target.value ? "category" : "home", category: "gpu", brand: "any" }),
+      searchChange: (e: React.ChangeEvent<HTMLInputElement>) => app.setState({
+        search: e.target.value,
+        route: e.target.value ? "category" : "home",
+        category: searchCategory,
+        productSlot: searchCategory,
+        dept: searchDept,
+        brand: "any",
+        openDept: null,
+      }),
       recentSearches: s.recentSearches,
       runSearch: (query: string) => {
         const search = query.trim();
@@ -68,9 +78,10 @@ export function buildShellVals(context: BuildContext) {
         app.setState({
           search,
           route: "category",
-          category: "gpu",
-          productSlot: "gpu",
-          dept: "pc",
+          category: searchCategory,
+          productSlot: searchCategory,
+          dept: searchDept,
+          openDept: null,
           brand: "any",
           recentSearches: [search, ...s.recentSearches.filter(item => item.toLowerCase() !== search.toLowerCase())].slice(0, 6),
         });

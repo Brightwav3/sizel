@@ -1,5 +1,6 @@
+import { buildBlocker, bundledFans } from "../../entities/build/selection";
 import React from "react";
-import { CATALOG, DEFAULT_PICKS, ORDER } from "../../data/catalog/catalog";
+import { CATALOG, ORDER } from "../../data/catalog/catalog";
 import { compatibilityIssues, money } from "../../entities/build/metrics";
 import { FACETS } from "../catalog/catalogFacets";
 import { facetSummary, facetValues } from "../../entities/product/queries";
@@ -19,6 +20,7 @@ export function buildBuilderVals(context: BuildContext) {
   const builderGpu = selectedPart("gpu"), builderCpu = selectedPart("cpu"), builderPsu = selectedPart("psu");
   const builderDraw = selectedCount ? (builderGpu?.watt ?? 0) + (builderCpu?.cpuPowerW ?? 0) + 80 : 0;
   const builderComplete = selectedCount === steps.length;
+  const blocked = buildBlocker(s.picks, s.chosen, s.budget);
   const activeSlot = s.builderSlot;
   const nextGap = steps.find(slot => !s.chosen.includes(slot));
 
@@ -59,7 +61,7 @@ export function buildBuilderVals(context: BuildContext) {
       builderOptions: shownPool.map(part => {
         const incompatibility = reasonFor(part);
         const installed = s.chosen.includes(activeSlot) && s.picks[activeSlot] === part.id;
-        const unavailable = part.stock === 0;
+        const unavailable = part.stock === 0 || (activeSlot === 'fans' && s.chosen.includes('case') && part.id !== bundledFans(s.picks.case));
         return {
           id: part.id, brand: part.brand, name: part.name, image: part.imagePath,
           specs: part.specs?.slice(0, 3).join(" · "),
@@ -97,13 +99,11 @@ export function buildBuilderVals(context: BuildContext) {
       builderComplete,
       builderTotalLabel: money(builderPrice),
       builderStatusLabel: builderIssues.length ? `${builderIssues.length} issues` : builderComplete ? "All clear" : `${selectedCount}/${ORDER.length} selected`,
-      resetBuild: () => app.setState({ picks: { ...DEFAULT_PICKS }, chosen: [], builderSearch: "", lastChange: null, toast: "Build reset" }, () => app.flash()),
+      resetBuild: () => app.resetBuild(),
       /** A disabled button has to say what is missing. */
       addBuildLabel: s.cart.some(line => line.kind === "build") ? "In your cart" : "Add build to cart · " + money(builderPrice),
-      addBuildDisabled: !builderComplete || builderIssues.length > 0,
-      addBuildReason: builderIssues.length
-        ? `${builderIssues.length} part${builderIssues.length === 1 ? "" : "s"} do not fit`
-        : builderComplete ? "" : `${steps.length - selectedCount} part${steps.length - selectedCount === 1 ? "" : "s"} still missing`,
+      addBuildDisabled: Boolean(blocked),
+      addBuildReason: blocked?.message ?? "",
       addBuildToCart: () => app.addBuildToCart(),
       shipLabel: app.shipDate(m.days),
   };

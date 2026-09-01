@@ -15,7 +15,7 @@ import { capacityLabel } from "../../data/catalog/storageVariants";
 import type { Part, PcSlot, Picks, Slot } from "../../shared/lib/types";
 
 export interface ProductQuery {
-  /** Category to browse. Ignored when `search` or `departmentId` is set. */
+  /** Category to browse. Text search is scoped to it when requested. */
   category?: Slot;
   /** Browse a whole department instead of one category. */
   departmentId?: string | null;
@@ -36,6 +36,8 @@ export interface ProductQuery {
   maxDays?: number;
   /** Keep only parts that raise no compatibility issue against this build. */
   fitsWith?: Partial<Picks> | null;
+  /** On a category page, keep text search inside that category. */
+  scopeSearchToCategory?: boolean;
   sort?: SortId;
 }
 
@@ -130,7 +132,10 @@ export const facetValues = (definition: FacetDefinition, product: Part): string[
 export function candidatePool(query: ProductQuery): Part[] {
   const search = (query.search ?? "").trim().toLowerCase();
   if (search) {
-    return allProducts().filter(product =>
+    const searchPool = query.scopeSearchToCategory && query.category
+      ? CATALOG[query.category]
+      : allProducts();
+    return searchPool.filter(product =>
       [product.name, product.model, product.description, JSON.stringify(product.specifications)]
         .join(" ").toLowerCase().includes(search));
   }

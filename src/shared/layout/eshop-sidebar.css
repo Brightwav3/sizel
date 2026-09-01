@@ -151,6 +151,12 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, #root::-webkit-scrollbar { wid
   .eshop-rail-item .rail-chevron { display: none; }
   /* The coming-soon departments stay in the row, sized to their own text. */
   .eshop-placeholder-category { flex: 0 0 auto; grid-template-columns: auto auto auto; white-space: nowrap; }
+  /* Only the home rail scrolls sideways; dropdown departments remain a list. */
+  .eshop-catalog .eshop-catalog-panel { flex-direction: column; gap: 0; overflow-x: hidden; }
+  .eshop-catalog-panel .eshop-rail-item { width: 100%; grid-template-columns: var(--space-8) minmax(0, 1fr) auto var(--space-5); white-space: normal; }
+  .eshop-catalog-panel .eshop-rail-item > span:nth-child(2) { white-space: normal; }
+  .eshop-catalog-panel .rail-chevron { display: block; }
+  .eshop-catalog-panel .eshop-placeholder-category { grid-template-columns: var(--space-8) minmax(0, 1fr) auto; white-space: normal; }
   .eshop-audience-services { display: flex; flex-direction: row; gap: var(--space-2); margin-top: 0; padding-top: var(--space-2); overflow-x: auto; scrollbar-width: none; }
   .eshop-audience-services::-webkit-scrollbar { width: 0; height: 0; }
   .eshop-audience-service { flex: 0 0 auto; grid-template-columns: 28px auto auto; align-items: center; padding: var(--space-2); }
