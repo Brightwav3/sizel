@@ -15,4 +15,4 @@ Start before browser setup and stop after visual verification. Report total time
 
 Do not use the legacy internal recommendation helper or fixed product ids as a shortcut. Do not optimize toward an arbitrary call count or fake progress with timers. The earlier under-one-minute target is not a quality criterion for this different task.
 
-Catalog data are synthetic. There are no per-game benchmarks, exchange rates, live stock checks, notification service or payment backend. Seven fit rules do not certify complete BIOS or physical compatibility. This measures configuration, not a completed purchase.
+Catalog data are synthetic. There are no measured per-game benchmarks; the app only exposes labelled simulation fixtures. There are also no exchange rates, live stock checks, notification service or payment backend. Seven fit rules do not certify complete BIOS or physical compatibility. This measures configuration, not a completed purchase.

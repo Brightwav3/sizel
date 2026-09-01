@@ -24,6 +24,12 @@ All selection and cart commands share controller validation, run sequentially an
 - Treat a reason string as proof of correct reasoning: not enforceable. Show the supporting options and limitations for review.
 - Depend on disabled buttons or tool descriptions as enforcement: neither guards all controller callers.
 
+## Explicit non-decisions
+
+- The shop will not select a complete build automatically for the agent.
+- The storefront will not add an explanation panel or block human shoppers on agent-authored text.
+- This decision does not turn the synthetic catalog or preview checkout into a production commerce service.
+
 ## Consequences
 
 More tool calls and model work are expected. The old four-call benchmark no longer describes the task. Agent-independent choice quality needs separate evaluation, beyond contract tests. Synchronous aggregation was changed to await read handlers so a future asynchronous data source does not break the snapshot tool.

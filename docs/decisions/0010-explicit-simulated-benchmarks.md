@@ -18,6 +18,18 @@ Whole-build composition uses the minimum of CPU and GPU average FPS ceilings, an
 
 Measured FPS and noise remain null. Simulated results have a separate `simulation` object with dataset version, scenario, resolution and status. Comparisons return simulated deltas without ranking or applying choices. Neither prices nor the shopper budget alter performance fixtures. No global optimum is certified and no UI panel is added.
 
+## Rejected alternatives
+
+- Use a CPU/core/clock formula as if it were measured performance.
+- Present synthetic numbers as real product benchmarks or predictions.
+- Let the shop rank or apply a winner based on the simulated score.
+
+## Explicit non-decisions
+
+- The fixtures do not certify actual game or application performance.
+- Measured FPS and noise remain unavailable.
+- This does not add a benchmark panel or change the human-facing storefront.
+
 ## Consequences
 
 The dataset enables repeatable tradeoff tests within the mock catalog, including GPU upgrades near the budget, CPU-limited results, diminishing returns and scenario-dependent rankings. It cannot justify real hardware purchases. The old internal clock/core formula is not the simulation source. Version the fixture protocol when changing behavior and rerun category coverage and integration tests.

@@ -29,7 +29,7 @@ WebMCP tool handlers write through that same controller — `set`, `resetSlot`, 
 
 Catalog reads live in `src/entities/product/queries.ts` — pure functions over the catalog with no React, styling, or closures. The view-models and any tool layer call the same `searchProducts` / `facetSummary`, so a machine-readable result cannot drift from the listing on screen.
 
-See `docs/decisions/0002-single-build-state-and-domain-view-models.md`, and `docs/decisions/0006-webmcp-tools-follow-the-screen.md` for the tool layer.
+See `decisions/0002-single-build-state-and-domain-view-models.md`, and `decisions/0006-webmcp-tools-follow-the-screen.md` for the tool layer.
 
 ## Data boundary
 

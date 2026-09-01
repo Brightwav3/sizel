@@ -18,6 +18,27 @@ The optional `game` parameter in `estimate_performance` and `compare_build_optio
 
 No game-specific storage loading fixtures exist, so game results return null loading times instead of relabeling generic scenario values. RAM uses the fictional 16 GB reference platform convention, not a claim about actual game requirements. Prices, stock and budget remain independently validated; no automatic winner is chosen and no UI panel is added.
 
+## Rejected alternatives
+
+- Reuse generic workload results under game names; this would imply evidence the fixtures do not contain.
+- Derive game values from price, cores, clocks or VRAM; the authored tables are the source.
+- Select a winning product automatically from the game result.
+
+## Explicit non-decisions
+
+- Game-labelled values are not claims about actual game performance.
+- No game-specific loading time is invented from generic storage data.
+- This does not add a game benchmark panel to the storefront.
+
+## Enforced in
+
+- `src/data/benchmarks/cpuGames.ts`
+- `src/data/benchmarks/gpuGames.ts`
+- `src/data/benchmarks/gameProtocol.ts`
+- `src/data/benchmarks/cpuGames.test.ts`
+- `src/data/benchmarks/gpuGames.test.ts`
+- `src/app/webmcp/production.test.ts`
+
 ## Verification
 
 Category tests cover catalog parity and coherent values. Integration tests cover actual game-table composition, null loading data, invalid/ambiguous requests, non-mutation and three-alternative tool output without truncation.

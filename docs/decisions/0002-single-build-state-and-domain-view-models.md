@@ -10,7 +10,7 @@ The application previously had two independent PC builds. `RigsmithApp` owned th
 
 ## Decision
 
-`AppState.picks` is the only owner of the active PC build. Every UI surface changes it through `RigsmithApp` actions. Shared calculations are created once in `buildContext.ts`, and route-specific value bags are assembled in `app/vals/*Vals.ts`. `buildVals.ts` is only the composition boundary.
+`AppState.picks` is the only owner of the active PC build. Every UI surface changes it through `RigsmithApp` actions. Shared calculations are created once in `entities/build/buildContext.ts`, and route-specific value bags live beside their features in `features/**/**Vals.ts` and `shared/layout/shellVals.ts`. `app/vals/*Vals.ts` was the former location.
 
 ## Rejected alternatives
 

@@ -14,7 +14,7 @@ The idea came from a simple frustration: product catalogs are designed for brows
 
 Rigsmith is designed around a shared workflow for a person and an AI agent. The person can browse real-looking product cards, compare trade-offs, and make the final call. An agent can search the same catalog, explain a compatibility conflict, and propose a replacement while keeping the person in control of the build.
 
-The repository contains a complete fictional catalog of 135 products across 13 fictional brands and an interactive storefront and PC configurator. It preserves the original product IDs, nested specifications, prices, availability, generated logos, brand guides, and image paths. The remaining competition milestone is to expose the working catalog and shared build state through WebMCP tools for search, product lookup, build changes, and compatibility checks.
+The repository contains a complete fictional catalog of 135 products across 13 fictional brands and an interactive storefront and PC configurator. It preserves the original product IDs, nested specifications, prices, availability, generated logos, brand guides, and image paths. The catalog and shared build state are exposed through WebMCP tools for search, product lookup, build changes, comparison and compatibility checks.
 
 What we learned is that an agent experience needs explicit actions and stable data boundaries. A tool should return structured product records and clear compatibility reasons, not force an agent to scrape visual labels from cards. The main challenge is making technical constraints understandable without hiding the underlying facts.
 
@@ -22,7 +22,7 @@ What we learned is that an agent experience needs explicit actions and stable da
 
 PC configuration is a high-friction task for browser agents: it involves searching, selecting across categories, preserving context, and validating relationships between products. WebMCP can expose these operations directly as structured tools instead of making an agent guess which UI controls to click.
 
-Thirty-three tools are registered. The full reference is in
+Thirty-seven tools are registered; thirteen are included in the stable demo allowlist. The full reference is in
 [webmcp-tools.md](webmcp-tools.md), the design in
 [webmcp-architecture.md](webmcp-architecture.md). The four that
 carry the story are:
@@ -46,7 +46,7 @@ The person gets plain-language explanations beside the technical facts. The agen
 
 ### How it was built
 
-The application and data layer are local and self-contained. The React UI provides catalog browsing, filters, product detail, a nine-part PC builder, compatibility checks, a persistent build summary, cart, and checkout. The active build has one state owner, so visible UI and future WebMCP tools can share the same deterministic data boundary. `products.json` is the canonical frontend source; `products.db` is retained as a SQLite copy for inspection and future server-side use. Product images, generated fictional logos, and brand guides are served from the repository without external product APIs or downloaded branded imagery.
+The application and data layer are local and self-contained. The React UI provides catalog browsing, filters, product detail, a nine-part PC builder, compatibility checks, a persistent build summary, cart, and checkout. The active build has one state owner shared by the visible UI and WebMCP tools. `products.json` is the canonical frontend source; `products.db` is retained as a SQLite copy for inspection and future server-side use. Product images, generated fictional logos, and brand guides are served from the repository without external product APIs or downloaded branded imagery.
 
 ## Current milestone boundary
 

@@ -20,6 +20,12 @@ The tool never generates, ranks or applies candidates. It returns the build revi
 - A mandatory reason string or comparison-count checkout gate: proves ceremony, not sound reasoning; would also obstruct manual shoppers.
 - Always exhaust the budget: savings can be the correct choice.
 
+## Explicit non-decisions
+
+- The comparison tool does not rank proposals, choose a winner or apply changes.
+- It does not certify a globally optimal build or measured real-world performance.
+- It does not add a comparison-count gate to checkout or require comparison for manual shoppers.
+
 ## Consequences
 
 This provides evidence for comparative decisions; it does not certify a global optimum, measured performance, truth of explanations or agent compliance with the workflow. Tools enforce valid inputs and calculate facts; the agent remains responsible for searching meaningful alternatives and assessing needs. Equal simulated FPS cannot establish equivalent real performance. External benchmarks and richer product facts are still needed for production recommendations.

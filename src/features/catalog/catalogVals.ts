@@ -1,17 +1,16 @@
 // ADR 0003: category cards expand canonical SKUs into colour listings.
 // docs/decisions/0003-storefront-variants-live-in-the-adapter.md
-import React from "react";
 import { CATALOG, CAT_META, DESCS, SPECS } from "../../data/catalog/catalog";
 import { money } from "../../entities/build/metrics";
 import { findProduct, partFits, productTitle } from "../../entities/product/queries";
 import { ratingFor } from "../../data/catalog/reviews";
 import { colorwaysFor } from "../../data/catalog/colorways";
 import { listingStock, stockLabel } from "../../data/catalog/listingStock";
-import type { Part, PcSlot, Slot } from "../../shared/lib/types";
+import type { Part, PcSlot } from "../../shared/lib/types";
 import type { BuildContext } from "../../entities/build/buildContext";
 
 export function buildCatalogVals(context: BuildContext) {
-  const { app, s, route, on, dept, openDept, searchText, cat, catList, filterPool, brandOf, specFilters, fitFilters, visible, hidden, bounds, filtersOn, activeBrandCategory } = context;
+  const { app, s, route, dept, searchText, cat, catList, filterPool, brandOf, specFilters, fitFilters, visible, hidden, bounds, filtersOn, activeBrandCategory } = context;
   const listingCount = (products: typeof visible, slot: typeof cat) => products.reduce(
     (total, product) => total + Math.max(1, colorwaysFor(product, slot).length), 0,
   );

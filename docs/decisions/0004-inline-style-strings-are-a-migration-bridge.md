@@ -34,6 +34,12 @@ Selectors that override `.card` or `.ph` from `styles.css` are compounded (`.car
 - **Hoist the parsed objects to module scope:** would remove the per-render parse but keep styling out of the stylesheet, which is the larger cost.
 - **Generate one class per unique declaration string mechanically:** rejected because inline styles outrank classes, so a mechanical lift would have silently changed which rule wins wherever an existing selector targeted the same element — precisely the `.t-panel-slide` case above.
 
+## Explicit non-decisions
+
+- This does not require removing every inline style; per-instance CSS custom properties and the two documented precedence cases remain valid.
+- This does not introduce a second styling system or require a global design-system rewrite.
+- The decision is about ownership of styling, not an intentional visual redesign of the migrated screens.
+
 ## Consequences
 
 ### Positive

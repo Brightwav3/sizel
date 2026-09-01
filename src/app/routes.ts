@@ -5,6 +5,7 @@
 import type { AppState } from "./state/AppState";
 import { CATALOG, DEPTS } from "../data/catalog/catalog";
 import type { Slot } from "../shared/lib/types";
+import { findProduct } from "../entities/product/queries";
 
 const categorySlugs: Record<string, string> = {
   gpu: "graphic-cards", cpu: "processors", board: "motherboards", ram: "memory",
@@ -33,23 +34,24 @@ export function stateFromLocation(): Partial<AppState> {
   if (segments[0] === "order-complete") return { route: "done" };
   if (segments[0] === "brands") {
     const brand = segments[1] ? brandForSlug(segments[1], allSlots) : null;
-    if (!brand) return { route: "home" };
+    if (!brand) return { route: "not-found" };
     const category = firstSlotForBrand(brand);
     const dept = DEPTS.find(item => item.cats.includes(category))?.id || "pc";
     return { route: "brand", dept, openDept: null, category, productSlot: category, brand, brandCategory: "all", search: "" };
   }
   const dept = segments[0] === "pc-parts" ? "pc" : segments[0] === "phones" ? "phone" : segments[0] === "gaming" ? "gaming" : null;
-  if (!dept) return { route: "home" };
+  if (!dept) return { route: "not-found" };
   const department = DEPTS.find(item => item.id === dept)!;
   if (!segments[1]) return { route: "category", dept, openDept: dept, category: department.cats[0], productSlot: department.cats[0], brand: "any" };
   const slot = segments[1] ? slotForSlug(segments[1]) : null;
   if (!slot) {
     const brand = brandForSlug(segments[1], department.cats);
-    return brand ? { route: "category", dept, openDept: dept, category: department.cats[0], productSlot: department.cats[0], brand } : { route: "home" };
+    return brand ? { route: "category", dept, openDept: dept, category: department.cats[0], productSlot: department.cats[0], brand } : { route: "not-found" };
   }
   if (segments[2]) {
     const brand = brandForSlug(segments[2], [slot]);
     if (brand) return { route: "category", dept, openDept: null, category: slot, productSlot: slot, brand };
+    if (!findProduct(segments[2])) return { route: "not-found" };
     return { route: "product", dept, openDept: null, category: slot, productSlot: slot, productId: segments[2], productColorId: segments[3] ?? null, brand: "any" };
   }
   return { route: "category", dept, openDept: null, category: slot, productSlot: slot, brand: "any" };
@@ -61,6 +63,7 @@ export function urlForState(state: AppState): string {
   if (state.route === "cart") return "/cart";
   if (state.route === "checkout") return "/checkout";
   if (state.route === "done") return "/order-complete";
+  if (state.route === "not-found") return window.location.pathname;
   if (state.route === "brand") return state.brand === "any" ? "/" : `/brands/${brandSlug(state.brand)}`;
   const slot = state.route === "product" ? state.productSlot : state.category;
   const productDept = slot === "phones" ? "phone" : slot === "consoles" ? "gaming" : "pc";

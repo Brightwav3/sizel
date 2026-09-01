@@ -4,6 +4,8 @@ Stav po opravách 31. 8. 2026: odstraněna automatická volba sestavy z WebMCP; 
 
 Neopraveno nahrazením reálných služeb: katalog zůstává syntetický, stav je v paměti, neexistuje platební backend ani upozorňovací služba. Kvalitu všech vysvětlení agenta nelze vynutit pouhou validací parametrů.
 
+> Historical snapshot from 31. 8. 2026. This audit describes the pre-current tool surface and is retained for decision history; it is not a report of the current 37-tool, 197-test implementation.
+
 Datum: 31. 8. 2026. Rozsah: místní zdrojový kód Rigsmith, 34 definic nástrojů, jejich vazby na UI, katalog, košík a checkout. Nejde o audit nasazeného serveru ani o měření skutečného prohlížeče.
 
 **Verdikt: demo skutečně zjednodušuje doménu natolik, že jeho rychlost nedokazuje připravenost reálného e-shopu. Samotná agregace WebMCP volání je ale použitelná i v produkci.** Z kódu nelze dovodit úmysl klamat. README výslovně uvádí fiktivní obchod a lokální katalog. Benchmark dokumentuje omezení, odděluje čas volání od času celého úkolu a nezahrnuje nákup.

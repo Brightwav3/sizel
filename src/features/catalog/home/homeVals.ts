@@ -1,11 +1,9 @@
-import React from "react";
 import { CATALOG } from "../../../data/catalog/catalog";
 import { money } from "../../../entities/build/metrics";
-import type { PcSlot } from "../../../shared/lib/types";
 import type { BuildContext } from "../../../entities/build/buildContext";
 
 export function buildHomeVals(context: BuildContext) {
-  const { app, s, route, on, dept, allProducts, pick, valueGpu, quietGpu, featuredCpu, featuredCooler, featuredStorage, featuredPhone, featuredConsole, promoProduct, brandRibbon, homeDepartments, homeCategories } = context;
+  const { app, allProducts, valueGpu, quietGpu, featuredCpu, featuredCooler, featuredStorage, featuredPhone, featuredConsole, promoProduct, brandRibbon, homeDepartments, homeCategories } = context;
   return {
       heroProduct: {
         name: valueGpu.name,

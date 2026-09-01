@@ -2,7 +2,7 @@
 
 ## Brand mark
 
-![Fabrikam logo](../logos/generated/fabrikam.webp)
+![Fabrikam logo](../logos/fabrikam.webp)
 
 ## Visual language
 

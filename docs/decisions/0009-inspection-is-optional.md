@@ -24,6 +24,18 @@ within an unchanged document/tool set and refresh when available tools change
 or a document is replaced, rather than refetching all schemas after each
 product selection.
 
+## Rejected alternatives
+
+- Require a fresh inspection before every selection; this adds calls without proving a better decision.
+- Treat an inspection result as permission to select; current catalog state still decides whether a selection is valid.
+- Force schema caching in the page; caching belongs to the external client.
+
+## Explicit non-decisions
+
+- Inspection remains available when it helps the agent, but it is not a mandatory workflow step.
+- Stock, compatibility, budget and candidate-id validation remain mandatory at commit time.
+- This decision does not claim a measured latency improvement or change the storefront UI.
+
 ## Consequences
 
 For an eight-part build with bundled fans, eight mandatory inspection calls are no longer required. Agents may still inspect where useful. Fewer required calls does not establish a measured latency improvement or correct reasoning. The page cannot force an external agent to cache definitions. No additional UI is introduced.

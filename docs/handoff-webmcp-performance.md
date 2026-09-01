@@ -1,5 +1,7 @@
 # Handoff: complete and accelerate the Rigsmith WebMCP shopping flow
 
+> Historical handoff snapshot from 31. 8. 2026. It describes an earlier tool surface and session; use the current source and `docs/webmcp-benchmark.md` for present behavior.
+
 > **Status update.** Priority 1 (one complete build read) and Priority 2
 > (explicit units, accurate descriptions) are implemented and covered by tests.
 > Priority 3 — the cold-task benchmark — is **not** done: it needs a fresh task
@@ -25,10 +27,7 @@ PC summary, combined hardware price, and any limitations in English.
 
 ## Primary evidence: read this report first
 
-[Rigsmith WebMCP Session Report](C:/Users/Sajmon/Documents/Codex/2026-08-30/open-https-rigsmith-brightwav3-chatgpt-site-3/outputs/Rigsmith-WebMCP-Session-Report.docx)
-
-Absolute path:
-`C:/Users/Sajmon/Documents/Codex/2026-08-30/open-https-rigsmith-brightwav3-chatgpt-site-3/outputs/Rigsmith-WebMCP-Session-Report.docx`
+The source report was an external session artifact and is not included in Git.
 
 The report is outside the repository and is not included in Git. If running on
 another machine, request this file rather than pretending it is available.
@@ -43,7 +42,7 @@ The task succeeded: $1448 PC, $1199 Pear Phone 16 Pro Max 512 GB recommendation,
 $2647 combined hardware price, completed builder visible, no purchase actions.
 These are historical observations, not prices or stock to reuse without tools.
 
-## Current implementation and completed work
+## Implementation at that snapshot
 
 Repository: `C:/Users/Sajmon/Projects/Active/rigsmith`
 

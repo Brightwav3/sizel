@@ -3,13 +3,13 @@ import React from "react";
 import { CATALOG, ORDER } from "../../data/catalog/catalog";
 import { compatibilityIssues, money } from "../../entities/build/metrics";
 import { FACETS } from "../catalog/catalogFacets";
-import { facetSummary, facetValues } from "../../entities/product/queries";
+import { facetSummary } from "../../entities/product/queries";
 import { RigsmithApp } from "../../app/App";
 import type { Part, PcSlot } from "../../shared/lib/types";
 import type { BuildContext } from "../../entities/build/buildContext";
 
 export function buildBuilderVals(context: BuildContext) {
-  const { app, s, m, route, on, cat, facetValues } = context;
+  const { app, s, m, facetValues } = context;
   const builderPicks = app.chosenPicks();
   const steps = RigsmithApp.BUILD_STEPS;
   const selectedPart = (slot: PcSlot) => s.chosen.includes(slot) ? CATALOG[slot].find(part => part.id === s.picks[slot]) : undefined;

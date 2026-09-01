@@ -7,7 +7,6 @@
  * stays the single write path.
  */
 import { CATALOG, DEFAULT_PICKS, partIn } from "../../data/catalog/catalog";
-import { listingStock } from "../../data/catalog/listingStock";
 import { PERFORMANCE_UNAVAILABLE, buildFits, buildNumbers, compatibilityIssues, part, powerDraw, requiredPower } from "../../entities/build/metrics";
 import type { Resolution } from "../../entities/build/metrics";
 import { partFits } from "../../entities/product/queries";
