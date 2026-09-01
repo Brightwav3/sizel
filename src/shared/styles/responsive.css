@@ -9,9 +9,10 @@
  */
 
 /* Page frame ------------------------------------------------------------- */
-.shell-grid { display: grid; grid-template-columns: 264px minmax(0, 1fr); }
-@media (max-width: 1240px) { .shell-grid { grid-template-columns: 232px minmax(0, 1fr); } }
-@media (max-width: 1000px) { .shell-grid { grid-template-columns: 210px minmax(0, 1fr); } }
+.shell-grid { display: grid; grid-template-columns: var(--shell-sidebar-width) minmax(0, 1fr); }
+:root { --shell-sidebar-width: 264px; }
+@media (max-width: 1240px) { :root { --shell-sidebar-width: 232px; } }
+@media (max-width: 1000px) { :root { --shell-sidebar-width: 210px; } }
 @media (max-width: 860px)  { .shell-grid { grid-template-columns: minmax(0, 1fr); } }
 
 .topbar-grid { display: grid; grid-template-columns: minmax(160px, 1fr) minmax(280px, 420px) minmax(160px, 1fr); gap: var(--space-4); padding: 0 var(--space-5); }
