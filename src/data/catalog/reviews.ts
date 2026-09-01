@@ -97,6 +97,8 @@ export function reviewsFor(product: Part, limit = 4): Review[] {
   const rating = ratingFor(product);
   return Array.from({ length: limit }, (_, index) => {
     const salt = `review-${index}`;
+    const page = Math.floor(index / 4);
+    const verifiedPageOffset = Math.floor(seeded(reviewId(product), `verified-page-${page}`) * 4);
     const pick = <T,>(list: T[], key: string) => list[Math.floor(seeded(reviewId(product), `${salt}:${key}`) * list.length)];
     const drift = seeded(reviewId(product), `${salt}:drift`);
     const stars = Math.max(3, Math.min(5, Math.round(rating.average + (drift < 0.25 ? -1 : 0))));
@@ -109,7 +111,9 @@ export function reviewsFor(product: Part, limit = 4): Review[] {
       title: pick(HEADLINES, "title"),
       body: pick(BODIES, "body"),
       date: `${day} ${pick(MONTHS, "month")} 2026`,
-      verified: seeded(reviewId(product), `${salt}:verified`) > 0.25,
+      // Retail-style pagination: one stable-but-randomly positioned verified
+      // purchase per page of four.
+      verified: index % 4 === verifiedPageOffset,
     };
   });
 }
