@@ -67,7 +67,7 @@ No logo or brand mark was provided. Wherever a mark is needed, render the wordma
 
 **Root**
 - `styles.css` — the single entry point consumers link (import list only).
-- `tokens/` — `colors.css`, `typography.css`, `spacing.css`, `radii.css`, `shadows.css`, `fonts.css`.
+- `tokens/` — `colors.css`, `typography.css`, `spacing.css`, `radii.css`, `shadows.css`, `components.css`, `fonts.css`.
 - `thumbnail.html` — homepage tile.
 - `SKILL.md` — Agent-Skill wrapper.
 - `guidelines/` — foundation specimen cards (Type, Colors, Spacing).

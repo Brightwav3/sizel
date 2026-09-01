@@ -17,19 +17,19 @@ a{color:var(--text-accent);text-decoration:none}a:hover{color:var(--accent-activ
 .ms{font-family:'Material Symbols Outlined';font-weight:400;font-style:normal;line-height:1;-webkit-font-smoothing:antialiased}
 .num{font-variant-numeric:tabular-nums}
 .eyebrow{font-size:12px;letter-spacing:0.6px;text-transform:uppercase;color:var(--text-tertiary)}
-.ph{background:var(--gray-100);border:1px solid var(--border-subtle);border-radius:8px;display:flex;align-items:center;justify-content:center;color:var(--gray-400)}
-.card{border:1px solid var(--border-subtle);border-radius:16px;background:#fff}
-.pill{display:inline-flex;align-items:center;justify-content:center;gap:6px;height:36px;padding:0 18px;border-radius:99px;font-size:14px;font-weight:500;cursor:pointer;user-select:none;transition:background 140ms ease,border-color 140ms ease,transform 80ms ease}
+.ph{background:var(--gray-100);border:1px solid var(--border-subtle);border-radius:var(--radius-nav);display:flex;align-items:center;justify-content:center;color:var(--gray-400)}
+.card{border:1px solid var(--border-subtle);border-radius:var(--radius-card);background:var(--surface-card)}
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:var(--gap-inline);height:var(--control-height-md);padding:0 var(--control-pad-x-md);border-radius:var(--radius-pill);font-size:var(--text-base);font-weight:var(--weight-medium);cursor:pointer;user-select:none;transition:background 140ms ease,border-color 140ms ease,transform 80ms ease}
 .pill:active{transform:scale(0.97)}
-.dark{background:var(--gray-900);color:#fff;border:1px solid var(--gray-900)}
-.dark:hover{background:#000}
-.ghostb{background:#fff;border:1px solid var(--border-default);color:var(--text-primary)}
+.dark{background:var(--surface-inverse);color:var(--text-inverse);border:1px solid var(--surface-inverse)}
+.dark:hover{background:var(--accent-active)}
+.ghostb{background:var(--surface-card);border:1px solid var(--border-default);color:var(--text-primary)}
 .ghostb:hover{background:var(--surface-hover)}
-.side{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:8px;font-size:13px;cursor:pointer;transition:background 140ms ease,color 140ms ease}
+.side{display:flex;align-items:center;gap:var(--gap-inline);padding:var(--space-2) var(--control-pad-x-sm);border-radius:var(--radius-nav);font-size:var(--text-sm);cursor:pointer;transition:background 140ms ease,color 140ms ease}
 .side:hover{background:var(--surface-hover)}
 .prod{cursor:pointer;transition:box-shadow 200ms var(--page-slide-ease),transform 200ms var(--page-slide-ease),border-color 140ms ease}
 .prod:hover{box-shadow:0 6px 18px rgba(41,41,41,.09);transform:translateY(-2px);border-color:var(--border-default)}
-.small{font-size:12px;font-weight:500;padding:5px 12px;border-radius:99px;border:1px solid var(--border-default);cursor:pointer;background:#fff;transition:background 140ms ease}
+.small{font-size:var(--text-xs);font-weight:var(--weight-medium);padding:var(--control-pad-y-compact) var(--control-pad-x-sm);border-radius:var(--radius-pill);border:1px solid var(--border-default);cursor:pointer;background:var(--surface-card);transition:background 140ms ease}
 .small:hover{background:var(--surface-hover)}
 .rowh{transition:background 140ms ease}
 .rowh:hover{background:var(--gray-50)}

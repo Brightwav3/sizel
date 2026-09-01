@@ -8,6 +8,7 @@ import "./_ds/rigsmith-design-system-7950386b-2f59-40a2-bfcc-93f7f795acfe/tokens
 import "./_ds/rigsmith-design-system-7950386b-2f59-40a2-bfcc-93f7f795acfe/tokens/spacing.css";
 import "./_ds/rigsmith-design-system-7950386b-2f59-40a2-bfcc-93f7f795acfe/tokens/radii.css";
 import "./_ds/rigsmith-design-system-7950386b-2f59-40a2-bfcc-93f7f795acfe/tokens/shadows.css";
+import "./_ds/rigsmith-design-system-7950386b-2f59-40a2-bfcc-93f7f795acfe/tokens/components.css";
 import { RigsmithApp } from "./app";
 
 createRoot(document.getElementById("root")!).render(<React.StrictMode><RigsmithApp /></React.StrictMode>);
