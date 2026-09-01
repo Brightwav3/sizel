@@ -68,8 +68,8 @@ export interface Review {
 }
 
 const AUTHORS = [
-  "Marek H.", "Petra N.", "Tomáš L.", "Jana K.", "David R.",
-  "Lucie B.", "Ondřej S.", "Kateřina M.", "Filip V.", "Eva D.",
+  "Mark H.", "Emily N.", "Thomas L.", "Jane K.", "David R.",
+  "Lucy B.", "Oliver S.", "Catherine M.", "Felix V.", "Emma D.",
 ];
 
 const HEADLINES = [

@@ -1,38 +1,38 @@
 
-:root{
-  --page-slide-dur:250ms;--page-fade-dur:250ms;--page-slide-distance:8px;--page-blur:3px;
-  --page-slide-ease:cubic-bezier(0.22,1,0.36,1);
-  --digit-dur:500ms;--digit-distance:8px;--digit-stagger:70ms;--digit-blur:2px;
-  --digit-ease:cubic-bezier(0.34,1.45,0.64,1);--digit-dir-x:0;--digit-dir-y:1;
-  --toast-open:350ms;--toast-close:250ms;--toast-distance:16px;--toast-blur:2px;--toast-scale:0.97;
-  --toast-ease:cubic-bezier(0.22,1,0.36,1);
-  --panel-open-dur:400ms;--panel-close-dur:350ms;--panel-translate-y:20px;--panel-blur:2px;
-  --panel-ease:cubic-bezier(0.22,1,0.36,1);
-}
+ :root{
+  --page-slide-dur:var(--motion-emphasis);--page-fade-dur:var(--motion-emphasis);--page-slide-distance:8px;--page-blur:3px;
+  --page-slide-ease:var(--ease-standard);
+  --digit-dur:var(--motion-emphasis);--digit-distance:4px;--digit-stagger:40ms;--digit-blur:1px;
+  --digit-ease:var(--ease-standard);--digit-dir-x:0;--digit-dir-y:1;
+  --toast-open:var(--motion-emphasis);--toast-close:var(--motion-standard);--toast-distance:8px;--toast-blur:1px;--toast-scale:var(--press-scale);
+  --toast-ease:var(--ease-standard);
+  --panel-open-dur:var(--motion-emphasis);--panel-close-dur:var(--motion-standard);--panel-translate-y:8px;--panel-blur:1px;
+  --panel-ease:var(--ease-standard);
+ }
 *,*::before,*::after{box-sizing:border-box}
-/* one ramp step darker than the stock greys, for legibility at 12-13px */
-:root{--text-secondary:#4F4F4F;--text-tertiary:#767676;--gray-600:#4F4F4F;--gray-500:#767676}
-body{margin:0;background:#fff;font-family:var(--font-sans);letter-spacing:-0.15px;color:var(--text-primary)}
+body{margin:0;background:var(--surface-page);font-family:var(--font-sans);letter-spacing:var(--tracking);color:var(--text-primary)}
+button,input,select,textarea{font:inherit}
+:where(button,[role="button"],a,input,select,textarea):focus-visible{outline:none;box-shadow:var(--control-focus-shadow)}
 a{color:var(--text-accent);text-decoration:none}a:hover{color:var(--accent-active)}
 .ms{font-family:'Material Symbols Outlined';font-weight:400;font-style:normal;line-height:1;-webkit-font-smoothing:antialiased}
 .num{font-variant-numeric:tabular-nums}
-.eyebrow{font-size:12px;letter-spacing:0.6px;text-transform:uppercase;color:var(--text-tertiary)}
-.ph{background:var(--gray-100);border:1px solid var(--border-subtle);border-radius:var(--radius-nav);display:flex;align-items:center;justify-content:center;color:var(--gray-400)}
+.eyebrow{font-size:var(--text-xs);letter-spacing:var(--tracking-eyebrow);text-transform:uppercase;color:var(--text-tertiary)}
+.ph{background:var(--surface-sunken);border:1px solid var(--border-subtle);border-radius:var(--radius-nav);display:flex;align-items:center;justify-content:center;color:var(--text-disabled)}
 .card{border:1px solid var(--border-subtle);border-radius:var(--radius-card);background:var(--surface-card)}
-.pill{display:inline-flex;align-items:center;justify-content:center;gap:var(--gap-inline);height:var(--control-height-md);padding:0 var(--control-pad-x-md);border-radius:var(--radius-pill);font-size:var(--text-base);font-weight:var(--weight-medium);cursor:pointer;user-select:none;transition:background 140ms ease,border-color 140ms ease,transform 80ms ease}
-.pill:active{transform:scale(0.97)}
+.pill{display:inline-flex;align-items:center;justify-content:center;gap:var(--gap-inline);height:var(--control-height-md);padding:0 var(--control-pad-x-md);border-radius:var(--radius-pill);font-size:var(--text-base);font-weight:var(--weight-medium);cursor:pointer;user-select:none;transition:background var(--motion-standard) ease,border-color var(--motion-standard) ease,transform var(--motion-press) ease}
+.pill:active{transform:scale(var(--press-scale))}
 .dark{background:var(--surface-inverse);color:var(--text-inverse);border:1px solid var(--surface-inverse)}
-.dark:hover{background:var(--accent-active)}
+.dark:hover{background:var(--gray-800)}
 .ghostb{background:var(--surface-card);border:1px solid var(--border-default);color:var(--text-primary)}
 .ghostb:hover{background:var(--surface-hover)}
-.side{display:flex;align-items:center;gap:var(--gap-inline);padding:var(--space-2) var(--control-pad-x-sm);border-radius:var(--radius-nav);font-size:var(--text-sm);cursor:pointer;transition:background 140ms ease,color 140ms ease}
+.side{display:flex;align-items:center;gap:var(--gap-inline);padding:var(--space-2) var(--control-pad-x-sm);border-radius:var(--radius-nav);font-size:var(--text-sm);cursor:pointer;transition:background var(--motion-standard) ease,color var(--motion-standard) ease}
 .side:hover{background:var(--surface-hover)}
-.prod{cursor:pointer;transition:box-shadow 200ms var(--page-slide-ease),transform 200ms var(--page-slide-ease),border-color 140ms ease}
-.prod:hover{box-shadow:0 6px 18px rgba(41,41,41,.09);transform:translateY(-2px);border-color:var(--border-default)}
-.small{font-size:var(--text-xs);font-weight:var(--weight-medium);padding:var(--control-pad-y-compact) var(--control-pad-x-sm);border-radius:var(--radius-pill);border:1px solid var(--border-default);cursor:pointer;background:var(--surface-card);transition:background 140ms ease}
+.prod{cursor:pointer;transition:box-shadow var(--motion-emphasis) var(--page-slide-ease),transform var(--motion-emphasis) var(--page-slide-ease),border-color var(--motion-standard) ease}
+.prod:hover{box-shadow:var(--shadow-card);transform:translateY(-1px);border-color:var(--border-default)}
+.small{font-size:var(--text-xs);font-weight:var(--weight-medium);padding:var(--control-pad-y-compact) var(--control-pad-x-sm);border-radius:var(--radius-pill);border:1px solid var(--border-default);cursor:pointer;background:var(--surface-card);transition:background var(--motion-standard) ease}
 .small:hover{background:var(--surface-hover)}
-.rowh{transition:background 140ms ease}
-.rowh:hover{background:var(--gray-50)}
+.rowh{transition:background var(--motion-standard) ease}
+.rowh:hover{background:var(--surface-hover)}
 /* page enter — transitions.dev "page side-by-side", single-page variant */
 @keyframes t-page-in{from{opacity:0;transform:translateX(var(--page-slide-distance));filter:blur(var(--page-blur))}to{opacity:1;transform:none;filter:blur(0)}}
 .t-page{animation:t-page-in var(--page-slide-dur) var(--page-slide-ease) both;animation-duration:var(--page-fade-dur)}

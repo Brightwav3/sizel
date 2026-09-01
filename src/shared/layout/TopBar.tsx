@@ -45,25 +45,25 @@ const WatchBell: React.FC<{ v: Vals }> = ({ v }) => {
 
 export const TopBar: React.FC<{ v: Vals }> = ({ v }) => (
   <div className="topbar topbar-grid">
-    <div className="topbar__logo" onClick={v.goHome}>
+    <button type="button" className="topbar__logo" onClick={v.goHome} aria-label="Go to Rigsmith home">
       <img src="/rigsmith-logo/rigsmith-logo.webp" alt="Rigsmith" />
-    </div>
+    </button>
     <SearchBox v={v} />
     <div className="topbar-actions">
       <WatchBell v={v} />
-      <div className="topbar__action topbar__action--icon" data-tip="Your account" role="button" tabIndex={0}>
+      <button type="button" className="topbar__action topbar__action--icon" data-tip="Your account" aria-label="Your account">
         <span className="ms">account_circle</span>
-      </div>
-      <div className="topbar__action topbar__action--icon" data-tip="Language and currency" role="button" tabIndex={0}>
+      </button>
+      <button type="button" className="topbar__action topbar__action--icon" data-tip="Language and currency" aria-label="Language and currency">
         <span className="topbar__flag" role="img" aria-label="United States" />
-      </div>
-      <div className="topbar__action topbar__action--cart" onClick={v.goCart} data-tip="Your cart" data-tip-align="end" role="button" tabIndex={0}>
+      </button>
+      <button type="button" className="topbar__action topbar__action--cart" onClick={v.goCart} data-tip="Your cart" data-tip-align="end" aria-label={`Your cart, ${v.cartCount} items`}>
         <span className="ms">shopping_bag</span>
         <span
           className="num topbar__cart-count"
           style={{ "--cart-dot-bg": v.cartDotBg, "--cart-dot-fg": v.cartDotFg } as React.CSSProperties}
         >{v.cartCount}</span>
-      </div>
+      </button>
     </div>
   </div>
 );

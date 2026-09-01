@@ -88,6 +88,10 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
       </div>
 
       <aside className="hero-rail" aria-label="More offers">
+        <div className="hero-rail__promise">
+          <span className="ms">local_shipping</span>
+          <span><strong>Free delivery over $99</strong><small>Ordered before 4pm ships today</small></span>
+        </div>
         {offers.filter((_: Vals, index: number) => index !== offerIndex).slice(0, 2).map((item: Vals) => (
           <button key={item.name} type="button" className="hero-rail__card" onClick={item.go}>
             <span className="hero-rail__shot"><CatalogImage src={item.image} alt={item.name} /></span>
@@ -99,9 +103,9 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
             <span className="ms">arrow_forward</span>
           </button>
         ))}
-        <div className="hero-rail__promise">
-          <span className="ms">local_shipping</span>
-          <span><strong>Free delivery over $99</strong><small>Ordered before 4pm ships today</small></span>
+        <div className="hero-rail__promise hero-rail__promise--returns">
+          <span className="ms">assignment_return</span>
+          <span><strong>30-day returns</strong><small>Easy returns on every order</small></span>
         </div>
       </aside>
     </section>
@@ -134,7 +138,7 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
       </div>
       <div className="home-grid-3">
         {v.promotions.map((p: Vals, i: number) => (
-          <article key={i} className="card prod promo-card" onClick={p.go}>
+          <button type="button" key={i} className="card prod promo-card" onClick={p.go}>
             <div className="ph"><CatalogImage src={p.image} alt={p.name} /></div>
             <div className="home-card__body">
               <div className="eyebrow">{p.label}</div>
@@ -145,7 +149,7 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
                 <span className="num home-card__price">{p.price}</span>
               </div>
             </div>
-          </article>
+          </button>
         ))}
       </div>
     </section>
@@ -178,7 +182,7 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
       </div>
       <div className="home-grid-4">
         {v.bestOf.map((b: Vals, i: number) => (
-          <article key={i} className="card prod feature-card" onClick={b.go}>
+          <button type="button" key={i} className="card prod feature-card" onClick={b.go}>
             <div className="ph"><CatalogImage src={b.image} alt={b.name} /></div>
             <div className="home-card__body">
               <div className="feature-card__award" style={{ "--award-fg": b.awardFg } as React.CSSProperties}>{b.award}</div>
@@ -189,7 +193,7 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
                 <span className="feature-card__picks">{b.picks}</span>
               </div>
             </div>
-          </article>
+          </button>
         ))}
       </div>
     </section>

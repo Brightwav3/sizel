@@ -7,6 +7,18 @@
   --control-height-sm: 30px;
   --control-height-md: 36px;
   --control-height-lg: 40px;
+  --control-height-xl: 44px;
+  --control-height-hero: 46px;
+  --control-size-icon: 36px;
+  --control-size-thumb: 64px;
+  --topbar-height: 56px;
+  --topbar-surface-fallback: var(--surface-card);
+  --topbar-surface: color-mix(in srgb, var(--surface-card) 72%, transparent);
+  --topbar-control-surface: color-mix(in srgb, var(--surface-card) 84%, transparent);
+  --topbar-control-hover: color-mix(in srgb, var(--surface-card) 96%, transparent);
+  --topbar-border: color-mix(in srgb, var(--surface-card) 58%, var(--border-subtle));
+  --topbar-backdrop: blur(18px) saturate(140%);
+  --topbar-shadow: 0 1px 0 color-mix(in srgb, var(--gray-900) 6%, transparent);
   --control-pad-x-xs: var(--space-2);
   --control-pad-x-sm: var(--space-3);
   --control-pad-x-md: var(--space-4);
@@ -15,12 +27,47 @@
   --control-radius-compact: var(--radius-xs);
   --control-focus-shadow: var(--ring);
 
+  /* Semantic type roles outside the base text ramp. */
+  --type-meta: 11px;
+  --type-icon-sm: 14px;
+  --type-icon-md: 16px;
+  --type-icon-lg: 20px;
+  --type-heading-md: 20px;
+  --type-heading-lg: 22px;
+  --type-price-compact: 16px;
+  --type-price: 19px;
+  --type-display-price: 30px;
+  --type-display-score: 32px;
+  --type-hero: 32px;
+  --type-hero-mobile: 24px;
+
+  /* Repeated dimensions that are part of component geometry, not spacing. */
+  --catalog-image-size: 88px;
+  --summary-image-size: 56px;
+  --price-header-height: 18px;
+  --indicator-dot-size: 7px;
+  --indicator-dot-active-width: 22px;
+  --checkout-max-width: 960px;
+  --flag-red: #B22234;
+  --flag-blue: #3C3B6E;
+  --border-swatch: color-mix(in srgb, var(--gray-900) 14%, transparent);
+  --filter-product-art: drop-shadow(0 18px 28px rgba(41, 41, 41, 0.16));
+
+  /* Shared motion contract. */
+  --motion-fast: 120ms;
+  --motion-standard: 140ms;
+  --motion-emphasis: 160ms;
+  --motion-press: 80ms;
+  --ease-standard: cubic-bezier(0.22, 1, 0.36, 1);
+  --press-scale: 0.97;
+  --tracking-eyebrow: 0.5px;
+
   /* Builder type and density */
-  --builder-title-size: 20px;
-  --builder-section-size: 22px;
-  --builder-panel-title-size: 19px;
-  --builder-price-size: 16px;
-  --builder-meta-size: 11px;
+  --builder-title-size: var(--type-heading-md);
+  --builder-section-size: var(--type-heading-lg);
+  --builder-panel-title-size: var(--type-heading-md);
+  --builder-price-size: var(--type-price-compact);
+  --builder-meta-size: var(--type-meta);
   --builder-row-min-height: 40px;
   --builder-row-gap: var(--space-2);
   --builder-step-size: 24px;

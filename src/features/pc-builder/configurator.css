@@ -63,3 +63,13 @@
 .forge-toolbar-actions{margin-left:auto}.forge-toolbar-actions .forge-small{height:var(--control-height-xs);min-height:var(--control-height-xs);padding:0 var(--control-pad-x-sm);border-radius:var(--control-radius-compact);font-size:var(--builder-meta-size)}.forge-toolbar-actions .forge-secondary:disabled{cursor:default;opacity:.45}
 @media(max-width:1400px){.forge-product{grid-template-columns:var(--space-12) minmax(0,1fr) 88px 92px}.forge-select{grid-column:auto;justify-self:end}}
 @media(max-width:760px){.forge-product{grid-template-columns:var(--space-12) minmax(0,1fr) 82px 88px}.forge-product-price,.forge-select{grid-column:auto}}
+
+/* Shared design-system finish for the compact builder controls. */
+.forge-builder,.forge-onboarding { min-height: calc(100dvh - var(--topbar-height)); }
+.forge-builder button:focus-visible,.forge-onboarding button:focus-visible,.forge-builder input:focus-visible,.forge-onboarding input:focus-visible { box-shadow: var(--control-focus-shadow); }
+.forge-facet__menu { box-shadow: var(--shadow-popover); }
+.forge-primary,.forge-select,.forge-secondary,.forge-icon { transition: transform var(--motion-standard) ease, background var(--motion-standard) ease, opacity var(--motion-standard) ease; }
+.forge-primary:active,.forge-select:active,.forge-secondary:active,.forge-goals button:active { transform: scale(var(--press-scale)); }
+@media (max-width: 1240px) { .forge-layout { grid-template-columns: minmax(0, 1fr) minmax(300px, 340px); } }
+@media (max-width: 1000px) { .forge-layout { display: block; } }
+@media (max-width: 620px) { .forge-product { grid-template-columns: var(--space-12) minmax(0, 1fr); } .forge-product-price,.forge-select { grid-column: 2; } }

@@ -28,7 +28,7 @@
   display: flex;
   box-sizing: border-box;
   width: 168px;
-  height: 44px;
+  height: var(--control-height-xl);
   align-items: center;
   gap: var(--space-2);
   padding: 0 var(--space-4);
@@ -36,21 +36,21 @@
   background: var(--gray-900);
   border: 0;
   border-radius: var(--radius-pill);
-  box-shadow: 0 8px 24px rgba(41, 41, 41, .22);
-  color: #fff;
+  box-shadow: var(--shadow-popover);
+  color: var(--text-inverse);
   font: inherit;
   cursor: grab;
   transition: box-shadow 140ms ease, transform 140ms ease;
 }
-.build-card__pill:hover { box-shadow: 0 10px 28px rgba(41, 41, 41, .3); }
+.build-card__pill:hover { box-shadow: var(--shadow-modal); }
 .build-card__pill:active { cursor: grabbing; transform: scale(.98); }
-.build-card__pill:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
-.build-card__pill .ms { font-size: 18px; }
+.build-card__pill:focus-visible { outline: none; box-shadow: var(--control-focus-shadow); }
+.build-card__pill .ms { font-size: var(--type-icon-lg); }
 .build-card__pill-count { font-size: var(--text-sm); font-weight: var(--weight-medium); }
 /* Pushed to the far edge so the pill reads as one line: what, how far, how much. */
 .build-card__pill-spent {
   margin-left: auto;
-  color: rgba(255, 255, 255, .62);
+  color: color-mix(in srgb, var(--text-inverse) 62%, transparent);
   font-size: var(--text-xs);
 }
 
@@ -60,7 +60,7 @@
   bottom: 0;
   left: 0;
   height: 2px;
-  background: rgba(255, 255, 255, .16);
+  background: color-mix(in srgb, var(--text-inverse) 16%, transparent);
 }
 .build-card__pill-bar::after {
   content: "";
@@ -80,7 +80,7 @@
   width: 296px;
   overflow: hidden;
   border-color: var(--border-default);
-  box-shadow: 0 8px 24px rgba(41, 41, 41, .12);
+  box-shadow: var(--shadow-raised);
 }
 
 .build-card__head {
@@ -96,6 +96,15 @@
 .build-card__title { flex: 1; font-size: var(--text-sm); font-weight: var(--weight-medium); }
 .build-card__count { font-size: var(--text-xs); color: var(--text-tertiary); }
 .build-card__head-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--control-size-icon);
+  height: var(--control-size-icon);
+  padding: 0;
+  background: transparent;
+  border: 0;
+  font: inherit;
   font-size: var(--text-base);
   color: var(--text-tertiary);
   cursor: pointer;
@@ -104,8 +113,8 @@
 .build-card__rows {
   display: flex;
   flex-direction: column;
-  gap: 7px;
-  padding: 10px 14px;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-4);
 }
 /* Each row is coloured by whether the slot is chosen, defaulted or missing. */
 .build-card__row {
@@ -125,13 +134,13 @@
   display: flex;
   align-items: center;
   gap: var(--space-2);
-  padding: 10px 14px var(--space-3);
+  padding: var(--space-3) var(--space-4) var(--space-3);
   border-top: 1px solid var(--border-subtle);
 }
 .build-card__totals { flex: 1; }
 .build-card__spent { font-size: var(--text-sm); font-weight: var(--weight-medium); }
 .build-card__left { font-size: var(--text-xs); color: var(--text-secondary); }
-.build-card__cta { height: 28px; padding: 0 var(--space-3); font-size: var(--text-xs); }
+.build-card__cta { height: var(--control-height-xs); padding: 0 var(--space-3); font-size: var(--text-xs); }
 
 /* Toast ------------------------------------------------------------------ */
 .build-toast {
@@ -146,8 +155,8 @@
   padding: 11px 18px;
   background: var(--gray-900);
   border-radius: var(--radius-pill);
-  box-shadow: 0 8px 24px rgba(41, 41, 41, .24);
-  color: #fff;
+  box-shadow: var(--shadow-popover);
+  color: var(--text-inverse);
   font-size: var(--text-sm);
   font-weight: var(--weight-medium);
   pointer-events: none;

@@ -28,8 +28,8 @@ export const CheckoutScreen: React.FC<{ v: Vals }> = ({ v }) => (
           ))}
         </div>
         <div className="checkout-actions">
-          <div className="pill ghostb" onClick={v.stepBack}>Back</div>
-          <div className="pill dark" onClick={v.stepNext}>{v.stepCta}</div>
+          <button type="button" className="pill ghostb" onClick={v.stepBack}>Back</button>
+          <button type="button" className="pill dark" onClick={v.stepNext}>{v.stepCta}</button>
         </div>
       </div>
       <div className="card checkout-summary">
@@ -58,8 +58,8 @@ export const DoneScreen: React.FC<{ v: Vals }> = ({ v }) => (
     <h1>Demo complete — no order placed</h1>
     <div className="done-page__meta">This shop does not process payments or ship orders.</div>
     <div className="done-page__actions">
-      <div className="pill ghostb" onClick={v.goHome}>Back to shop</div>
-      <div className="pill dark" onClick={v.restart}>Start another build</div>
+      <button type="button" className="pill ghostb" onClick={v.goHome}>Back to shop</button>
+      <button type="button" className="pill dark" onClick={v.restart}>Start another build</button>
     </div>
   </div>
 );

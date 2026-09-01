@@ -9,6 +9,8 @@
   --gray-400: #C7C7C7;
   --gray-500: #9E9E9E; /* tertiary text */
   --gray-600: #5D5D5D; /* secondary text */
+  --gray-700: #767676; /* readable tertiary text */
+  --gray-800: #333333; /* dark hover surface */
   --gray-900: #292929; /* primary text + primary CTA */
 
   /* Accent — interactive blue (links, active nav, focus) */
@@ -33,7 +35,7 @@
   /* ---- Semantic aliases ---- */
   --text-primary:   var(--gray-900);
   --text-secondary: var(--gray-600);
-  --text-tertiary:  var(--gray-500);
+  --text-tertiary:  var(--gray-700);
   --text-inverse:   var(--gray-0);
   --text-accent:    var(--blue-600);
   --text-disabled:  var(--gray-400);

@@ -1,17 +1,17 @@
 # Rigsmith Design System
 
-A clean, restrained interface system for **Rigsmith** — a minimal productivity workspace. The system favors quiet neutrals, a single accent blue, generous whitespace, and a tightly constrained type scale. It is built to feel calm and native on Apple platforms.
+A clean, restrained interface system for **Rigsmith** — an electronics storefront with catalog, product detail, cart, checkout, and PC builder surfaces. The system favors quiet neutrals, a single accent blue, compact information hierarchy, and semantic component tokens that keep every screen in the same visual language.
 
-> **Sources.** This system was created from a written brief only — no codebase, Figma file, or asset package was attached. All foundations below (type scale, color hierarchy, icon sizes, radii) come from that brief; everything else (accent hue, semantic palette, component set, UI kit) is a coherent original derivation. If you have a real Rigsmith codebase or Figma, attach it and this system should be re-derived from it.
+> **Sources.** The foundations below are the contract for the current Rigsmith frontend. Catalog imagery is allowed in product surfaces; decorative gradients, textures, and arbitrary component styling are not.
 
 ---
 
 ## Brand context
 
-Rigsmith is a workspace app for organizing projects, tasks, and team activity. The product surface is dense but never noisy: lots of small text, subtle borders instead of heavy shadows, and one dark pill button per view as the clear primary action. There is no marketing bombast — the tone is that of a focused tool.
+Rigsmith is a focused electronics shop for comparing parts and assembling a compatible PC. The product surface is dense but never noisy: lots of small text, subtle borders instead of heavy shadows, and one dark pill button per view as the clear primary action.
 
 **Products represented**
-- **Workspace app** (`ui_kits/workspace/`) — the core signed-in product: sidebar navigation, project grid, settings. This is the only product surface defined; a marketing site is not yet specified.
+- **Storefront** (`src/`) — persistent top bar, catalog rail, category grids, product detail, cart, checkout, and PC builder.
 
 ---
 
@@ -29,11 +29,11 @@ Rigsmith is a workspace app for organizing projects, tasks, and team activity. T
 
 ## Visual foundations
 
-- **Type:** Inter, two weights only — Regular (400) and Medium (500). Global letter-spacing of **−0.15px** on all text. The size ramp is deliberately tiny: **12 / 13 / 14 / 24px**. 14px is default body/UI; 13px is nav and controls; 12px is meta/labels; 24px is the single heading/display size. No other sizes.
+- **Type:** Inter, two weights only — Regular (400) and Medium (500). Global letter-spacing of **−0.15px** on all text. The base ramp is **12 / 13 / 14 / 24px**. Component roles in `tokens/components.css` cover intentional geometry such as icon sizes, compact prices, hero headings, and review scores; screens must use those semantic roles instead of raw values.
 - **Color hierarchy:** text is built from three greys — `#292929` (primary), `#5D5D5D` (secondary), `#9E9E9E` (tertiary). These do the heavy lifting; color is used sparingly.
 - **Accent:** one blue (`#2C6EF5`) for links, active nav, focus rings, and the accent button variant. The *primary* CTA is not blue — it is the near-black `#292929` pill.
 - **Semantic:** green `#2E9E5B` (success), amber `#C9820A` (warning), red `#DC3B3B` (danger), each with a soft tinted background for badges/toasts.
-- **Backgrounds:** flat. Page is white; content areas sit on a faint `#F4F4F4` sunken fill. No gradients, no imagery, no textures, no patterns.
+- **Backgrounds:** flat. Page is white; content areas sit on a faint `#F4F4F4` sunken fill. Product imagery is content; decorative gradients, textures, and patterns are not.
 - **Borders:** hairline `1px` in the neutral ramp (`#EBEBEB` subtle, `#E0E0E0` default). Cards rely on borders more than shadow.
 - **Shadows:** soft and low-contrast, tinted with the ink color (`rgba(41,41,41,…)`), never pure black. Four steps: card, raised, popover, modal. Most cards have *no* shadow at rest.
 - **Corner radii:** three intentional values — **8px** navigation/inputs/menus, **16px** cards/sheets/dialogs, **pill (full)** for CTA buttons and toggles. Chips/tags use a tight 4px.
@@ -41,7 +41,7 @@ Rigsmith is a workspace app for organizing projects, tasks, and team activity. T
 - **Animation:** quick and understated — 120–160ms ease on background/border/opacity. Buttons scale to 0.97 on press. No bounces, no long fades, no motion flourishes.
 - **Hover states:** neutral surfaces darken by one ramp step (transparent → `#F4F4F4`); the primary pill darkens slightly. Never lighten.
 - **Press states:** slight scale-down (0.97) on buttons; active nav uses a one-step-darker fill.
-- **Transparency & blur:** used only for the modal scrim (`rgba(41,41,41,0.32)`). No frosted-glass panels.
+- **Transparency & blur:** reserved for the persistent topbar and modal scrim (`rgba(41,41,41,0.32)`). The topbar uses a restrained translucent surface with an 18px backdrop blur; cards stay solid.
 - **Cards:** white surface, 16px radius, hairline subtle border, no shadow at rest; interactive cards lift 1px and gain the card shadow on hover; floating panels use the raised shadow instead.
 
 ---
