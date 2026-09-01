@@ -9,9 +9,7 @@ const CatalogImage: React.FC<{ src?: string; alt: string }> = ({ src, alt }) => 
 
 const showcasePrompt = `https://sizel.vercel.app/
 
-Hello i want you to build me an pc for around $1500 for my son so he can play his favourite games like Counterstrike or Cyberpunk so make sure it runs them well.
-Also find me a good phone, look through few flagships and recommend me one. If the best possible build is unavalible atm, create watchdog.
-Do it in Codex-in app browser through webmcp tools.`;
+Hello, I want you to build me a PC for around $1500 for my son so he can play his favourite games like Counter-Strike 2, League of Legends or Cyberpunk so make sure it runs them well. Also find me a good phone, compare all the flagship phones between themselves, by reviews and specs. If the best possible product is unavailable at this moment, create a watchdog. Do it in the Codex-in-app browser through WebMCP tools.`;
 
 /** The shop front: a catalog-led electronics store with the builder as its differentiator. */
 export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
