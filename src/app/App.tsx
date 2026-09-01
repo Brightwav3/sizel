@@ -16,7 +16,6 @@ import { BUILD_SLOTS, bundledFans, buildBlocker, requireQuantity, selectedPicks,
 import { cartBlocker } from "../entities/cart/cartValidation";
 import { listingStock } from "../data/catalog/listingStock";
 import { budgetPlan, validateBudgetShares } from "../entities/build/budgetPlan";
-import { balancedStarter } from "./webmcp/buildAdvisor";
 
 type Mutation = { patch?: Partial<AppState>; result?: Record<string, any> };
 
@@ -340,36 +339,25 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     });
   }
 
-  beginBuild(brief: string, budget: number, res: AppState['res'], reset = false, requestedShares?: unknown, starter?: 'balanced') {
+  // ADR 0013: begin_build opens a blank workspace; the agent owns component order and selection.
+  // docs/decisions/0013-agent-chooses-build-order.md
+  beginBuild(brief: string, budget: number, res: AppState['res'], reset = false, requestedShares?: unknown) {
     return this.mutate(state => {
       if (typeof brief !== 'string' || brief.trim().length < 5 || brief.length > 500) throw new ShopError('invalid_brief', 'Summarise the shopper request in 5–500 characters.');
       if (!Number.isFinite(budget) || budget <= 0) throw new ShopError('invalid_budget', 'Budget must be positive.');
       const checked = validateBudgetShares(requestedShares);
       if (!checked.valid) throw new ShopError('invalid_budget_allocation', checked.message);
       const plan = budgetPlan(budget, res, checked.shares);
-      if (starter !== undefined && starter !== 'balanced') throw new ShopError('invalid_starter', 'Use the balanced starter or omit starter.');
-      if (starter && state.chosen.length && !reset) throw new ShopError('starter_requires_reset', 'The balanced starter would replace existing selections. Pass reset=true or clear the build first.');
-      const starterPlan = starter === 'balanced' ? balancedStarter(budget, res) : null;
-      if (starter === 'balanced' && !starterPlan) throw new ShopError('starter_unavailable', 'The balanced starter cannot leave a compatible in-stock GPU under this budget.');
       const patch: Partial<AppState> = { buildBrief: brief.trim(), budget, res, route: 'builder', inspected: null,
         budgetShares: checked.shares,
-        builderSlot: starterPlan ? 'gpu' : 'cpu', buildRevision: state.buildRevision + 1,
+        buildRevision: state.buildRevision + 1,
         ...(reset ? { picks: { ...DEFAULT_PICKS }, chosen: [], decisions: {}, prev: this.snapshot(state) } : {}) };
-      if (starterPlan) {
-        patch.picks = starterPlan.picks;
-        patch.chosen = starterPlan.chosen;
-        patch.decisions = {};
-      }
       return { patch: { buildBrief: brief.trim(), budget, res, route: 'builder', inspected: null,
         ...patch },
         result: { opened: 'builder', budget, resolution: res, reset,
           budgetAllocation: { source: plan.source, slots: plan.rows },
-          ...(starterPlan ? {
-            starter: 'balanced', starterPriceUSD: starterPlan.price,
-            starterSelected: starterPlan.chosen, next: 'The balanced starter filled every non-GPU slot. Choose the GPU with ranked list_compatible_parts; compatibility, stock and the exact whole-build budget still win.',
-          } : {
-            next: 'Use each slot allowance as a planning hint, then choose parts yourself with list_compatible_parts and set_build_component. Compatibility, stock and the exact whole-build budget always win.',
-          }) } };
+          next: 'Choose the starting slot yourself from the shopper brief. Use list_compatible_parts for candidates and set_build_component to apply each choice. Compatibility, stock and the exact whole-build budget always win.',
+        } };
     });
   }
 

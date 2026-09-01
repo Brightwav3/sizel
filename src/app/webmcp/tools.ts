@@ -641,7 +641,7 @@ export const TOOLS: RigsmithTool[] = [
           } : {
             watchdogOffer: null,
             ...((primaryStock === 0 || primary.days >= SLOW_DELIVERY_DAYS) && !nonGpuComplete
-              ? { watchdogHint: "Finish the non-GPU starter before asking about a watchdog." } : {}),
+              ? { watchdogHint: "Finish selecting the non-GPU parts before asking about a watchdog." } : {}),
           }),
           next: offer
             ? "Show the primary GPU, then ask before create_watchdog. If declined, choose the fallback."
@@ -734,7 +734,7 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "check_build_compatibility",
     description:
-      "One-call build report: all nine selected slots with price, stock and delivery, plus total, compatibility, sockets, GPU clearance, PSU headroom and performance availability. Use begin_build or list_compatible_parts for budget allocation hints. No per-part check_stock or get_current_build needed. On a clash use fix_build_issue.",
+      "One-call build report: all nine selected slots with price, stock and delivery, plus total, compatibility, sockets, GPU clearance, PSU headroom and performance availability. Use begin_build or list_compatible_parts for budget allocation hints. On a clash, choose another compatible part with list_compatible_parts.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
@@ -847,7 +847,9 @@ export const TOOLS: RigsmithTool[] = [
 
   {
     name: "begin_build",
-    description: "Open the configurator with the brief and hard budget. Optional budgetShares gives slot percentages; starter balanced fills only compatible non-GPU support parts and leaves GPU selection to the agent. Use shares as hints, never as hard caps. Preserve selections unless reset is requested. Compatibility, stock and the exact whole-build budget win.",
+    // ADR 0013: this tool opens the workspace but never chooses a starting slot or part.
+    // docs/decisions/0013-agent-chooses-build-order.md
+    description: "Open the configurator with the brief and hard budget. Optional budgetShares gives slot percentages as planning hints. Choose the starting slot and every part yourself with candidate reads and set_build_component. Preserve selections unless reset is requested. Compatibility, stock and the exact whole-build budget win.",
     routes: ["home", "category", "product", "builder"],
     inputSchema: schema({
       brief: { ...str("Shopper needs and constraints, 5–500 characters."), minLength: 5, maxLength: 500 },
@@ -857,11 +859,10 @@ export const TOOLS: RigsmithTool[] = [
         type: "object", additionalProperties: { type: "number", minimum: 0, maximum: 100 },
         description: "Optional slot percentages; omitted slots share the remainder.",
       },
-      starter: str("Optional balanced non-GPU starter; leaves GPU unchosen.", ["balanced"]),
       reset: bool("Discard existing selections only if requested. Default false."),
     }, ["brief", "budget"]),
     async execute(args) {
-      return commandResult(await app().beginBuild(args.brief, args.budget, resolutionOf(args.resolution, "1440p"), args.reset === true, args.budgetShares, args.starter));
+      return commandResult(await app().beginBuild(args.brief, args.budget, resolutionOf(args.resolution, "1440p"), args.reset === true, args.budgetShares));
     },
   },
   {
