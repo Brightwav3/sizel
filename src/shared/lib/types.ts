@@ -107,7 +107,7 @@ export interface Metrics {
 }
 
 export type Route =
-  | "home" | "category" | "product" | "builder"
+  | "home" | "category" | "brand" | "product" | "builder"
   | "cart" | "checkout" | "done";
 
 /**

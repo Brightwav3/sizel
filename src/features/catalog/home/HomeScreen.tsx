@@ -1,16 +1,40 @@
 import React from "react";
 import type { Vals } from "../../../shared/lib/types";
+import { DEMO_TOOL_NAMES, TOOLS } from "../../../app/webmcp/tools";
 import "./home.css";
 
 const CatalogImage: React.FC<{ src?: string; alt: string }> = ({ src, alt }) => (
   src ? <img className="catalog-image" src={src} alt={alt} /> : <span className="ms catalog-image-fallback">image</span>
 );
 
+const showcasePrompt = `https://sizel.vercel.app/
+
+Hello i want you to build me an pc for around $1500 for my son so he can play his favourite games like Counterstrike or Cyberpunk so make sure it runs them well.
+Also find me a good phone, look through few flagships and recommend me one. If the best possible build is unavalible atm, create watchdog.
+Do it in Codex-in app browser through webmcp tools.`;
+
 /** The shop front: a catalog-led electronics store with the builder as its differentiator. */
 export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
   const offers = v.promotions || [];
   const [offerIndex, setOfferIndex] = React.useState(0);
+  const [promptCopied, setPromptCopied] = React.useState(false);
   const offerIndexRef = React.useRef(0);
+  const promptCopiedTimer = React.useRef<number | null>(null);
+  const webmcpDialog = React.useRef<HTMLDialogElement>(null);
+  const webmcpTools = TOOLS.filter(tool => (DEMO_TOOL_NAMES as readonly string[]).includes(tool.name));
+
+  const copyShowcasePrompt = React.useCallback(async () => {
+    if (!navigator.clipboard?.writeText) return;
+
+    try {
+      await navigator.clipboard.writeText(showcasePrompt);
+      setPromptCopied(true);
+      if (promptCopiedTimer.current !== null) window.clearTimeout(promptCopiedTimer.current);
+      promptCopiedTimer.current = window.setTimeout(() => setPromptCopied(false), 2200);
+    } catch {
+      setPromptCopied(false);
+    }
+  }, []);
 
   const showOffer = React.useCallback((nextIndex: number) => {
     if (offers.length < 1) return;
@@ -24,6 +48,10 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
     const timer = window.setInterval(() => showOffer((offerIndexRef.current + 1) % offers.length), 6500);
     return () => window.clearInterval(timer);
   }, [offers.length, showOffer]);
+
+  React.useEffect(() => () => {
+    if (promptCopiedTimer.current !== null) window.clearTimeout(promptCopiedTimer.current);
+  }, []);
 
   const offer = offers[offerIndex % Math.max(offers.length, 1)] || v.heroProduct;
 
@@ -104,10 +132,10 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
             <span className="ms">arrow_forward</span>
           </button>
         ))}
-        <div className="hero-rail__promise hero-rail__promise--returns">
-          <span className="ms">assignment_return</span>
-          <span><strong>30-day returns</strong><small>Easy returns on every order</small></span>
-        </div>
+        <button type="button" className="hero-rail__promise hero-rail__promise--tools" onClick={() => webmcpDialog.current?.showModal()} aria-haspopup="dialog">
+          <span className="ms">code</span>
+          <span><strong>WebMCP tools</strong><small>{webmcpTools.length} tools</small></span>
+        </button>
       </aside>
       </section>
     </div>
@@ -223,6 +251,35 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
         <div className="home-why__point"><span className="ms">photo_library</span><span>Real photos and full specifications on every product.</span></div>
       </div>
     </section>
+
+    <dialog ref={webmcpDialog} className="webmcp-dialog" aria-labelledby="webmcp-dialog-title" onClick={event => { if (event.target === event.currentTarget) webmcpDialog.current?.close(); }}>
+      <div className="webmcp-dialog__content">
+        <button type="button" className="webmcp-dialog__close" aria-label="Close WebMCP tools" onClick={() => webmcpDialog.current?.close()}><span className="ms">close</span></button>
+        <div className="eyebrow">Agent access</div>
+        <h2 id="webmcp-dialog-title">WebMCP tools</h2>
+        <p className="webmcp-dialog__intro">WebMCP gives an AI agent structured tools to search the shop, compare products, check compatibility and update the cart.</p>
+        <div className="webmcp-dialog__showcase">
+          <div className="webmcp-dialog__showcase-head">
+            <div className="webmcp-dialog__showcase-title"><span className="eyebrow">Showcase</span><strong>Try this showcase prompt</strong></div>
+          </div>
+          <div className="webmcp-dialog__showcase-code">
+            <button type="button" className={`webmcp-dialog__copy ${promptCopied ? "is-copied" : ""}`} aria-label={promptCopied ? "Prompt copied" : "Copy prompt"} title={promptCopied ? "Prompt copied" : "Copy prompt"} onClick={copyShowcasePrompt}>
+              <span className="ms" aria-hidden="true">{promptCopied ? "check" : "content_copy"}</span>
+            </button>
+            <pre><code>{showcasePrompt}</code></pre>
+          </div>
+        </div>
+        <div className="webmcp-dialog__status"><span className="webmcp-dialog__status-dot" />Available in this demo<span className="num">{webmcpTools.length} tools</span></div>
+        <div className="webmcp-dialog__list">
+          {webmcpTools.map(tool => <div className="webmcp-dialog__tool" key={tool.name}>
+            <span className="webmcp-dialog__tool-icon ms">code</span>
+            <div><code>{tool.name}</code><p>{tool.description}</p></div>
+            <span className="webmcp-dialog__badge">{tool.readOnlyHint ? "Read only" : "Action"}</span>
+          </div>)}
+        </div>
+        <p className="webmcp-dialog__note"><span className="ms">verified</span> The agent can only use the actions exposed by this shop.</p>
+      </div>
+    </dialog>
   </div>
-);
+  );
 };

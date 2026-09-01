@@ -20,7 +20,7 @@ export interface BuildSnapshot {
 // ADR 0002: AppState is the single owner of the active PC build.
 // docs/decisions/0002-single-build-state-and-domain-view-models.md
 export interface AppState {
-  route: Route; productId: string; productColorId: string | null; category: Slot; productSlot: Slot;
+  route: Route; productId: string; productColorId: string | null; category: Slot; productSlot: Slot; brandCategory: Slot | "all";
   catalogOpen: boolean; dept: string; openDept: string | null;
   /** The active build. Every slot always holds a part, so metrics stay defined. */
   picks: Picks;

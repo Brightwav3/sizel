@@ -143,6 +143,7 @@ export function candidatePool(query: ProductQuery): Part[] {
     const department = DEPTS.find(item => item.id === query.departmentId);
     if (department) return department.cats.flatMap(category => CATALOG[category]);
   }
+  if (query.departmentId === null && !query.category) return allProducts();
   return CATALOG[query.category ?? "gpu"] || CATALOG.gpu;
 }
 

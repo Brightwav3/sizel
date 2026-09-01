@@ -7,7 +7,7 @@ import { buildVals } from "../entities/build/buildVals";
 import { RigsmithView } from "./RigsmithView";
 import type { AppState, BuildDecision } from "./state/AppState";
 import { stateFromLocation, urlForState } from "./routes";
-import { stopWebmcpTools, syncWebmcpTools } from "./webmcp";
+import { stopWebmcpTools, syncWebmcpTools, takeUserControl } from "./webmcp";
 import { DEFAULT_PICKS, partIn } from "../data/catalog/catalog";
 import { compatibilityIssues, metrics, noiseWord, shipDate } from "../entities/build/metrics";
 import type { CartLine, PcSlot, Picks, Route, Slot, Watchdog } from "../shared/lib/types";
@@ -37,7 +37,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   static instance: RigsmithApp | null = null;
 
   state: AppState = {
-    route: "home", productId: DEFAULT_PICKS.gpu, productColorId: null, category: "gpu", productSlot: "gpu",
+    route: "home", productId: DEFAULT_PICKS.gpu, productColorId: null, category: "gpu", productSlot: "gpu", brandCategory: "all",
     catalogOpen: false, dept: "pc", openDept: null,
     picks: { ...DEFAULT_PICKS },
     chosen: [],
@@ -54,7 +54,18 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   private urlReady = false;
   private syncingFromUrl = false;
   private onResize = () => this.forceUpdate();
+  private pauseAgentForShopper = () => {
+    if (!takeUserControl()) return;
+    this.setState({ toast: "You took control — agent actions are paused." }, () => this.flash());
+  };
+  private onShopperInteraction = (event: MouseEvent | KeyboardEvent) => {
+    if (!event.isTrusted) return;
+    const target = event.target as Element | null;
+    if (!target?.closest("button, a, input, select, textarea, [role='button']")) return;
+    this.pauseAgentForShopper();
+  };
   private onPopState = () => {
+    this.pauseAgentForShopper();
     const next = stateFromLocation();
     this.syncingFromUrl = true;
     this.setState(next as any);
@@ -71,6 +82,8 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     if (!webmcpDisabled) syncWebmcpTools();
     window.addEventListener("resize", this.onResize);
     window.addEventListener("popstate", this.onPopState);
+    document.addEventListener("click", this.onShopperInteraction);
+    document.addEventListener("keydown", this.onShopperInteraction);
     this.urlReady = true;
   }
   componentWillUnmount() {
@@ -78,6 +91,8 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     stopWebmcpTools();
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("popstate", this.onPopState);
+    document.removeEventListener("click", this.onShopperInteraction);
+    document.removeEventListener("keydown", this.onShopperInteraction);
     clearTimeout(this.t);
   }
 
@@ -92,7 +107,8 @@ export class RigsmithApp extends React.Component<{}, AppState> {
       || prevState.productId !== this.state.productId
       || prevState.productColorId !== this.state.productColorId
       || prevState.dept !== this.state.dept
-      || prevState.openDept !== this.state.openDept;
+      || prevState.openDept !== this.state.openDept
+      || prevState.brandCategory !== this.state.brandCategory;
     const navigationChanged = pageChanged || prevState.brand !== this.state.brand;
     if (navigationChanged) {
       const nextUrl = urlForState(this.state);

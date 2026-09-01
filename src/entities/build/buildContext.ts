@@ -23,7 +23,7 @@ export function createBuildContext(app: RigsmithApp) {
       ic: active ? "var(--text-secondary)" : "var(--text-tertiary)",
     });
 
-    const shopping = route === "category" || route === "product";
+    const shopping = route === "category" || route === "brand" || route === "product";
     const dept = DEPTS.find(d => d.id === s.dept) || DEPTS[0];
     const picked = s.openDept;
     const depts = DEPTS.map(d => {
@@ -52,9 +52,11 @@ export function createBuildContext(app: RigsmithApp) {
 
     // Catalog reads go through the pure query module so the WebMCP tools and
     // this view-model cannot drift apart. src/entities/product/queries.ts
+    const activeBrandCategory = route === "brand" && s.brandCategory !== "all" ? s.brandCategory : undefined;
+    const queryCategory = route === "brand" ? activeBrandCategory : s.category;
     const query: ProductQuery = {
-      category: s.category,
-      departmentId: s.openDept,
+      category: queryCategory,
+      departmentId: route === "brand" ? null : s.openDept,
       search: s.search,
       brand: s.brand,
       minPrice: s.minPrice,
@@ -73,9 +75,11 @@ export function createBuildContext(app: RigsmithApp) {
     const searchText = s.search.trim().toLowerCase();
     const cat = s.category;
     const catList = candidatePool(query);
-    const bounds = priceBounds(catList);
+    const brandPool = route === "brand" ? allProducts.filter(product => brandOf(product) === s.brand) : [];
+    const filterPool = route === "brand" ? brandPool : catList;
+    const bounds = priceBounds(filterPool);
     const UNUSED_facetDefinitions = FACETS[cat] || [];
-    const specFilters = facetSummary(query, catList).map(facet => ({
+    const specFilters = route === "brand" ? [] : facetSummary(query, catList).map(facet => ({
       id: facet.id,
       label: facet.label,
       fit: facet.fit,
@@ -93,7 +97,7 @@ export function createBuildContext(app: RigsmithApp) {
     const fitFilters = specFilters.filter(facet => facet.fit);
     const UNUSED_technicalFilters = specFilters.filter(facet => !facet.fit);
     const visible = sortProducts(applyProductFilters(catList, query), query.sort);
-    const hidden = catList.length - visible.length;
+    const hidden = filterPool.length - visible.length;
 
     // Product ids are authoritative. If an older route or search card left
     // productSlot stale, do not fall back to the first graphics card.
@@ -121,7 +125,7 @@ export function createBuildContext(app: RigsmithApp) {
     const pFits = candidateIssues.length === 0;
 
     const st = checkoutStepAt(s.step);
-    const filtersOn = route === "category" || route === "product";
+    const filtersOn = route === "category" || route === "brand" || route === "product";
     const valueGpu = CATALOG.gpu.filter(p => p.stock !== 0).slice().sort((a, b) => a.price - b.price)[0];
     const quietGpu = CATALOG.gpu.filter(p => p.stock !== 0).slice().sort((a, b) => (a.noise ?? 99) - (b.noise ?? 99))[0];
     const featuredCpu = CATALOG.cpu.find(p => p.id === DEFAULT_PICKS.cpu)!;
@@ -136,11 +140,25 @@ export function createBuildContext(app: RigsmithApp) {
       go: () => app.setState({ route: "product", productSlot: slot, productId: product.id }),
     });
     const brandNames = Array.from(new Set(allProducts.map(product => product.brand).filter((brand): brand is string => Boolean(brand)))).sort();
+    const brandSlot = (brand: string) => (Object.keys(CATALOG) as Slot[]).find(slot => CATALOG[slot].some(product => product.brand === brand)) || "gpu" as Slot;
+    const brandDepartment = (brand: string) => DEPTS.find(department => department.cats.includes(brandSlot(brand))) || DEPTS[0];
     const brandRibbon = brandNames.map(brand => ({
       name: brand,
       logo: "/catalog/logos/" + brand.toLowerCase().replace(/\s+/g, "-") + ".webp",
-      go: () => app.setState({ route: "category", dept: "pc", category: "gpu", brand, search: "" }),
+      go: () => {
+        const category = brandSlot(brand);
+        app.setState({ route: "brand", dept: brandDepartment(brand).id, openDept: null, category, productSlot: category, brandCategory: "all", brand, search: "", minPrice: 0, maxPrice: 2200, facetFilters: {}, stockOnly: false, onSale: false, fastShip: false, fitOnly: false, useFilter: "any", sort: "popular" });
+      },
     }));
+    const brandCategoryFilters = Array.from(new Set(brandPool.map(product => findProduct(product.id)?.category).filter((slot): slot is Slot => Boolean(slot))))
+      .sort((a, b) => CAT_META[a].name.localeCompare(CAT_META[b].name))
+      .map(category => ({
+        id: category,
+        label: CAT_META[category].name,
+        count: String(brandPool.filter(product => findProduct(product.id)?.category === category).length),
+        on: s.brandCategory === category,
+        go: () => app.setState({ brandCategory: category, category, productSlot: category }),
+      }));
     const homeDepartments = DEPTS.map(d => {
       const shopCats = d.cats.filter(category => category !== "fans");
       const count = shopCats.reduce((sum, category) => sum + (CAT_META[category]?.count ?? 0), 0);
@@ -161,7 +179,7 @@ export function createBuildContext(app: RigsmithApp) {
       go: () => app.setState({ route: "category", dept: category === "phones" ? "phone" : category === "consoles" ? "gaming" : "pc", category, brand: "any", search: "" }),
     }));
 
-    return { app, s, m, route, on, sideStyle, shopping, dept, picked, depts, openDept, categories, spend, over, fpsOk, quietOk, allProducts, searchText, cat, catList, brandOf, brandLogo, facetValues, specFilters, fitFilters, visible, hidden, bounds, query, pSlot, pick, buildableProduct, chosenPicks, chosenCount, hasBuild, candidateIssues, pFits, stepDefs: CHECKOUT_STEPS, st, filtersOn, valueGpu, quietGpu, featuredCpu, featuredCooler, featuredStorage, featuredPhone, featuredConsole, promoProduct, brandRibbon, homeDepartments, homeCategories };
+    return { app, s, m, route, on, sideStyle, shopping, dept, picked, depts, openDept, categories, spend, over, fpsOk, quietOk, allProducts, searchText, cat, catList, filterPool, brandOf, brandLogo, facetValues, specFilters, fitFilters, visible, hidden, bounds, query, activeBrandCategory, brandPool, brandCategoryFilters, pSlot, pick, buildableProduct, chosenPicks, chosenCount, hasBuild, candidateIssues, pFits, stepDefs: CHECKOUT_STEPS, st, filtersOn, valueGpu, quietGpu, featuredCpu, featuredCooler, featuredStorage, featuredPhone, featuredConsole, promoProduct, brandRibbon, homeDepartments, homeCategories };
 }
 
 export type BuildContext = ReturnType<typeof createBuildContext>;

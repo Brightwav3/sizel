@@ -61,9 +61,9 @@ export const FilterPanel: React.FC<{ v: Vals }> = ({ v }) => (
       </FilterGroup>
     )}
 
-    <FilterGroup label="Brand">
+    {v.brandFilters.length > 1 && <FilterGroup label="Brand">
       <FacetList options={v.brandFilters} />
-    </FilterGroup>
+    </FilterGroup>}
 
     {v.facetGroups.map((facet: Vals) => (
       <FilterGroup key={facet.id} label={facet.label}>
