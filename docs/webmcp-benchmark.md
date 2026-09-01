@@ -1,57 +1,18 @@
-# Benchmarking the complete shopping task
+# Benchmark independent agent selection
 
-The target is the **whole user task** in under a minute: a Pear phone
-recommendation plus a $1700 / 1440p PC that is applied, verified and visible in
-the browser preview. That target has not been demonstrated yet. The recorded
-run in the session report took 81 seconds and 15 WebMCP calls.
+The previous four-call workflow used `recommend_build` and no longer exists. Its 81-second / 15-call run measured a different interface. Do not present it as a measurement of independent agent selection.
 
-This file is the protocol, so a later run is comparable rather than a new
-measurement of a different thing.
+## Task and workflow
 
-## What counts as the task
+1. `begin_build` opens the existing builder before any selections and records the brief and hard USD budget. No new page panel is added.
+2. Search the catalog and use `inspect_build_options` when candidate facts or a focused comparison are useful. It focuses the existing slot listing, without choosing a product. Inspection is optional; selection still validates the current catalog state. Follow `search_products.nextOffset` when more results are needed.
+3. Use `set_build_component` to select each part with the agent's own reason, tradeoff and inspected alternative. The selection appears in the existing build sheet. Explain choices in the conversation. A case includes its fans.
+4. Verify completion, price, stock and known conflicts with `check_build_compatibility`, then visually verify the builder. Do not add to cart, create watches or open checkout unless requested.
 
-1. A phone recommendation drawn from live catalog results.
-2. A complete nine-part PC within $1700 at 1440p, applied to the configurator.
-3. All nine selections verified — part, price, stock, delivery.
-4. The completed builder visible in the browser preview, captured through the
-   supported screenshot API and forwarded as an image.
-5. An English answer: phone, PC summary, combined hardware price, limitations.
+## Measurement and quality
 
-No cart writes, no watchdogs, no checkout, no orders.
+Start before browser setup and stop after visual verification. Report total time separately from tool time; include discovery, failures, retries and approval waits. Record candidates actually inspected and assess whether reasons cite available facts, address the brief and describe alternatives fairly. Valid text parameters do not prove understanding.
 
-## Measurement rules
+Do not use the legacy internal recommendation helper or fixed product ids as a shortcut. Do not optimize toward an arbitrary call count or fake progress with timers. The earlier under-one-minute target is not a quality criterion for this different task.
 
-- Start the clock **before** browser setup. Note separately any instruction
-  reading excluded from the clock.
-- Stop the clock **after** the final visual verification, not after writing
-  the answer.
-- Report total elapsed time and summed tool execution time as two numbers.
-  They are not interchangeable.
-- Record every attempted call, including failures and retries; every discovery
-  fetch; browser setup; screenshot work; and any approval wait, each as its own
-  line.
-- Never omit browser setup, visual verification, unavailable-part checks or
-  authorization to make the number smaller. A run that skips them is not a
-  measurement of this task.
-
-## The call budget this interface allows
-
-| Step | Call |
-| --- | --- |
-| 1 | `read_shop` — `search.compare` for phones, `include: ["build"]` |
-| 2 | `recommend_build` — `budget: 1700, resolution: "1440p", apply: true, configure: true` |
-| 3 | `show_in_catalog` — `view: "builder"` |
-| 4 | `read_shop` — `include: ["build"]` to verify all nine slots |
-
-Four calls, plus discovery and the screenshot. Step 4 needs no
-`get_current_build` and no per-part `check_stock`: the build report carries
-every slot with the same stock the storefront shows.
-
-A second discovery fetch after navigation is legitimate — the route change
-alters the tool set. Do not count it as waste.
-
-## Known limits to report, never to paper over
-
-- No per-game FPS source exists. `fps` is a catalog estimate. Do not attach it
-  to a named game.
-- No exchange-rate source exists. Prices are USD; do not convert.
+Catalog data are synthetic. There are no per-game benchmarks, exchange rates, live stock checks, notification service or payment backend. Seven fit rules do not certify complete BIOS or physical compatibility. This measures configuration, not a completed purchase.

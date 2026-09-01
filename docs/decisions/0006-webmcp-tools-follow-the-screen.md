@@ -4,6 +4,10 @@
 - **Date:** 2026-08-30
 - **Decision owners:** Rigsmith project and repository owner
 
+> **Demo profile note (2026-08-31):** The route-registration part of this ADR
+> is superseded for the judge-facing demo by [ADR 0012](0012-stable-webmcp-demo-registry.md).
+> Route metadata remains available for a future full-storefront profile.
+
 ## Context
 
 The shop had to expose its catalog and its active build to browser agents through WebMCP. Two questions had no obvious answer. Where do tool definitions live, given that a tool spans the catalog adapter, the product entity, the build model and the application controller? And how many tools should an agent see at once, given that Chrome's guidance caps a result at 1.5K characters and that a large tool set is harder for an agent to choose from than a small one.

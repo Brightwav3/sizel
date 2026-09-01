@@ -1,4 +1,13 @@
-# How `recommend_build` decides
+> Historical implementation notes. Since ADR 0007, `recommend_build` is not exposed to agents. The pure helper remains for numerical test fixtures; `withinBudget` now compares the price to the exact requested budget.
+
+# Internal legacy helper: how `recommendBuild` decides
+
+`recommendBuild` is retained for local fixtures and compatibility tests. It is
+not exposed as a WebMCP tool. Its `fps` value and the catalog's component
+scores are synthetic demo values, not measured game performance, and must not
+be quoted as a recommendation. Public WebMCP results return performance as
+unavailable with that basis. Agents choose from catalog facts, price, stock and
+compatibility checks instead.
 
 `recommend_build` assembles a complete nine-part machine for a budget. This is
 what it optimises for, what it deliberately will not do, and where the model
@@ -49,7 +58,8 @@ because the cheapest part is not always a compatible one. If the total still
 overshoots, the dearest slot steps down until the cap holds. This is what makes
 the ten per cent true rather than intended.
 
-**3 — Upgrade.** Whatever is left goes into the slots that move the frame rate,
+**3 — Upgrade.** Whatever is left goes into the slots that move the internal
+demo score,
 repeatedly until nothing more can be bought — money freed by a cheap case can
 still reach the graphics card. Candidates are **not** pre-filtered for fit
 here: a bigger card outgrows the case and power supply that were bought at
@@ -58,7 +68,7 @@ tell the shopper their budget cannot buy a card their money plainly covers.
 
 **4 — Trim again.** The first pass buys a processor before the card it will
 drive exists, so it can pay for pace the card never asks for. Each slot drops
-to the cheapest part that holds the same frame rate, and the money returns to
+to the cheapest part that holds the same internal score, and the money returns to
 the next upgrade round.
 
 **5 — Re-size the power supply.** A stronger card can outgrow the unit the
@@ -66,17 +76,18 @@ first pass sized.
 
 ## How "best" is decided per slot
 
-| Slot | Measured by |
+| Slot | Internal demo signal |
 | --- | --- |
-| Graphics card | Frame rate |
-| Processor, memory | Benchmark score |
+| Graphics card | Catalog FPS field (demo only) |
+| Processor, memory | Catalog score (demo only) |
 | Storage | Capacity |
 | Power supply | Cheapest unit covering the draw with 15 % headroom |
 | Motherboard, case, cooler, fans | Cheapest that fits |
 
-A slot missing a performance number takes the cheapest part that fits. Paying
-more for it buys nothing the build model can show the shopper, so the money
-stays with the parts that count.
+A slot missing an internal signal takes the cheapest part that fits. Paying
+more for it does not change this fixture's output, so the money stays with the
+parts the helper can score. This is an implementation detail, not a real-world
+performance assessment.
 
 Upgrades are judged by **the machine they produce**, not by the part's own
 number. A processor past the point where the frame-rate model stops rewarding
@@ -85,35 +96,33 @@ bought — and among equals, the cheapest.
 
 ## What the resolution actually changes
 
-In the frame-rate model a resolution is a plain multiplier:
+The legacy frame-rate model uses a plain resolution multiplier:
 
 ```text
 fps = gpu.fps × min(1, cpu.score / 100) × min(1, ram.score / 100) × RES[resolution]
 ```
 
-Because it multiplies everything uniformly, **it never changes which machine is
-fastest** — only the number that machine reaches. Weighting the budget shares
-by resolution shapes the first pass, but the optimiser converges regardless.
+This formula is retained only for deterministic local fixtures. It does not
+establish which machine is fastest in a real game, and equal values do not mean
+equal performance or quality. Public comparison and recommendation outputs do
+not expose its result.
 
-What resolution does change is how much machine the shopper needs. 144 frames
-at 1080p is a far cheaper ask than 144 at 4K. That is where `targetFps` earns
-its place: once the build clears the target the upgrades stop, and the rest of
-the budget stays with the shopper. Storage keeps going, because capacity is a
-benefit the target says nothing about.
+The `targetFps` argument remains only for local fixture compatibility. Public
+tools do not use it to claim that a build meets a real frame-rate target.
 
-## Measured behaviour
+## Budget behaviour
 
-At the default target of 144 fps and 1440p:
+The legacy helper's internal fixture table (not a measured performance result):
 
-| Asked | Spent | Over | Frame rate |
-| --- | --- | --- | --- |
-| $800 | $868 | +8 % | 111 |
-| $999 | $1,042 | +4 % | 139 |
-| $1,200 | $1,212 | +1 % | 139 |
-| $1,600 | $1,522 | −5 % | 151 |
-| $2,400 | $2,302 | −4 % | 162 |
-| $3,500 | $3,642 | +4 % | 165 |
-| $5,000 | $3,642 | −27 % | 165 |
+| Asked | Spent | Over |
+| --- | --- | --- |
+| $800 | $868 | +8 % |
+| $999 | $1,042 | +4 % |
+| $1,200 | $1,212 | +1 % |
+| $1,600 | $1,522 | −5 % |
+| $2,400 | $2,302 | −4 % |
+| $3,500 | $3,642 | +4 % |
+| $5,000 | $3,642 | −27 % |
 
 $5,000 falls short because the catalog runs out: nothing above the $2,099 card
 exists. `budgetRemainingUSD` reports it, in dollars; the older `headroom`
@@ -133,10 +142,9 @@ The $999 machine, applied to the screen and read back from it:
 | Case | Proseware Tower | $89 |
 | Case fans | included with the case | $0 |
 
-$1,042 · 139 fps at 1440p · 387 W · quiet · everything fits. The power supply
-is 550 W against a 446 W requirement; the processor is the cheapest that does
-not hold the card back; the leftover went into 4 TB of storage, because the
-frame rate had nowhere further to go.
+$1,042 · 387 W · quiet · everything fits. The power supply is 550 W against a
+446 W requirement. Any real performance conclusion requires measured game
+benchmarks that this catalog does not provide.
 
 ## What it was before
 

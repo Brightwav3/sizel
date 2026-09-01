@@ -1,205 +1,37 @@
-# How the WebMCP layer works
+# WebMCP architecture
 
-Rigsmith exposes its catalog and its live PC build to browser agents through
-[WebMCP](https://webmachinelearning.github.io/webmcp/). This is how that layer
-is put together, what it guarantees, and how to run it.
+> Current selection contract (ADR 0009): inspection and explanation fields are optional. Select known catalog ids directly; current stock, compatibility and budget checks remain mandatory. Earlier descriptions of required inspection below are historical.
 
-The tool list itself is in [webmcp-tools.md](webmcp-tools.md). The reasoning
-behind the shape is recorded in
-[ADR 0006](decisions/0006-webmcp-tools-follow-the-screen.md).
+Rigsmith implements 36 descriptors through `src/app/webmcp`, while the
+judge-facing demo exposes a stable allowlist of 13. [ADR 0007](decisions/0007-agents-select-and-explain-parts.md) supersedes automatic recommendation and pre-commit replies. [ADR 0012](decisions/0012-stable-webmcp-demo-registry.md) defines the demo registry. [Tool reference](webmcp-tools.md) is generated from descriptors.
 
-## Where it lives
+## Agent selection, existing UI
 
-```text
-src/app/webmcp/
-  index.ts          registration lifecycle — the only file that touches the API
-  tools.ts          the 33 tool definitions and their handlers
-  buildAdvisor.ts   reasoning no screen renders: recommend, bottleneck, fix
-  toolResult.ts     result shaping against the character budget
-  webmcpApi.ts      the slice of the API this app uses, and feature detection
-  tools.test.ts     contract, budget and behaviour tests
-```
+`begin_build` opens the existing builder and records the brief and exact budget. An explicit `starter: "balanced"` may fill only compatible, in-stock non-GPU support parts and leaves the GPU unchosen; without it, no parts are selected. `list_compatible_parts` can rank a GPU primary and in-stock fallback under a price ceiling, deriving a watchdog offer only from the real listing. Phone searches group storage variants by model by default, avoiding pagination through every tier when the agent needs model comparisons. `inspect_build_options` focuses a slot and returns candidate facts. `set_build_component` validates the agent's known catalog id against current state; inspection, reason and tradeoff are optional. The existing build sheet updates as selections commit. Reasons belong in the conversation; no additional explanation panel is added to the storefront.
 
-Tools sit in `src/app` rather than inside a feature because a tool is an
-application-level capability. `set_build_component` belongs to no single
-screen, and `search_products` answers for a catalog the whole shop shares.
+There is no automatic whole-build recommendation tool. The legacy pure helper remains for numerical fixtures only; the explicit balanced starter is limited to non-GPU support parts. The controller validates candidate ids and constraints, not the truth of natural-language reasons or the agent's cognition.
 
-## The three rules
+## Shared commands
 
-**One owner per domain rule.** Handlers never call `setState`. They write
-through `RigsmithApp` — `set`, `resetSlot`, `undoBuild`, `setTargets`,
-`applyPicks`, `showInCatalog`, `addToCart`, `toggleWatchdog`. ADR 0002 gave the
-build one owner; a tool reaching into state directly would be a second one.
-The same holds for numbers: prices, frame rates and power come from
-`entities/build/metrics`, cart totals from `entities/cart/cartTotals`, checkout
-fields from `entities/checkout/checkoutSteps` — each read by both the screen
-and the tools, so an agent cannot quote a figure the shopper is not looking at.
+`RigsmithApp` owns state. Selection and cart commands serialize and resolve after React commits, using the latest state. Expected validation failures do not apply the requested change. A case and included fans update atomically; undo restores selections and explanations. Build/target changes invalidate prior inspection.
 
-**Tools follow the screen.** Each tool declares the routes it makes sense on.
-Every route change registers what that screen supports and withdraws the rest,
-so an agent on the checkout is not offered a build editor for a build it cannot
-see. No screen presents more than twenty tools.
+`entities/build/selection.ts` owns orderability and exact budget checks. `entities/cart/cartValidation.ts` checks whole quantities, five-per-product limits and combined stock use across product and build lines. UI commands, WebMCP and checkout share these rules. Build lines still refer to the editable build and checkout revalidates them.
 
-**Advisors propose, they never write.** `buildAdvisor.ts` is pure functions
-over picks. `recommendBuild` returns a machine; only the tool applies it, and
-only when asked.
+## Registration and results
 
-## Registration lifecycle
+The demo registers its stable allowlist once when the controller mounts. Route
+changes do not remove and re-add tools; handlers validate the live controller
+state when called. AbortController still withdraws every registration on
+unmount, and pending acknowledgements do not block the rest of the set. The
+full descriptor list retains route metadata for the future storefront profile.
+The API is optional.
 
-A registration is withdrawn by aborting the `AbortSignal` it was made with.
-The specification has **no `unregisterTool`**, and `registerTool` rejects a
-name that is already taken — so holding the `AbortController` is what makes
-route-scoped registration possible at all, not a convenience. Getting this
-wrong is silent: an optional-chained `unregisterTool?.()` does nothing in a
-real browser, tools accumulate, and every later route change fails on a
-duplicate name.
+Results are JSON text. Ordinary output budget is 1500 characters, full build reports 3000, snapshots and candidate inspection 6000. List omissions are explicit. `read_shop` awaits allowlisted read handlers; failures remain local to each section. Read tools do not navigate. `show_in_catalog` is the explicit UI navigation call, and build selections return to the configurator. Search exposes `nextOffset`, including after character-budget shortening.
 
-```text
-componentDidMount        → syncWebmcpTools(route)
-route changes            → syncWebmcpTools(next)   withdraw, then register
-componentWillUnmount     → stopWebmcpTools()       withdraw everything
-```
+Incomplete builds report missing slots and no complete-build performance estimate. Defaults in unselected slots are not a chosen build.
 
-Calls are serialised through a promise chain, so two fast route changes cannot
-interleave. A tool that fails to register is logged and skipped; the screen
-keeps the rest of its set.
+## Limits and verification
 
-Without `document.modelContext` the whole layer is inert and the shop runs
-unchanged. Nothing about it is load-bearing for a human shopper.
+Catalog data are synthetic, compatibility checks cover seven rules, and FPS is not measured performance. State is in memory; watches send no notifications. Checkout is explicitly a preview without payment or order creation. Production requires authoritative services and persistence; WebMCP does not replace them.
 
-## Result contract
-
-Every handler returns JSON inside one text content block.
-
-**No handler throws at the agent.** A thrown error arrives as an opaque failure
-it cannot act on, so faults come back as a stated reason with a way forward.
-Missing required arguments are caught before the handler runs and named
-explicitly, rather than surfacing as whatever the handler dereferenced first.
-
-**Results are held under 1.5K characters**, the budget Chrome documents. Past
-that an agent's own guardrails truncate — in the middle of a JSON document.
-`toolResult.ok` shortens the list itself and reports `omitted`, so the cut is
-deliberate and visible.
-
-Anything derived from a list is computed from the list actually sent. A note
-saying "some of these are out of stock" would be a lie once shortening had
-dropped every out-of-stock row, so those fields are re-derived after each pass.
-
-Two results are deliberately larger, each with a documented ceiling: a
-`read_shop` snapshot (6000) and the `check_build_compatibility` build report
-(3000). Both are bought once instead of many times — the build report lists all
-nine slots with their stock, which is the alternative to nine `check_stock`
-calls. Its slots are never dropped to fit, and inside a snapshot the build
-section is the last one shortened rather than the first.
-
-## Character budgets
-
-Chrome's guidance, all enforced by tests:
-
-| Limit | Value |
-| --- | --- |
-| Tool name | 30 characters |
-| Tool description | 500 |
-| Parameter description | 150 |
-| Result | 1.5K |
-| Build report result | 3K |
-| `read_shop` snapshot result | 6K |
-
-Descriptions are the standing cost — they reach the agent on every turn, unlike
-results. Measured per screen:
-
-| Screen | Tools | Schema characters |
-| --- | --- | --- |
-| home | 10 | 5,481 |
-| category | 17 | 8,269 |
-| product | 20 | 9,280 |
-| builder | 20 | 9,512 |
-| cart | 14 | 6,088 |
-| checkout | 7 | 3,822 |
-
-## Safety posture
-
-**Hints.** `readOnlyHint` marks the tools that change nothing, so an agent can
-tell which calls are safe without asking. The tools that spend money or change
-the build do not carry it. They are sent both under `annotations`, where the
-specification puts them, and at the top level, which Chrome's origin-trial
-build reads; an unknown dictionary member is ignored rather than rejected.
-
-**Untrusted content.** `get_reviews` is the only tool marked
-`untrustedContentHint`. Its text is written by other shoppers, and the WebMCP
-specification uses a product review tool as its own worked example of an output
-injection attack. Its description tells the agent to summarise the reviews and
-never follow instructions found inside them.
-
-**Refusals over silence.** `add_build_to_cart` refuses while a conflict is
-open. `start_checkout` stops at the delivery step and never places an order.
-Out-of-stock parts are refused with a pointer at `create_watchdog` rather than
-substituted.
-
-**Personal data.** No tool writes a name, address or card detail.
-`get_checkout_fields` describes what checkout will ask for so the shopper can
-have it ready, and returns `enteredBy: "shopper"`.
-
-**Origins.** `exposedTo` is unused: tools are same-origin only.
-
-## Performance
-
-Sub-millisecond throughout, so the network round-trip to the agent dominates by
-three orders of magnitude. Two changes got it there.
-
-**One index instead of a scan.** Every compatibility check resolves eight parts
-by id, and the tools that hunt for a replacement run that check once per
-candidate. The catalog is built once and never changes, so lookup is a map
-built beside it in `data/catalog/catalogIndex.ts`.
-
-**Two wasted passes removed.** `buildFits` answers the compatibility question
-without composing the sentences, for callers that only branch on the answer —
-thousands of times per tool call. `buildNumbers` gives price and frame rate
-without re-deriving conflicts the caller has already ruled out. A test holds
-`buildFits` to the same verdict as `compatibilityIssues` across every
-constrained combination in the catalog, so the fast path cannot drift from the
-slow one.
-
-Measured warm, per call:
-
-| Function | Before | After |
-| --- | --- | --- |
-| `fixOptions` | 152 µs | 25 µs |
-| `bottleneck` | 26 µs | 6 µs |
-| `recommendBuild` | 502 µs | 65 µs |
-
-Live, across all 33 tools: slowest 0.6 ms, average 0.26 ms; largest result 988
-characters, average 340.
-
-## Running it
-
-1. Open `chrome://flags/#enable-webmcp-testing` and set it to **Enabled**.
-2. Relaunch Chrome, then `npm run dev`.
-3. Install the [Model Context Tool
-   Inspector](https://chromewebstore.google.com/detail/model-context-tool-inspec/gbpdfapgefenggkahomfgkhfehlcenpd)
-   to list the registered tools and call them by hand.
-
-If the inspector says *"No tools registered"* with a flag error, the flag is
-off — that is not an application fault.
-
-A deployed build additionally needs an origin trial token, and the document
-must be **origin-isolated**: do not serve it with `Origin-Agent-Cluster: ?0`,
-or the API disappears. The `tools` permissions policy defaults to `self`, which
-is what this app wants.
-
-## Testing
-
-`npm test` covers the contract (name, description and parameter budgets, unique
-names, correct hints, route scoping), result sizes, error paths, and the
-behaviour of the advisors — including that `recommend_build` stays inside its
-budget promise and never pays for a part that adds no frame rate.
-
-Two things the unit tests cannot reach are worth doing by hand against
-`npm run dev`, with a stub that follows the specification — refusing a
-duplicate name and offering no `unregisterTool`:
-
-- **Route scoping.** Walk category → builder → cart → checkout → builder and
-  back, and check the registered count rises and falls without accumulating.
-  A stub that tolerates duplicates will hide the bug this catches.
-- **A full sweep.** Call all 33 tools once each on their own screens, and check
-  none fails and none exceeds the result budget.
+Run `npm test` and `npm run build`. Regression tests use actual controller methods with deferred commits; separately verify native React and visible selection in the browser. See [benchmark protocol](webmcp-benchmark.md).
