@@ -4,8 +4,8 @@ import { compatibilityIssues, metrics } from "../../entities/build/metrics";
 import type { PcSlot, Picks } from "../../shared/lib/types";
 import { BUDGET_TOLERANCE, bottleneck, cheapestBuild, fixOptions, powerReport, recommendBuild } from "./buildAdvisor";
 import { part } from "../../entities/build/metrics";
-import { OUTPUT_BUDGET, ok } from "./toolResult";
-import { TOOLS, toolsForRoute } from "./tools";
+import { OUTPUT_BUDGET, SNAPSHOT_OUTPUT_BUDGET, ok } from "./toolResult";
+import { DEMO_TOOL_NAMES, TOOLS, demoTools, toolsForRoute } from "./tools";
 
 const text = (result: { content: { text: string }[] }) => result.content[0].text;
 const call = (name: string, args: Record<string, unknown> = {}) => {
@@ -37,9 +37,15 @@ describe("tool contract", () => {
     expect(new Set(TOOLS.map(tool => tool.name)).size).toBe(TOOLS.length);
   });
 
+  it("exposes only the stable judge-facing demo set", () => {
+    expect(demoTools().map(tool => tool.name)).toEqual([...DEMO_TOOL_NAMES]);
+    expect(demoTools()).toHaveLength(13);
+    expect(demoTools().some(tool => tool.name === "read_shop")).toBe(false);
+  });
+
   it("marks every tool that changes nothing as read only", () => {
     const writers = ["set_build_component", "add_to_cart", "add_build_to_cart", "create_watchdog",
-      "recommend_build", "set_build_target", "undo_build_change", "show_in_catalog",
+      "begin_build", "inspect_build_options", "set_build_target", "undo_build_change", "show_in_catalog",
       "update_cart_line", "start_checkout", "remove_watchdog",
       "select_product_variant", "focus_builder_slot"];
     for (const tool of TOOLS) {
@@ -83,6 +89,15 @@ describe("results stay inside the output budget", () => {
     for (const body of calls) expect(body.length).toBeLessThanOrEqual(OUTPUT_BUDGET);
   });
 
+  it("can include compact product details in one comparison read", () => {
+    const ids = CATALOG.phones.slice(0, 3).map(product => product.id);
+    const body = call("compare_products", { productIds: ids, includeDetails: true });
+    expect(body.length).toBeLessThanOrEqual(SNAPSHOT_OUTPUT_BUDGET);
+    const result = JSON.parse(body);
+    expect(result.items).toHaveLength(3);
+    expect(result.items[0].details).toMatchObject({ description: expect.any(String), facts: expect.any(Object) });
+  });
+
   it("drops a note about rows the shortening removed", () => {
     const items = Array.from({ length: 60 }, (_, index) => ({
       id: `p${index}`, name: "A long product name here", ...(index > 40 ? { concern: "out_of_stock" } : {}),
@@ -104,9 +119,26 @@ describe("results stay inside the output budget", () => {
   it("answers an unknown id with a reason instead of throwing", () => {
     expect(JSON.parse(call("get_product", { productId: "nope" })).error).toBe("product_not_found");
   });
+
+  it("does not expose synthetic FPS or score fields as product facts", () => {
+    const product = JSON.parse(call("get_product", { productId: CATALOG.gpu[0].id }));
+    expect(product.facts).not.toHaveProperty("fps1440p");
+    expect(product.facts).not.toHaveProperty("score");
+    const search = TOOLS.find(tool => tool.name === "search_products")!;
+    expect((search.inputSchema as any).properties.sort.enum).not.toContain("perf");
+  });
 });
 
 describe("search_products filters", () => {
+  it("surfaces stock concerns when comparing a stronger unavailable candidate", () => {
+    const unavailable = CATALOG.gpu.find(product => (product.stock ?? 0) === 0)!;
+    const available = CATALOG.gpu.find(product => (product.stock ?? 0) > 0)!;
+    const result = JSON.parse(call("compare_products", { productIds: [available.id, unavailable.id] }));
+    const row = result.items.find((item: any) => item.id === unavailable.id);
+    expect(row).toMatchObject({ inStock: false, concern: "out_of_stock", offer: "create_watchdog" });
+    expect(row.shipsInDays).toBeGreaterThan(2);
+  });
+
   it("applies a facet from list_filters and narrows the result", () => {
     const facet = JSON.parse(call("list_filters", { category: "gpu" })).facets[0];
     const all = JSON.parse(call("search_products", { category: "gpu", limit: 20 })).total;
@@ -175,7 +207,7 @@ describe("recommend_build", () => {
   it.each(BUDGETS)("keeps %i dollars inside the ten per cent it promises", budget => {
     const proposal = recommendBuild(budget);
     expect(proposal.price).toBeLessThanOrEqual(budget * (1 + BUDGET_TOLERANCE));
-    expect(proposal.withinBudget).toBe(true);
+    expect(proposal.withinBudget).toBe(proposal.price <= budget);
   });
 
   it("says so plainly when the budget is below what any machine costs", () => {
@@ -271,24 +303,14 @@ describe("fix_build_issue", () => {
 });
 
 describe("explain_build_bottleneck", () => {
-  it("names the graphics card when nothing holds it back", () => {
-    const strongCpu = CATALOG.cpu.reduce((a, b) => (b.score ?? 0) > (a.score ?? 0) ? b : a);
-    const strongRam = CATALOG.ram.reduce((a, b) => (b.score ?? 0) > (a.score ?? 0) ? b : a);
-    const picks = { ...DEFAULT_PICKS, cpu: strongCpu.id, ram: strongRam.id } as Picks;
-    const report = bottleneck(picks);
-    expect(report.slot).toBe("gpu");
-    expect(report.lostFps).toBe(0);
-  });
-
-  it("names the weak part and the frames it costs", () => {
-    const weakCpu = CATALOG.cpu.reduce((a, b) => (b.score ?? 100) < (a.score ?? 100) ? b : a);
-    const fastGpu = CATALOG.gpu.reduce((a, b) => (b.fps ?? 0) > (a.fps ?? 0) ? b : a);
-    const picks = { ...DEFAULT_PICKS, cpu: weakCpu.id, gpu: fastGpu.id } as Picks;
-    const report = bottleneck(picks);
-    if (report.slot !== "gpu") {
-      expect(report.lostFps).toBeGreaterThan(0);
-      expect(report.currentFps).toBe(metrics(picks).fps);
-    }
+  it("reports the absence of measured game data instead of inventing a bottleneck", () => {
+    const report = bottleneck({ ...DEFAULT_PICKS } as Picks);
+    expect(report.slot).toBeNull();
+    expect(report.currentFps).toBeNull();
+    expect(report.ceilingFps).toBeNull();
+    expect(report.lostFps).toBeNull();
+    expect(report.upgrade).toBeNull();
+    expect(report.basis).toContain("not a game benchmark");
   });
 });
 

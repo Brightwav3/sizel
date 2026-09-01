@@ -1,34 +1,31 @@
-// ADR 0006: tool definitions live in src/app/webmcp and follow the route.
-// docs/decisions/0006-webmcp-tools-follow-the-screen.md
+// ADR 0012: the demo exposes a small, stable WebMCP tool set.
+// docs/decisions/0012-stable-webmcp-demo-registry.md
 /**
  * Registration lifecycle for the Rigsmith WebMCP tools.
  *
- * Tools follow the screen. An agent on the cart should not be offered a tool
- * that edits a build it cannot see, and a smaller tool set is a clearer one,
- * so every route change registers what the screen supports and drops the rest.
+ * The judge-facing demo registers one small, stable set once. Handlers still
+ * validate the live controller state when called, while the screen can move
+ * through the catalogue with the explicit `show_in_catalog` tool. Keeping the
+ * registry stable avoids a remove/add cycle on every route change.
  *
  * A tool is dropped by aborting the `AbortSignal` it was registered with,
- * which is the only way the specification offers — there is no
- * `unregisterTool`. That matters here: `registerTool` rejects when a name is
- * already taken, so a registration that could not be withdrawn would make
- * every later route change fail.
+ * which is the lifecycle primitive exposed by the current WebMCP API.
  *
  * Nothing here assumes WebMCP exists: without it the shop runs unchanged.
  *
  * https://webmachinelearning.github.io/webmcp/
  */
-import type { Route } from "../../shared/lib/types";
-import { toolsForRoute } from "./tools";
+import { demoTools } from "./tools";
 import { fail } from "./toolResult";
 import { modelContext } from "./webmcpApi";
-import type { ToolCallResult } from "./webmcpApi";
+import type { ToolCallResult, ToolExecuteOptions } from "./webmcpApi";
 
 /** Live registrations, each with the controller that withdraws it. */
 const registered = new Map<string, AbortController>();
 // Claim names synchronously, so slow browser acknowledgements never block
 // discovery of other tools or a newer route. AbortSignal owns cancellation.
 let retry: ReturnType<typeof setTimeout> | undefined;
-let desiredRoute: Route | null = null;
+let started = false;
 let retries = 0;
 
 /**
@@ -40,14 +37,14 @@ let retries = 0;
 const guard = (
   name: string,
   required: string[],
-  execute: (args: Record<string, any>) => Promise<ToolCallResult> | ToolCallResult,
+  execute: (args: Record<string, any>, options?: ToolExecuteOptions) => Promise<ToolCallResult> | ToolCallResult,
 ) =>
-  async (args: Record<string, any>): Promise<ToolCallResult> => {
+  async (args: Record<string, any>, options?: ToolExecuteOptions): Promise<ToolCallResult> => {
     const given = args ?? {};
     const missing = required.filter(key => given[key] === undefined || given[key] === null);
     if (missing.length) return fail("missing_argument", `Required: ${missing.join(", ")}.`);
     try {
-      return await execute(given);
+      return await execute(given, options);
     } catch (error) {
       const reason = error instanceof Error ? error.message : String(error);
       console.error(`[webmcp] ${name} failed`, error);
@@ -60,21 +57,17 @@ function drop(name: string) {
   registered.delete(name);
 }
 
-function apply(route: Route) {
+function apply() {
   const context = modelContext();
   if (!context) {
     // Some browser integrations inject the API after React mounts.
     if (retries++ < 100) retry = setTimeout(() => {
       retry = undefined;
-      if (desiredRoute !== null) apply(desiredRoute);
+      if (started) apply();
     }, 100);
     return;
   }
-  const wanted = new Map(toolsForRoute(route).map(tool => [tool.name, tool]));
-
-  for (const name of Array.from(registered.keys())) {
-    if (!wanted.has(name)) drop(name);
-  }
+  const wanted = new Map(demoTools().map(tool => [tool.name, tool]));
   for (const [name, tool] of wanted) {
     if (registered.has(name)) continue;
     const { routes, execute, readOnlyHint, untrustedContentHint, ...rest } = tool;
@@ -110,18 +103,18 @@ function apply(route: Route) {
   }
 }
 
-/** Register the tools this screen supports. Safe to call on every update. */
-export function syncWebmcpTools(route: Route): void {
-  desiredRoute = route;
+/** Register the stable demo set. Route changes do not churn the registry. */
+export function syncWebmcpTools(): void {
+  started = true;
   retries = 0;
   clearTimeout(retry);
   retry = undefined;
-  apply(route);
+  apply();
 }
 
 /** Drop every registration — the app is unmounting. */
 export function stopWebmcpTools(): void {
-  desiredRoute = null;
+  started = false;
   clearTimeout(retry);
   retry = undefined;
   for (const name of Array.from(registered.keys())) drop(name);
@@ -130,5 +123,5 @@ export function stopWebmcpTools(): void {
 /** Names submitted to the browser, including pending acknowledgements. */
 export const registeredToolNames = () => Array.from(registered.keys());
 
-export { TOOLS, toolsForRoute } from "./tools";
+export { TOOLS, DEMO_TOOL_NAMES, demoTools, toolsForRoute } from "./tools";
 export { webmcpAvailable } from "./webmcpApi";

@@ -6,6 +6,17 @@ export const money = (n: number) => "$" + n.toLocaleString("en-US");
 export const RES = { "1080p": 1.32, "1440p": 1, "4K": 0.6 } as const;
 export type Resolution = keyof typeof RES;
 
+/**
+ * Public performance results must use this explanation when no measured game
+ * benchmark exists. The catalog's FPS field is an internal demo model only.
+ */
+export const PERFORMANCE_UNAVAILABLE =
+  "Measured FPS unavailable: no measured game benchmark exists. A separate simulation is not a game benchmark and only supports fictional scenario comparisons.";
+
+/** Public acoustic results do not claim a lab measurement for demo data. */
+export const NOISE_UNAVAILABLE =
+  "Unavailable: catalog noise figures are specifications, not lab measurements.";
+
 const DAYNAMES = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
 
@@ -146,7 +157,7 @@ export function metrics(picks: Picks, res: Resolution = "1440p"): BuildMetrics {
   return { ...buildNumbers(picks, res), fits: issues.length === 0, issues };
 }
 
-export function shipDate(days: number, from = new Date(2026, 7, 29)) {
+export function shipDate(days: number, from = new Date()) {
   const d = new Date(from);
   d.setDate(d.getDate() + days);
   return `${DAYNAMES[d.getDay()]} ${d.getDate()} ${MONTHS[d.getMonth()]}`;
