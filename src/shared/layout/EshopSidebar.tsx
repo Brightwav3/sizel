@@ -5,25 +5,6 @@ import { CatalogMenu } from "./CatalogMenu";
 import { CATALOG, CAT_ICON, CAT_META, DEPTS } from "../../data/catalog/realCatalog";
 import "./eshop-sidebar.css";
 
-const groupCopy: Record<string, { title: string; hint: string }[]> = {
-  "PC parts": [
-    { title: "Components", hint: "Graphics cards · Processors · Memory · Storage" },
-    { title: "Build a PC", hint: "Start a build · Check compatibility · Saved builds" },
-    { title: "Monitors", hint: "Gaming · Professional · Office" },
-    { title: "Accessories", hint: "Keyboards · Mice · Headsets" },
-  ],
-  Phones: [
-    { title: "Phones", hint: "New arrivals · Android · iOS" },
-    { title: "Phone accessories", hint: "Cases · Chargers · Cables" },
-    { title: "Wearables", hint: "Smart watches · Bands · Trackers" },
-  ],
-  Gaming: [
-    { title: "Consoles", hint: "Current generation · Handhelds · Bundles" },
-    { title: "Games", hint: "New releases · PC · Console" },
-    { title: "Gaming gear", hint: "Controllers · Chairs · Streaming" },
-  ],
-};
-
 const comingSoonCategories = [
   { name: "Computers and accessories", icon: "laptop" },
   { name: "TV, photo and audio", icon: "tv" },

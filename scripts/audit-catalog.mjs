@@ -8,7 +8,7 @@ const adapter = fs.readFileSync(path.join(sourceRoot, "data/catalog/realCatalog.
 const catalog = fs.readFileSync(path.join(sourceRoot, "data/catalog/catalog.ts"), "utf8");
 const types = fs.readFileSync(path.join(sourceRoot, "shared/lib/types.ts"), "utf8");
 const routeUnion = types.match(/export type Route =([\s\S]*?);/)?.[1] ?? "";
-const routeValues = [...routeUnion.matchAll(/["']([a-z]+)["']/g)].map(match => match[1]);
+const routeValues = [...routeUnion.matchAll(/["']([a-z-]+)["']/g)].map(match => match[1]);
 const check = [];
 const pass = (label, ok, detail = "") => check.push({ label, ok, detail });
 
@@ -30,11 +30,25 @@ pass("default picks are derived from canonical parts", ["defaultCpu.id", "defaul
 pass("ORDER has nine prototype slots", (adapter.match(/\{ slot: "[a-z]+"/g) ?? []).length === 9);
 // The guided walkthrough was replaced by the configurator; its recommended
 // order now lives on the controller as RigsmithApp.BUILD_STEPS.
-pass("build order has nine slots", (fs.readFileSync(path.join(sourceRoot, "app/App.tsx"), "utf8").match(/BUILD_STEPS: PcSlot\[\] = \[[^\]]+\]/)?.[0].match(/"[a-z]+"/g) ?? []).length === 9);
-// Every route the union names must have a screen wired to it in the view.
+const appSource = fs.readFileSync(path.join(sourceRoot, "app/App.tsx"), "utf8");
+const buildSteps = appSource.match(/BUILD_STEPS: PcSlot\[\] = \[([^\]]+)\]/)?.[1] ?? "";
+pass("build order has nine slots", (buildSteps.match(/[\"'][a-z]+[\"']/g) ?? []).length === 9);
+// Brand is intentionally rendered by the category screen and not-found is
+// handled before the normal shell.
 const view = fs.readFileSync(path.join(sourceRoot, "app/RigsmithView.tsx"), "utf8");
-const routeFlags = routeValues.map(route => `is${route[0].toUpperCase()}${route.slice(1)}`);
-pass("every route has a screen", routeFlags.every(flag => view.includes(`v.${flag}`)), routeValues.join(", "));
+const routeGroups = new Map([
+  ["home", "isHome"],
+  ["category", "isCategory"],
+  ["brand", "isCategory"],
+  ["product", "isProduct"],
+  ["builder", "isBuilder"],
+  ["cart", "isCart"],
+  ["checkout", "isCheckout"],
+  ["done", "isDone"],
+  ["not-found", "isNotFound"],
+]);
+const missingRoutes = routeValues.filter(route => !routeGroups.has(route) || !view.includes("v." + routeGroups.get(route)));
+pass("every route has a screen", missingRoutes.length === 0, missingRoutes.length ? missingRoutes.join(", ") : routeValues.join(", "));
 
 const viewFiles = {
   AppShell: "shared/layout/AppShell.tsx", TopBar: "shared/layout/TopBar.tsx", EshopSidebar: "shared/layout/EshopSidebar.tsx",

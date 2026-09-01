@@ -85,6 +85,13 @@ export const ProductScreen: React.FC<{ v: Vals }> = ({ v }) => {
       </aside>
     </div>
 
+    <div className="product-mobile-cta" aria-label="Quick purchase">
+      <div className="product-mobile-cta__price"><span>Today</span><strong className="num">{v.pPrice}</strong></div>
+      <button type="button" className="product-buy__cta" onClick={v.pMobileAction}>
+        <span className="ms">{v.pCanAddToCart ? "shopping_bag" : "notifications"}</span>{v.pMobileActionLabel}
+      </button>
+    </div>
+
     <section className="product-detail">
       <div className="product-detail__main">
         <h2>About this product</h2>

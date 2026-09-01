@@ -3,35 +3,6 @@
   scrollbar-width: thin;
 }
 
-.sidebar-department {
-  border: 1px solid transparent;
-}
-
-.sidebar-department:hover {
-  border-color: var(--border-subtle);
-}
-
-.sidebar-clear {
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--text-accent);
-  font: inherit;
-  font-size: var(--text-xs);
-  cursor: pointer;
-}
-
-.sidebar-more {
-  margin-top: var(--space-2);
-  padding: 0;
-  border: 0;
-  background: transparent;
-  color: var(--text-accent);
-  font: inherit;
-  font-size: var(--text-xs);
-  cursor: pointer;
-}
-
 .range-slider {
   position: relative;
   height: 24px;

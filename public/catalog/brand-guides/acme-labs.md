@@ -2,7 +2,7 @@
 
 ## Brand mark
 
-![Acme Labs logo](../logos/generated/acme-labs.webp)
+![Acme Labs logo](../logos/acme-labs.webp)
 
 ## Visual language
 

@@ -20,7 +20,7 @@ import { compatibilityIssues } from "../../entities/build/metrics";
 import { cartBlocker } from "../../entities/cart/cartValidation";
 import type { RigsmithApp } from "../App";
 import { requireRigsmithApp } from "../state/appInstance";
-import { CATALOG, CAT_META, DEFAULT_PICKS, DEPTS, ORDER } from "../../data/catalog/catalog";
+import { CATALOG, CAT_META, DEPTS, ORDER } from "../../data/catalog/catalog";
 import { colorwaysFor } from "../../data/catalog/colorways";
 import { siblingVariants } from "../../data/catalog/storageVariants";
 import { ratingFor, reviewsFor } from "../../data/catalog/reviews";
@@ -1346,7 +1346,3 @@ export const demoTools = (): RigsmithTool[] => DEMO_TOOL_NAMES
 /** Tools offered on a screen. A tool with no routes is offered everywhere. */
 export const toolsForRoute = (route: Route): RigsmithTool[] =>
   TOOLS.filter(tool => tool.routes.length === 0 || tool.routes.includes(route));
-
-/** Every listed brand, for tool descriptions and tests. */
-export const catalogBrands = () =>
-  Array.from(new Set(Object.values(CATALOG).flat().map(brandOf))).sort();

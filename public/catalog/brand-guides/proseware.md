@@ -2,7 +2,7 @@
 
 ## Brand mark
 
-![Proseware logo](../logos/generated/proseware.webp)
+![Proseware logo](../logos/proseware.webp)
 
 ## Visual language
 

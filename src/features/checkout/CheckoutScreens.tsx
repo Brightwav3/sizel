@@ -19,19 +19,38 @@ export const CheckoutScreen: React.FC<{ v: Vals }> = ({ v }) => (
       </div>
     </header>
     <div className="checkout-layout">
-      <div className="card checkout-form">
-        <p>Demo only. These are placeholder fields. No personal details are collected, no payment is taken and no order is placed.</p>
+      <form className="card checkout-form" onSubmit={event => { event.preventDefault(); v.stepNext(); }} noValidate>
+        <div className="checkout-form__notice"><span className="ms">info</span><p>Demo checkout. Use any realistic values — nothing is sent or saved and no payment is taken.</p></div>
         <div className="checkout-form__title">{v.stepTitle}</div>
         <div className="checkout-fields">
-          {v.stepFields.map((f: Vals, i: number) => (
-            <div key={i} className="checkout-field" style={{ "--field-span": f.span } as React.CSSProperties}>{f.label}</div>
+          {v.stepFields.map((f: Vals) => f.readOnly ? (
+            <div key={f.id} className="checkout-field checkout-field--readonly" style={{ "--field-span": f.span } as React.CSSProperties}>
+              <span className="ms">check</span>{f.label}
+            </div>
+          ) : (
+            <label key={f.id} className={`checkout-field-wrap ${f.error ? "has-error" : ""}`} style={{ "--field-span": f.span } as React.CSSProperties}>
+              <span className="checkout-field-label">{f.label}<em aria-label="Required">*</em></span>
+              <input
+                id={`checkout-${f.id}`}
+                type={f.type ?? "text"}
+                inputMode={f.inputMode}
+                autoComplete={f.autocomplete}
+                value={f.value}
+                onChange={event => v.checkoutFieldChange(f.id, event.target.value)}
+                required
+                aria-invalid={Boolean(f.error)}
+                aria-describedby={f.error ? `checkout-${f.id}-error` : undefined}
+              />
+              {f.error && <small id={`checkout-${f.id}-error`} className="checkout-field-error"><span className="ms">error</span>{f.error}</small>}
+            </label>
           ))}
         </div>
+        {v.stepErrors.length > 0 && <p className="checkout-form__error" role="alert"><span className="ms">error</span>Complete the required fields before continuing.</p>}
         <div className="checkout-actions">
           <button type="button" className="pill ghostb" onClick={v.stepBack}>Back</button>
-          <button type="button" className="pill dark" onClick={v.stepNext}>{v.stepCta}</button>
+          <button type="submit" className="pill dark">{v.stepCta}</button>
         </div>
-      </div>
+      </form>
       <div className="card checkout-summary">
         <div className="checkout-summary__build">
           <div className="ph">{v.buildImage ? <img className="catalog-image" src={v.buildImage} alt="Selected graphics card" /> : <span className="ms">image</span>}</div>
@@ -55,8 +74,10 @@ export const CheckoutScreen: React.FC<{ v: Vals }> = ({ v }) => (
 export const DoneScreen: React.FC<{ v: Vals }> = ({ v }) => (
   <div className="t-page done-page">
     <span className="ms done-page__tick">check_circle</span>
-    <h1>Demo complete — no order placed</h1>
-    <div className="done-page__meta">This shop does not process payments or ship orders.</div>
+    <div className="done-page__eyebrow">Demo order confirmed</div>
+    <h1>Thanks — your order is ready.</h1>
+    <div className="done-page__order">Order <strong className="num">{v.demoOrderId}</strong></div>
+    <div className="done-page__meta">This is a demo confirmation. No payment was taken and nothing will be shipped.</div>
     <div className="done-page__actions">
       <button type="button" className="pill ghostb" onClick={v.goHome}>Back to shop</button>
       <button type="button" className="pill dark" onClick={v.restart}>Start another build</button>

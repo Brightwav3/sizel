@@ -8,7 +8,8 @@ import { RigsmithView } from "./RigsmithView";
 import type { AppState, BuildDecision } from "./state/AppState";
 import { stateFromLocation, urlForState } from "./routes";
 import { stopWebmcpTools, syncWebmcpTools, takeUserControl } from "./webmcp";
-import { DEFAULT_PICKS, partIn } from "../data/catalog/catalog";
+import { CAT_META, DEFAULT_PICKS, DEPTS, partIn } from "../data/catalog/catalog";
+import { findProduct, productTitle } from "../entities/product/queries";
 import { compatibilityIssues, metrics, noiseWord, shipDate } from "../entities/build/metrics";
 import type { CartLine, PcSlot, Picks, Route, Slot, Watchdog } from "../shared/lib/types";
 
@@ -16,6 +17,7 @@ import { BUILD_SLOTS, bundledFans, buildBlocker, requireQuantity, selectedPicks,
 import { cartBlocker } from "../entities/cart/cartValidation";
 import { listingStock } from "../data/catalog/listingStock";
 import { budgetPlan, validateBudgetShares } from "../entities/build/budgetPlan";
+import { CHECKOUT_STEPS } from "../entities/checkout/checkoutSteps";
 
 type Mutation = { patch?: Partial<AppState>; result?: Record<string, any> };
 type BatchComponentSlot = Exclude<PcSlot, "fans">;
@@ -38,7 +40,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
 
   state: AppState = {
     route: "home", productId: DEFAULT_PICKS.gpu, productColorId: null, category: "gpu", productSlot: "gpu", brandCategory: "all",
-    catalogOpen: false, dept: "pc", openDept: null,
+    catalogOpen: false, dept: "pc", openDept: null, isLoading: true,
     picks: { ...DEFAULT_PICKS },
     chosen: [],
     builderSlot: "cpu", builderSearch: "", builderCompatibleOnly: true, builderFacets: {},
@@ -46,11 +48,12 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     budget: 1800, budgetShares: {}, target: 144, res: "1440p", quiet: true,
     fitOnly: false, fastShip: false, minPrice: 0, maxPrice: 2200, useFilter: "any", brand: "any", facetFilters: {}, sort: "popular", stockOnly: false, onSale: false, search: "", recentSearches: ["quiet graphics card", "1 TB NVMe", "phone under $700"],
     buildBrief: "", buildRevision: 0, decisions: {}, inspected: null,
-    lastChange: null, prev: null, cart: [], watchdogs: [], step: 0, toast: null, saved: 2,
+    lastChange: null, prev: null, cart: [], watchdogs: [], step: 0, checkoutValues: {}, checkoutErrors: {}, demoOrderId: null, toast: null, saved: 2,
     ...stateFromLocation(),
   };
 
   private t?: number;
+  private bootTimer?: number;
   private urlReady = false;
   private syncingFromUrl = false;
   private onResize = () => this.forceUpdate();
@@ -85,6 +88,8 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     document.addEventListener("click", this.onShopperInteraction);
     document.addEventListener("keydown", this.onShopperInteraction);
     this.urlReady = true;
+    this.syncDocumentMetadata();
+    this.bootTimer = window.setTimeout(() => this.setState({ isLoading: false }), 180);
   }
   componentWillUnmount() {
     if (RigsmithApp.instance === this) RigsmithApp.instance = null;
@@ -94,10 +99,14 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     document.removeEventListener("click", this.onShopperInteraction);
     document.removeEventListener("keydown", this.onShopperInteraction);
     clearTimeout(this.t);
+    clearTimeout(this.bootTimer);
   }
 
-  componentDidUpdate(prevProps: {}, prevState: AppState) {
+  componentDidUpdate(_prevProps: {}, prevState: AppState) {
     if (!this.urlReady) return;
+    if (prevState.route !== this.state.route || prevState.productId !== this.state.productId || prevState.category !== this.state.category || prevState.brand !== this.state.brand) {
+      this.syncDocumentMetadata();
+    }
     if (this.syncingFromUrl) {
       this.syncingFromUrl = false;
       return;
@@ -124,6 +133,51 @@ export class RigsmithApp extends React.Component<{}, AppState> {
      * above, which leaves the browser's own scroll restoration alone.
      */
     if (pageChanged) window.scrollTo(0, 0);
+  }
+
+  private syncDocumentMetadata() {
+    const { route, category, dept, brand, productId } = this.state;
+    const department = DEPTS.find(item => item.id === dept)?.name ?? "Shop";
+    const categoryName = CAT_META[category]?.name ?? department;
+    const found = route === "product" ? findProduct(productId) : null;
+    const productName = found ? productTitle(found.product, found.category) : "";
+    const title = route === "home" ? "Sizel | Electronics, Phones & PC Parts"
+      : route === "not-found" ? "Page not found | Sizel"
+      : route === "product" ? `${productName} | Sizel`
+      : route === "brand" ? `${brand} | Sizel`
+      : route === "category" ? `${brand !== "any" ? `${brand} ` : ""}${categoryName} | Sizel`
+      : route === "builder" ? "PC Builder | Sizel"
+      : route === "cart" ? "Your cart | Sizel"
+      : route === "checkout" ? "Checkout preview | Sizel"
+      : route === "done" ? "Demo order confirmed | Sizel"
+      : "Sizel";
+    const description = route === "product" && productName
+      ? `See the price, availability, specifications and compatibility details for ${productName}.`
+      : route === "not-found"
+        ? "The page you are looking for is not available in the Sizel demo shop."
+        : route === "builder"
+          ? "Build a compatible gaming PC with clear budgets, compatibility checks and transparent trade-offs."
+          : "Explore phones, gaming consoles and PC components at Sizel. Compare products, find your next device or build a custom PC.";
+    const image = new URL("/branding/SizelThumb.png", window.location.origin).href;
+    document.title = title;
+    this.setMeta("description", description);
+    this.setMeta("og:title", title, "property");
+    this.setMeta("og:description", description, "property");
+    this.setMeta("og:image", image, "property");
+    this.setMeta("twitter:title", title);
+    this.setMeta("twitter:description", description);
+    this.setMeta("twitter:image", image);
+    this.setMeta("og:url", window.location.href, "property");
+  }
+
+  private setMeta(key: string, content: string, attr: "name" | "property" = "name") {
+    let meta = document.head.querySelector(`meta[${attr}="${key}"]`) as HTMLMetaElement | null;
+    if (!meta) {
+      meta = document.createElement("meta");
+      meta.setAttribute(attr, key);
+      document.head.appendChild(meta);
+    }
+    meta.content = content;
   }
 
   dockPoint() {
@@ -219,9 +273,49 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     return this.mutate(state => {
       const blocked = cartBlocker(state.cart, state.picks, state.chosen, state.budget);
       if (blocked) throw blocked;
-      return { patch: { route: 'checkout', step: 0 }, result: { opened: 'checkout', step: 'delivery', demo: true } };
+      return { patch: { route: 'checkout', step: 0, checkoutValues: {}, checkoutErrors: {}, demoOrderId: null }, result: { opened: 'checkout', step: 'delivery', demo: true } };
     });
   }
+
+  setCheckoutField(id: string, value: string) {
+    this.setState(state => {
+      const checkoutErrors = { ...state.checkoutErrors };
+      delete checkoutErrors[id];
+      return { checkoutValues: { ...state.checkoutValues, [id]: value }, checkoutErrors };
+    });
+  }
+
+  private checkoutErrorsForStep(step: number) {
+    const values = this.state.checkoutValues;
+    const errors: Record<string, string> = {};
+    if (step === 0) {
+      if ((values.fullName ?? "").trim().length < 2) errors.fullName = "Enter your full name.";
+      if ((values.phone ?? "").replace(/\D/g, "").length < 7) errors.phone = "Enter a valid phone number.";
+      if ((values.streetAddress ?? "").trim().length < 3) errors.streetAddress = "Enter your street address.";
+      if ((values.city ?? "").trim().length < 2) errors.city = "Enter your city.";
+      if (!/^[a-z0-9][a-z0-9\s-]{2,9}$/i.test((values.postcode ?? "").trim())) errors.postcode = "Enter a valid postcode.";
+    }
+    if (step === 1) {
+      if ((values.cardNumber ?? "").replace(/\D/g, "").length < 12) errors.cardNumber = "Enter a valid demo card number.";
+      if (!/^(0[1-9]|1[0-2])\s*\/\s*\d{2}$/.test((values.expiry ?? "").trim())) errors.expiry = "Use MM / YY format.";
+      if (!/^\d{3,4}$/.test((values.securityCode ?? "").trim())) errors.securityCode = "Enter a 3 or 4 digit code.";
+    }
+    return errors;
+  }
+
+  nextCheckoutStep = () => {
+    const errors = this.checkoutErrorsForStep(this.state.step);
+    if (Object.keys(errors).length) {
+      this.setState(state => ({ checkoutErrors: { ...state.checkoutErrors, ...errors }, toast: "Check the highlighted fields." }), () => this.flash());
+      return;
+    }
+    if (this.state.step < CHECKOUT_STEPS.length - 1) {
+      this.setState({ step: this.state.step + 1, checkoutErrors: {} });
+      return;
+    }
+    const orderId = `SZ-DEMO-${String(Date.now()).slice(-6)}`;
+    this.setState({ route: "done", demoOrderId: orderId, checkoutErrors: {}, toast: null });
+  };
 
   // Watchdogs -----------------------------------------------------------
   /** Start or stop watching a product. Everything stays on this device. */

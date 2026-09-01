@@ -5,9 +5,14 @@
 export type FieldKind = "delivery" | "payment" | "confirmation";
 
 export interface CheckoutField {
+  id: string;
   label: string;
   /** Grid placement for the screen. Tools ignore it. */
   span: string;
+  type?: "text" | "tel" | "password";
+  inputMode?: "text" | "tel" | "numeric";
+  autocomplete?: string;
+  readOnly?: boolean;
 }
 
 export interface CheckoutStep {
@@ -33,11 +38,11 @@ export const CHECKOUT_STEPS: CheckoutStep[] = [
     cta: "Continue to payment",
     kind: "delivery",
     fields: [
-      { label: "Full name", span: "auto" },
-      { label: "Phone", span: "auto" },
-      { label: "Street address", span: "1 / -1" },
-      { label: "City", span: "auto" },
-      { label: "Postcode", span: "auto" },
+      { id: "fullName", label: "Full name", span: "auto", autocomplete: "name" },
+      { id: "phone", label: "Phone", span: "auto", type: "tel", inputMode: "tel", autocomplete: "tel" },
+      { id: "streetAddress", label: "Street address", span: "1 / -1", autocomplete: "street-address" },
+      { id: "city", label: "City", span: "auto", autocomplete: "address-level2" },
+      { id: "postcode", label: "Postcode", span: "auto", inputMode: "text", autocomplete: "postal-code" },
     ],
   },
   {
@@ -46,9 +51,9 @@ export const CHECKOUT_STEPS: CheckoutStep[] = [
     cta: "Review order",
     kind: "payment",
     fields: [
-      { label: "Card number", span: "1 / -1" },
-      { label: "Expiry", span: "auto" },
-      { label: "Security code", span: "auto" },
+      { id: "cardNumber", label: "Card number", span: "1 / -1", inputMode: "numeric", autocomplete: "cc-number" },
+      { id: "expiry", label: "Expiry (MM / YY)", span: "auto", inputMode: "numeric", autocomplete: "cc-exp" },
+      { id: "securityCode", label: "Security code", span: "auto", type: "password", inputMode: "numeric", autocomplete: "cc-csc" },
     ],
   },
   {
@@ -57,8 +62,8 @@ export const CHECKOUT_STEPS: CheckoutStep[] = [
     cta: "Place order",
     kind: "confirmation",
     fields: [
-      { label: "Quiet 1440p gaming PC, 9 parts", span: "1 / -1" },
-      { label: "Assembled and tested", span: "1 / -1" },
+      { id: "review-items", label: "Quiet 1440p gaming PC, 9 parts", span: "1 / -1", readOnly: true },
+      { id: "review-service", label: "Assembled and tested", span: "1 / -1", readOnly: true },
     ],
   },
 ];

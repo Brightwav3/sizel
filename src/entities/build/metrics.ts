@@ -63,7 +63,6 @@ export function compatibilityIssues(picks: Partial<Picks>): string[] {
   if (gpu?.len && cs?.clearance && gpu.len > cs.clearance) {
     issues.push(`${gpu.name} is ${gpu.len} mm long, but ${cs.name} allows ${cs.clearance} mm.`);
   }
-  const draw = powerDraw(picks);
   if (psu?.watt && psu.watt < requiredPower(picks)) {
     issues.push(`${psu.name} provides ${psu.watt} W, but this build needs about ${requiredPower(picks)} W with headroom.`);
   }

@@ -2,7 +2,7 @@
 
 ## Brand mark
 
-![Pear logo](../logos/generated/pear.webp)
+![Pear logo](../logos/pear.webp)
 
 ## Visual language
 

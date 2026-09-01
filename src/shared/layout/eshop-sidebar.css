@@ -35,9 +35,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, #root::-webkit-scrollbar { wid
 .eshop-catalog .eshop-catalog-panel::before { content: ""; position: absolute; top: -6px; right: 0; left: 0; height: 6px; }
 /* Flex children shrink below their content by default; these rows must not. */
 .eshop-catalog .eshop-catalog-panel > * { flex-shrink: 0; }
-.eshop-rail-head { display: flex; align-items: baseline; gap: var(--space-2); padding: 0 var(--space-2); }
 .eshop-category-rail { position: relative; z-index: 3; display: flex; flex-direction: column; gap: var(--space-3); padding: var(--space-4) var(--space-3); background: var(--surface-card); }
-.eshop-rail-head > span:last-child, .eshop-section-count { color: var(--text-tertiary); font-size: var(--text-xs); }
 .eshop-rail-list { display: flex; flex-direction: column; gap: 0; }
 .eshop-rail-item {
   display: grid;
@@ -81,7 +79,7 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, #root::-webkit-scrollbar { wid
 
 .eshop-scrim { position: fixed; inset: 0; background: color-mix(in srgb, var(--surface-inverse) 32%, transparent); z-index: 1; }
 .eshop-scrim.is-passive { pointer-events: none; }
-.eshop-rail-head, .eshop-rail-list { position: relative; z-index: 3; background: var(--surface-card); }
+.eshop-rail-list { position: relative; z-index: 3; background: var(--surface-card); }
 .eshop-flyout {
   position: absolute;
   top: 0;

@@ -3,8 +3,7 @@ import type { Vals } from "../../shared/lib/types";
 import { CATALOG, CAT_ICON, CAT_META, DEFAULT_PICKS, DEPTS } from "../../data/catalog/catalog";
 import { CHECKOUT_STEPS, checkoutStepAt } from "../checkout/checkoutSteps";
 import { compatibilityIssues, money } from "./metrics";
-import type { Part, PcSlot, Picks, Slot } from "../../shared/lib/types";
-import { FACETS, FIT_FACET_IDS } from "../../features/catalog/catalogFacets";
+import type { PcSlot, Slot } from "../../shared/lib/types";
 import {
   allProducts as allCatalogProducts, applyProductFilters, brandOf, brandLogo,
   candidatePool, facetSummary, facetValues, findProduct, priceBounds, sortProducts,
@@ -70,7 +69,6 @@ export function createBuildContext(app: RigsmithApp) {
       scopeSearchToCategory: shopping,
       sort: s.sort as SortId,
     };
-    const UNUSED_wantRes = s.useFilter.split(" ")[0];
     const allProducts = allCatalogProducts();
     const searchText = s.search.trim().toLowerCase();
     const cat = s.category;
@@ -78,7 +76,6 @@ export function createBuildContext(app: RigsmithApp) {
     const brandPool = route === "brand" ? allProducts.filter(product => brandOf(product) === s.brand) : [];
     const filterPool = route === "brand" ? brandPool : catList;
     const bounds = priceBounds(filterPool);
-    const UNUSED_facetDefinitions = FACETS[cat] || [];
     const specFilters = route === "brand" ? [] : facetSummary(query, catList).map(facet => ({
       id: facet.id,
       label: facet.label,
@@ -93,9 +90,7 @@ export function createBuildContext(app: RigsmithApp) {
         go: () => app.toggleFacet(facet.id, option.value),
       })),
     }));
-    const UNUSED_fitFacetIds = FIT_FACET_IDS[cat] ?? [];
     const fitFilters = specFilters.filter(facet => facet.fit);
-    const UNUSED_technicalFilters = specFilters.filter(facet => !facet.fit);
     const visible = sortProducts(applyProductFilters(catList, query), query.sort);
     const hidden = filterPool.length - visible.length;
 
