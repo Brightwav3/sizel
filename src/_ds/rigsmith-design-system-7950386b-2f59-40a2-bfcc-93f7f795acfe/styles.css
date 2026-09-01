@@ -3,4 +3,5 @@
 @import "tokens/spacing.css";
 @import "tokens/radii.css";
 @import "tokens/shadows.css";
+@import "tokens/components.css";
 @import "tokens/fonts.css";
