@@ -149,10 +149,7 @@ export const CatalogMenu: React.FC<{ v: Vals; variant?: "rail" | "bar" }> = ({ v
           } : undefined}
           aria-label={`${activeDept?.name ?? "Catalog"} menu`}
         >
-          <header>
-            <div><span className="eyebrow">Browse</span><h2>{activeDept?.name ?? "Catalog"}</h2></div>
-            <button onClick={close} aria-label="Close menu" data-tip="Close menu" data-tip-align="end"><span className="ms">close</span></button>
-          </header>
+          <button className="eshop-flyout__close" onClick={close} aria-label="Close menu" data-tip="Close menu" data-tip-align="end"><span className="ms">close</span></button>
           <div className="eshop-flyout-grid">
             {groups.map(group => (
               <button key={group.title} onClick={() => {
@@ -171,13 +168,10 @@ export const CatalogMenu: React.FC<{ v: Vals; variant?: "rail" | "bar" }> = ({ v
             ))}
           </div>
           <div className="eshop-flyout-brands">
-            <div className="eshop-flyout-section-head"><span className="eyebrow">Shop by brand</span></div>
             <div className="eshop-brand-grid">
               {brands.map(brand => (
-                <button key={brand.name} onClick={() => { close(); goTo(`${departmentBase(activeDept?.name)}/${brand.slug}`); }}>
+                <button key={brand.name} onClick={() => { close(); goTo(`${departmentBase(activeDept?.name)}/${brand.slug}`); }} aria-label={`Shop ${brand.name}`}>
                   <img src={brand.logo} alt={`${brand.name} logo`} />
-                  <span><strong>{brand.name}</strong><small>{brand.count} products</small></span>
-                  <span className="ms">arrow_forward</span>
                 </button>
               ))}
             </div>
