@@ -108,7 +108,7 @@ export interface Metrics {
 
 export type Route =
   | "home" | "category" | "brand" | "product" | "builder"
-  | "cart" | "checkout" | "done";
+  | "cart" | "checkout" | "done" | "not-found";
 
 /**
  * The derived value bag a screen renders. `buildVals` composes it from the

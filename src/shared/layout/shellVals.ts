@@ -1,14 +1,14 @@
 import React from "react";
 import { CAT_META } from "../../data/catalog/catalog";
 
-import type { PcSlot, Slot } from "../lib/types";
+import type { Slot } from "../lib/types";
 import { CATALOG } from "../../data/catalog/catalog";
 import { money } from "../../entities/build/metrics";
 import { productTitle } from "../../entities/product/queries";
 import type { BuildContext } from "../../entities/build/buildContext";
 
 export function buildShellVals(context: BuildContext) {
-  const { app, s, route, on, shopping, dept, depts, openDept, categories, cat, catList, brandOf, brandLogo, brandPool, activeBrandCategory, brandCategoryFilters } = context;
+  const { app, s, route, on, shopping, dept, depts, categories, cat, catList, brandOf, brandLogo, brandPool, activeBrandCategory, brandCategoryFilters } = context;
   const searchCategory = shopping ? s.category : "gpu";
   const searchDept = searchCategory === "phones" ? "phone" : searchCategory === "consoles" ? "gaming" : "pc";
   const brandCategoryNames = (Object.keys(CATALOG) as Slot[])
@@ -49,14 +49,15 @@ export function buildShellVals(context: BuildContext) {
       goHome: () => app.go("home"), goBuilder: () => app.go("builder"),
       goCategory: () => app.go("category"), goCart: () => app.go("cart"),
       goCheckout: () => app.startCheckout(),
+      isLoading: s.isLoading,
       isHome: on("home"), isCategory: on("category") || on("brand"), isProduct: on("product"),
       isBuilder: on("builder"), isCart: on("cart"),
-      isCheckout: on("checkout"), isDone: on("done"),
+      isCheckout: on("checkout"), isDone: on("done"), isNotFound: on("not-found"),
       startGuided: () => app.setState({ route: "builder", chosen: [], builderSlot: "cpu" }),
 
       /** Watched products, newest first, each removable from the panel. */
       watchCount: s.watchdogs.length,
-      watchItems: s.watchdogs.map((watch, index) => {
+      watchItems: s.watchdogs.map((watch) => {
         const part = CATALOG[watch.slot].find(item => item.id === watch.productId);
         const cheaper = part ? part.price < watch.priceAtWatch : false;
         const back = part ? part.stock !== 0 : false;

@@ -1,6 +1,5 @@
 // ADR 0003: product detail resolves colour and stock from listing identity.
 // docs/decisions/0003-storefront-variants-live-in-the-adapter.md
-import React from "react";
 import { CATALOG, CAT_META, SPECS } from "../../data/catalog/catalog";
 import { siblingVariants } from "../../data/catalog/storageVariants";
 import { colorwaysFor } from "../../data/catalog/colorways";
@@ -20,7 +19,7 @@ const shippingDateLabel = (app: BuildContext["app"], days: number) =>
   days === 0 ? "Ships today" : `Ships ${app.shipDate(days)}`;
 
 export function buildProductVals(context: BuildContext) {
-  const { app, s, route, openDept, pSlot, pick, buildableProduct, hasBuild, chosenCount, candidateIssues, pFits } = context;
+  const { app, s, pSlot, pick, buildableProduct, hasBuild, chosenCount, candidateIssues, pFits } = context;
   const watchKind = pick.stock === 0 ? "availability" as const : "price" as const;
   // The same device at other storage capacities: separate listings, one choice.
   const variants = siblingVariants(pick, CATALOG[pSlot] ?? []);
@@ -100,6 +99,9 @@ export function buildProductVals(context: BuildContext) {
       pPriceExVat: money(Math.round(pick.price / 1.21)),
       pAllFromBrand: () => app.setState({ route: "category", category: pSlot, productSlot: pSlot, brand: pick.brand ?? "any", openDept: null }),
       pAddToCart: () => app.addToCart(pSlot, pick.id),
+      pCanAddToCart: stockCount > 0,
+      pMobileActionLabel: stockCount > 0 ? "Add to cart" : "Notify me",
+      pMobileAction: stockCount > 0 ? () => app.addToCart(pSlot, pick.id) : () => app.toggleWatchdog(pSlot, pick.id, watchKind),
       pBuildActionShow: buildableProduct ? "flex" : "none",
       pBuildActionLabel: "Add to my PC build",
       pAddToBuild: () => app.set(pSlot as PcSlot, pick.id),

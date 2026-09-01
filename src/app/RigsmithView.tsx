@@ -7,8 +7,12 @@ import { BuilderScreen } from "../features/pc-builder/BuilderScreen";
 import { CartScreen } from "../features/cart/CartScreen";
 import { CheckoutScreen, DoneScreen } from "../features/checkout/CheckoutScreens";
 import { FloatingBuildCard, Toast } from "../features/pc-builder/FloatingBuildCard";
+import { NotFoundScreen } from "../features/errors/NotFoundScreen";
+import { StorefrontSkeleton } from "../shared/layout/StorefrontSkeleton";
 
 export function RigsmithView({ v }: { v: Vals }) {
+  if (v.isLoading) return <StorefrontSkeleton />;
+  if (v.isNotFound) return <><NotFoundScreen v={v} /><Toast v={v} /></>;
   return (
     <>
       <AppShell v={v}>

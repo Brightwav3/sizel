@@ -22,6 +22,7 @@ export interface BuildSnapshot {
 export interface AppState {
   route: Route; productId: string; productColorId: string | null; category: Slot; productSlot: Slot; brandCategory: Slot | "all";
   catalogOpen: boolean; dept: string; openDept: string | null;
+  isLoading: boolean;
   /** The active build. Every slot always holds a part, so metrics stay defined. */
   picks: Picks;
   /** Slots the shopper (or an agent) explicitly chose; the rest are defaults. */
@@ -51,5 +52,6 @@ export interface AppState {
   cart: CartLine[];
   /** Products the shopper is watching for stock or a price drop. */
   watchdogs: Watchdog[];
-  step: number; toast: string | null; saved: number;
+  step: number; checkoutValues: Record<string, string>; checkoutErrors: Record<string, string>; demoOrderId: string | null;
+  toast: string | null; saved: number;
 }

@@ -1,4 +1,4 @@
-import React, { useEffect, useId, useRef, useState } from "react";
+import { useEffect, useId, useRef, useState } from "react";
 import { GPU_GAME_BENCHMARKS } from "../../data/benchmarks/gpuGames";
 import { GAME_PROTOCOLS } from "../../data/benchmarks/gameProtocol";
 import { GPU_GAME_PROVENANCE } from "../../data/benchmarks/gpuGameCalibration";

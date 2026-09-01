@@ -2,7 +2,7 @@
 
 ## Brand mark
 
-![Y-Ball logo](../logos/generated/y-ball.webp)
+![Y-Ball logo](../logos/y-ball.webp)
 
 ## Visual language
 

@@ -15,7 +15,7 @@ import type { BuildContext } from "../../entities/build/buildContext";
  * hero and the product page all still lead into it.
  */
 export function buildOverlayVals(context: BuildContext) {
-  const { app, s, m, route } = context;
+  const { app, s, route } = context;
   const steps = RigsmithApp.BUILD_STEPS;
   const chosenParts = s.chosen.map(slot => CATALOG[slot].find(part => part.id === s.picks[slot])!);
   const spent = chosenParts.reduce((total, part) => total + part.price, 0);
