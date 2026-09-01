@@ -20,6 +20,9 @@ const brandForSlug = (slug: string, slots: Slot[]) => Array.from(new Set(
 const slotForSlug = (slug: string): Slot | null =>
   (Object.keys(categorySlugs) as Slot[]).find(slot => categorySlugs[slot] === slug) || null;
 
+const allSlots = Object.keys(CATALOG) as Slot[];
+const firstSlotForBrand = (brand: string) => allSlots.find(slot => CATALOG[slot].some(product => product.brand === brand)) || "gpu" as Slot;
+
 export function stateFromLocation(): Partial<AppState> {
   const segments = window.location.pathname.split("/").filter(Boolean).map(segment => decodeURIComponent(segment));
   if (segments.length === 0) return { route: "home" };
@@ -28,6 +31,13 @@ export function stateFromLocation(): Partial<AppState> {
   if (segments[0] === "cart") return { route: "cart" };
   if (segments[0] === "checkout") return { route: "checkout", step: 0 };
   if (segments[0] === "order-complete") return { route: "done" };
+  if (segments[0] === "brands") {
+    const brand = segments[1] ? brandForSlug(segments[1], allSlots) : null;
+    if (!brand) return { route: "home" };
+    const category = firstSlotForBrand(brand);
+    const dept = DEPTS.find(item => item.cats.includes(category))?.id || "pc";
+    return { route: "brand", dept, openDept: null, category, productSlot: category, brand, brandCategory: "all", search: "" };
+  }
   const dept = segments[0] === "pc-parts" ? "pc" : segments[0] === "phones" ? "phone" : segments[0] === "gaming" ? "gaming" : null;
   if (!dept) return { route: "home" };
   const department = DEPTS.find(item => item.id === dept)!;
@@ -51,6 +61,7 @@ export function urlForState(state: AppState): string {
   if (state.route === "cart") return "/cart";
   if (state.route === "checkout") return "/checkout";
   if (state.route === "done") return "/order-complete";
+  if (state.route === "brand") return state.brand === "any" ? "/" : `/brands/${brandSlug(state.brand)}`;
   const slot = state.route === "product" ? state.productSlot : state.category;
   const productDept = slot === "phones" ? "phone" : slot === "consoles" ? "gaming" : "pc";
   const baseDept = state.route === "product" ? productDept : state.dept;

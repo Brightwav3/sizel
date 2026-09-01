@@ -3,24 +3,70 @@
 import React from "react";
 import { CATALOG, CAT_META, DESCS, SPECS } from "../../data/catalog/catalog";
 import { money } from "../../entities/build/metrics";
-import { partFits, productTitle } from "../../entities/product/queries";
+import { findProduct, partFits, productTitle } from "../../entities/product/queries";
 import { ratingFor } from "../../data/catalog/reviews";
 import { colorwaysFor } from "../../data/catalog/colorways";
 import { listingStock, stockLabel } from "../../data/catalog/listingStock";
-import type { PcSlot } from "../../shared/lib/types";
+import type { Part, PcSlot, Slot } from "../../shared/lib/types";
 import type { BuildContext } from "../../entities/build/buildContext";
 
 export function buildCatalogVals(context: BuildContext) {
-  const { app, s, route, on, dept, openDept, searchText, cat, catList, brandOf, specFilters, fitFilters, visible, hidden, bounds, filtersOn } = context;
+  const { app, s, route, on, dept, openDept, searchText, cat, catList, filterPool, brandOf, specFilters, fitFilters, visible, hidden, bounds, filtersOn, activeBrandCategory } = context;
   const listingCount = (products: typeof visible, slot: typeof cat) => products.reduce(
     (total, product) => total + Math.max(1, colorwaysFor(product, slot).length), 0,
   );
-  const visibleListings = listingCount(visible, cat);
-  const poolListings = listingCount(catList, cat);
+  const makeBrandCards = (products: Part[]) => products.flatMap(product => {
+    const cardCategory = findProduct(product.id)?.category ?? cat;
+    const colorways = colorwaysFor(product, cardCategory);
+    return (colorways.length ? colorways : [null]).map(colorway => {
+      const stockCount = listingStock(product, cardCategory, colorway?.id);
+      const out = stockCount === 0;
+      const sale = product.merchandising === "sale";
+      const fresh = product.merchandising === "new";
+      const low = !out && product.low;
+      return {
+        state: out ? "Out of stock" : low ? "Only " + product.low + " left" : product.days > 3 ? "Pre-order" : "",
+        stateBg: out ? "var(--gray-900)" : sale ? "var(--red-500)" : low ? "var(--amber-500)" : "var(--gray-600)",
+        stateShow: (out || low || product.days > 3) ? "inline-flex" : "none",
+        was: product.was ? money(product.was) : "", wasShow: product.was ? "inline" : "none",
+        priceKind: sale ? "sale" : fresh ? "new" : "standard",
+        priceHeader: sale ? "Price bomb" : fresh ? "New" : "",
+        pricePanelBg: sale ? "var(--danger)" : fresh ? "var(--accent-soft)" : "transparent",
+        pricePanelBorder: sale ? "none" : fresh ? "1px solid var(--blue-100)" : "none",
+        priceHeaderBg: sale ? "var(--price-bomb)" : "var(--accent-active)",
+        priceHeaderFg: sale ? "var(--text-primary)" : "var(--text-inverse)",
+        priceFg: sale ? "var(--text-inverse)" : fresh ? "var(--accent-active)" : "var(--danger)",
+        dim: out ? 0.55 : 1,
+        addBg: out ? "var(--surface-sunken)" : "var(--surface-card)",
+        addFg: out ? "var(--text-tertiary)" : "var(--text-primary)",
+        name: `${productTitle(product, cardCategory)}${colorway ? ` · ${colorway.name}` : ""}`,
+        brand: brandOf(product), image: colorway?.imagePath ?? product.imagePath,
+        rating: ratingFor(product), inBuild: false,
+        watched: app.isWatched(product.id, product.stock === 0 ? "availability" : "price"),
+        watch: () => app.toggleWatchdog(cardCategory, product.id, product.stock === 0 ? "availability" : "price"),
+        desc: (DESCS[cardCategory] || (() => CAT_META[cardCategory].blurb))(product),
+        specs: (SPECS[cardCategory] || (() => []))(product),
+        cta: out ? "Notify me" : "Add to cart",
+        add: () => out
+          ? app.setState({ toast: "Out of stock. Demo only — email alerts are not available." }, () => app.flash())
+          : app.addToCart(cardCategory, product.id),
+        good: product.good || product.note || product.meaning || CAT_META[cardCategory].blurb,
+        price: money(product.price), tag: product.tag, tagFg: "var(--text-tertiary)", bd: "var(--border-subtle)",
+        stock: out ? "Out of stock" : product.days <= 2 ? `In stock · ${stockLabel(stockCount)} pcs` : "Ships in " + product.days + " days",
+        stockFg: out ? "var(--text-tertiary)" : product.days <= 2 ? "var(--green-600)" : "var(--amber-600)",
+        go: () => app.setState({ route: "product", productSlot: cardCategory, productId: product.id, productColorId: colorway?.id ?? null, openDept: null }),
+      };
+    });
+  });
+  const brandProducts = route === "brand" ? visible : [];
+  const visibleListings = route === "brand" ? visible.length : listingCount(visible, cat);
+  const poolListings = route === "brand"
+    ? context.brandPool.filter(product => activeBrandCategory === undefined || findProduct(product.id)?.category === activeBrandCategory).length
+    : listingCount(catList, cat);
   return {
       filtersOpen: filtersOn ? "true" : "false",
       catName: s.search ? "Search results" : s.brand === "any" ? CAT_META[cat].name : s.brand + " " + CAT_META[cat].name.toLowerCase(),
-      gpuFilterDisplay: cat === "gpu" && !s.openDept ? "flex" : "none",
+      gpuFilterDisplay: route !== "brand" && cat === "gpu" && !s.openDept ? "flex" : "none",
       catSub: visibleListings + " shown of " + poolListings + " listings",
       minPrice: s.minPrice, minPriceLabel: money(s.minPrice), maxPrice: s.maxPrice, maxPriceLabel: money(s.maxPrice),
       setMinPrice: (e: any) => app.setState({ minPrice: Math.min(+e.target.value, s.maxPrice - 20) }),
@@ -31,13 +77,13 @@ export function buildCatalogVals(context: BuildContext) {
         bg: s.useFilter === l ? "var(--gray-900)" : "#fff",
         bd: s.useFilter === l ? "var(--gray-900)" : "var(--border-default)",
       })),
-      clearFilters: () => app.setState({ useFilter: "any", minPrice: 0, maxPrice: 2200, fitOnly: false, fastShip: false, brand: "any", facetFilters: {}, stockOnly: false, onSale: false, sort: "popular", search: "" }),
+      clearFilters: () => app.setState({ useFilter: "any", minPrice: 0, maxPrice: 2200, fitOnly: false, fastShip: false, brand: route === "brand" ? s.brand : "any", brandCategory: route === "brand" ? "all" : s.brandCategory, facetFilters: {}, stockOnly: false, onSale: false, sort: "popular", search: "" }),
       /** Every spec facet in one list — the shopper does not think in "fit" vs "technical". */
       facetGroups: specFilters,
       fitFilters,
-      brandFilters: ["any", ...Array.from(new Set(catList.map(brandOf)))].map(b => ({
+      brandFilters: (route === "brand" ? [s.brand] : ["any", ...Array.from(new Set(catList.map(brandOf))) ]).map(b => ({
         label: b === "any" ? "All brands" : b,
-        count: b === "any" ? String(catList.length) : String(catList.filter(x => brandOf(x) === b).length),
+        count: b === "any" ? String(filterPool.length) : String(filterPool.filter(x => brandOf(x) === b).length),
         mark: s.brand === b ? "check" : "",
         bg: s.brand === b ? "var(--gray-900)" : "#fff",
         bd: s.brand === b ? "var(--gray-900)" : "var(--border-default)",
@@ -70,7 +116,7 @@ export function buildCatalogVals(context: BuildContext) {
           : c.id === "stock" ? app.setState({ stockOnly: !s.stockOnly })
           : app.setState({ minPrice: 0, maxPrice: s.maxPrice <= 500 ? 2200 : 500 }),
       })),
-      anyFilter: s.onSale || s.stockOnly || s.fastShip || s.fitOnly || s.minPrice > 0 || s.maxPrice < 2200 || s.brand !== "any" || s.useFilter !== "any" || s.sort !== "popular" || !!s.search || Object.values(s.facetFilters).some(values => values.length > 0),
+      anyFilter: s.onSale || s.stockOnly || s.fastShip || s.fitOnly || s.minPrice > 0 || s.maxPrice < 2200 || (s.brand !== "any" && route !== "brand") || (route === "brand" && s.brandCategory !== "all") || s.useFilter !== "any" || s.sort !== "popular" || !!s.search || Object.values(s.facetFilters).some(values => values.length > 0),
 
       // Filter panel ------------------------------------------------------
       visibleCount: `${visibleListings} of ${poolListings}`,
@@ -78,7 +124,8 @@ export function buildCatalogVals(context: BuildContext) {
       /** What is currently narrowing the list, each chip removing just itself. */
       activeFilterChips: [
         ...(s.search ? [{ label: `"${s.search}"`, clear: () => app.setState({ search: "" }) }] : []),
-        ...(s.brand !== "any" ? [{ label: s.brand, clear: () => app.setState({ brand: "any" }) }] : []),
+        ...(s.brand !== "any" && route !== "brand" ? [{ label: s.brand, clear: () => app.setState({ brand: "any" }) }] : []),
+        ...(route === "brand" && s.brandCategory !== "all" ? [{ label: CAT_META[s.brandCategory].name, clear: () => app.setState({ brandCategory: "all" }) }] : []),
         ...(s.minPrice > bounds.min || s.maxPrice < bounds.max
           ? [{ label: `${money(s.minPrice)} – ${money(s.maxPrice)}`, clear: () => app.setState({ minPrice: 0, maxPrice: 2200 }) }] : []),
         ...(s.stockOnly ? [{ label: "In stock", clear: () => app.setState({ stockOnly: false }) }] : []),
@@ -102,7 +149,7 @@ export function buildCatalogVals(context: BuildContext) {
           const on = s.minPrice === from && s.maxPrice === to;
           return {
             label: index === 0 ? `Under ${money(to)}` : index === 2 ? `${money(from)} and up` : `${money(from)} – ${money(to)}`,
-            count: String(catList.filter(product => product.price >= from && product.price <= to).length),
+            count: String(filterPool.filter(product => product.price >= from && product.price <= to).length),
             on,
             go: () => app.setState(on ? { minPrice: 0, maxPrice: 2200 } : { minPrice: from, maxPrice: to }),
           };
@@ -111,15 +158,15 @@ export function buildCatalogVals(context: BuildContext) {
 
       /** Availability and offers, each with the number of listings it leaves. */
       availabilityFilters: [
-        { id: "stock", label: "In stock", on: s.stockOnly, count: catList.filter(p => p.stock !== 0).length, go: () => app.setState({ stockOnly: !s.stockOnly }) },
-        { id: "fast", label: "Ships within 2 days", on: s.fastShip, count: catList.filter(p => p.days <= 2).length, go: () => app.setState({ fastShip: !s.fastShip }) },
-        { id: "sale", label: "On sale", on: s.onSale, count: catList.filter(p => p.merchandising === "sale").length, go: () => app.setState({ onSale: !s.onSale }) },
+        { id: "stock", label: "In stock", on: s.stockOnly, count: filterPool.filter(p => p.stock !== 0).length, go: () => app.setState({ stockOnly: !s.stockOnly }) },
+        { id: "fast", label: "Ships within 2 days", on: s.fastShip, count: filterPool.filter(p => p.days <= 2).length, go: () => app.setState({ fastShip: !s.fastShip }) },
+        { id: "sale", label: "On sale", on: s.onSale, count: filterPool.filter(p => p.merchandising === "sale").length, go: () => app.setState({ onSale: !s.onSale }) },
       ].map(f => ({ ...f, count: String(f.count), mark: f.on ? "check" : "", bg: f.on ? "var(--gray-900)" : "var(--gray-0)", bd: f.on ? "var(--gray-900)" : "var(--border-default)" })),
 
       /** The build-aware filter — the reason this shop is not a generic grid. */
-      fitFilterShow: app.chosenPicks && Object.keys(app.chosenPicks()).length > 0 && ["gpu", "cpu", "board", "ram", "storage", "cooler", "psu", "case", "fans"].includes(cat) ? "flex" : "none",
+      fitFilterShow: route !== "brand" && app.chosenPicks && Object.keys(app.chosenPicks()).length > 0 && ["gpu", "cpu", "board", "ram", "storage", "cooler", "psu", "case", "fans"].includes(cat) ? "flex" : "none",
       fitOnlyOn: s.fitOnly,
-      fitOnlyCount: String(catList.filter(product => partFits(product, cat, app.chosenPicks())).length),
+      fitOnlyCount: String(filterPool.filter(product => partFits(product, cat, app.chosenPicks())).length),
       fitOnlyLabel: `Fits my ${Object.keys(app.chosenPicks()).length}-part build`,
       toggleFitOnly: () => app.setState({ fitOnly: !s.fitOnly }),
 
@@ -205,6 +252,7 @@ export function buildCatalogVals(context: BuildContext) {
           go: () => app.setState({ route: "product", productSlot: cardCategory, productId: g.id, productColorId: colorway?.id ?? null, openDept: null }),
         };
       }))),
+      brandCards: makeBrandCards(brandProducts),
       hiddenNote: hidden > 0 ? hidden + " products hidden by your filters." : null,
   };
 }

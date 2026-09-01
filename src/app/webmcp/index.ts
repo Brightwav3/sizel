@@ -24,6 +24,9 @@ import type { ToolCallResult, ToolExecuteOptions } from "./webmcpApi";
 const registered = new Map<string, AbortController>();
 const WEBMCP_TIMINGS_KEY = "__rigsmithWebmcpTimings";
 type WebmcpTiming = { name: string; ms: number; outcome: "ok" | "error" };
+let userHasControl = false;
+let controlRevision = 0;
+let agentSessionActive = false;
 
 const timingNow = () => typeof performance !== "undefined" ? performance.now() : Date.now();
 
@@ -60,6 +63,17 @@ const guard = (
   async (args: Record<string, any>, options?: ToolExecuteOptions): Promise<ToolCallResult> => {
     const startedAt = timingNow();
     const given = args ?? {};
+    if (userHasControl) {
+      const result = fail("user_control", "The shopper navigated to another page and took control. Stop making changes until the shopper asks you to continue.");
+      recordTiming(name, startedAt, "error");
+      return result;
+    }
+    if (options?.signal?.aborted) {
+      const result = fail("action_cancelled", "The shopper cancelled this agent action.");
+      recordTiming(name, startedAt, "error");
+      return result;
+    }
+    const actionRevision = controlRevision;
     const missing = required.filter(key => given[key] === undefined || given[key] === null);
     if (missing.length) {
       const result = fail("missing_argument", `Required: ${missing.join(", ")}.`);
@@ -67,7 +81,13 @@ const guard = (
       return result;
     }
     try {
+      agentSessionActive = true;
       const result = await execute(given, options);
+      if (userHasControl || actionRevision !== controlRevision || options?.signal?.aborted) {
+        const cancelled = fail("user_control", "The shopper navigated away and took control before this agent action finished.");
+        recordTiming(name, startedAt, "error");
+        return cancelled;
+      }
       recordTiming(name, startedAt, result.isError ? "error" : "ok");
       return result;
     } catch (error) {
@@ -84,6 +104,7 @@ function drop(name: string) {
 }
 
 function apply() {
+  if (userHasControl) return;
   const context = modelContext();
   if (!context) {
     // Some browser integrations inject the API after React mounts.
@@ -131,6 +152,7 @@ function apply() {
 
 /** Register the stable demo set. Route changes do not churn the registry. */
 export function syncWebmcpTools(): void {
+  if (userHasControl) return;
   started = true;
   retries = 0;
   clearTimeout(retry);
@@ -144,6 +166,15 @@ export function stopWebmcpTools(): void {
   clearTimeout(retry);
   retry = undefined;
   for (const name of Array.from(registered.keys())) drop(name);
+}
+
+/** Withdraw every tool after the agent has started working and block later calls. */
+export function takeUserControl(): boolean {
+  if (userHasControl || !agentSessionActive) return false;
+  userHasControl = true;
+  controlRevision += 1;
+  stopWebmcpTools();
+  return true;
 }
 
 /** Names submitted to the browser, including pending acknowledgements. */

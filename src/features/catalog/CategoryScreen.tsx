@@ -6,7 +6,7 @@ import { RatingLine } from "../../shared/ui/Stars";
 import "./catalog.css";
 
 /** Category listing: crumb header, brand tiles, inline sorts and chips, product grid. */
-export const CategoryScreen: React.FC<{ v: Vals }> = ({ v }) => v.departmentOverview ? <DepartmentOverview v={v} /> : (
+export const CategoryScreen: React.FC<{ v: Vals }> = ({ v }) => v.brandOverview ? <BrandOverview v={v} /> : v.departmentOverview ? <DepartmentOverview v={v} /> : (
   <div className="t-page category-page">
     <div className="category-head">
       <div>
@@ -106,9 +106,90 @@ const DepartmentOverview: React.FC<{ v: Vals }> = ({ v }) => (
       <div className="eyebrow">Department</div>
       <h1>{v.deptName}</h1>
     </header>
+    <section className="department-page__section" aria-labelledby="department-categories-title">
+      <div className="category-rule">
+        <div className="eyebrow" id="department-categories-title">Categories</div>
+        <div className="category-rule__line" />
+      </div>
+      <div className="department-category-grid">
+        {v.catalog.map((category: Vals) => (
+          <button type="button" className="department-category-card" key={category.name} onClick={category.go}>
+            <span className="department-category-card__icon ms">{category.icon}</span>
+            <span className="department-category-card__copy"><strong>{category.name}</strong><small>{category.count} products</small></span>
+            <span className="ms department-category-card__arrow">arrow_forward</span>
+          </button>
+        ))}
+      </div>
+    </section>
+    <section className="department-page__section" aria-labelledby="department-brands-title">
+      <div className="category-rule">
+        <div className="eyebrow" id="department-brands-title">Brands in {v.deptName.toLowerCase()}</div>
+        <div className="category-rule__line" />
+      </div>
+      <div className="brand-row__tiles">
+        {v.subcats.map((brand: Vals, index: number) => (
+          <button type="button" key={`${brand.name}-${index}`} className="card prod brand-tile" onClick={brand.go} style={{ "--tile-bg": brand.bg, "--tile-border": brand.bd, "--tile-fg": brand.fg } as React.CSSProperties}>
+            <img src={brand.logo} alt={`${brand.name} logo`} className="brand-tile-logo" />
+            <div className="brand-tile__copy"><div className="brand-tile__name">{brand.name}</div><div className="num brand-tile__count">{brand.count} products</div></div>
+          </button>
+        ))}
+      </div>
+    </section>
+    <div className="category-rule">
+      <div className="eyebrow">All products</div>
+      <div className="category-rule__line" />
+      <div className="num category-rule__count">{v.departmentCards.length} shown</div>
+    </div>
     <div className="catalog-grid">
       {v.departmentCards.map((product: Vals, index: number) => <ProductCard key={`${product.name}-${index}`} g={product} />)}
     </div>
+  </div>
+);
+
+const BrandOverview: React.FC<{ v: Vals }> = ({ v }) => (
+  <div className="t-page category-page brand-page">
+    <div className="category-head">
+      <div>
+        <nav aria-label="Breadcrumb" className="category-crumbs">
+          {v.crumbs.map((crumb: Vals, index: number) => <React.Fragment key={crumb.label}>
+            {index > 0 && <span aria-hidden="true">/</span>}
+            <button type="button" onClick={crumb.go} aria-current={crumb.current ? "page" : undefined}>{crumb.label}</button>
+          </React.Fragment>)}
+        </nav>
+        <div className="brand-page__identity"><img src={v.brandLogo(v.brandName)} alt="" /><div><div className="category-title">{v.brandName}</div><div className="category-sub">{v.brandSub}</div></div></div>
+      </div>
+      <div className="category-head__spacer" />
+    </div>
+
+    <div className="brand-category-filter" role="group" aria-label="Filter by category">
+      <span className="eyebrow">Categories</span>
+      <div className="brand-category-filter__options">
+        {[{ id: "all", label: "All products", count: String(v.brandPool.length), on: v.activeBrandCategory === "all", go: v.brandAllCategoriesGo }, ...v.brandCategoryFilters].map((option: Vals) => (
+          <button key={option.id} type="button" className={option.on ? "is-on" : ""} onClick={option.go}>{option.label}<span className="num">{option.count}</span></button>
+        ))}
+      </div>
+    </div>
+
+    <div className="category-rule">
+      <div className="eyebrow">{v.activeBrandCategory === "all" ? "All products" : v.catName}</div>
+      <div className="category-rule__line" />
+      <div className="num category-rule__count">{v.catSub}</div>
+    </div>
+
+    <div className="category-controls">
+      <div className="sort-group">
+        {v.inlineSorts.map((o: Vals, i: number) => <button type="button" key={i} className="sort-group__option" onClick={o.go} style={{ "--option-bg": o.bg, "--option-fg": o.fg, "--option-weight": o.fw, "--option-shadow": o.sh } as React.CSSProperties}>{o.label}</button>)}
+      </div>
+      <div className="category-controls__divider" />
+      {v.inlineChips.map((c: Vals, i: number) => <button type="button" key={i} className="filter-chip" onClick={c.go} style={{ "--chip-bg": c.bg, "--chip-fg": c.fg, "--chip-border": c.bd, "--chip-weight": c.fw, "--chip-icon-display": c.iconShow } as React.CSSProperties}><span className="ms">{c.icon}</span>{c.label}</button>)}
+      <div className="category-controls__spacer" />
+      {v.anyFilter && <button type="button" className="text-button clear-filters" onClick={v.clearFilters}>Clear filters</button>}
+    </div>
+
+    <div className="catalog-grid">
+      {v.brandCards.map((g: Vals, i: number) => <ProductCard key={`${g.name}-${i}`} g={g} />)}
+    </div>
+    {v.hiddenNote && <div className="card hidden-note"><span className="ms">visibility_off</span><div className="hidden-note__copy">{v.hiddenNote}</div><div className="hidden-note__spacer" /><button type="button" className="text-button clear-filters" onClick={v.clearFilters}>Clear filters</button></div>}
   </div>
 );
 

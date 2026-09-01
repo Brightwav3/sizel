@@ -168,6 +168,47 @@
 .hero-rail__promise span { display: flex; flex-direction: column; gap: 1px; }
 .hero-rail__promise strong { font-size: var(--text-sm); font-weight: var(--weight-medium); }
 .hero-rail__promise small { color: var(--gray-300); font-size: var(--text-xs); }
+.hero-rail__promise--tools { width: 100%; border: 0; font: inherit; text-align: left; cursor: pointer; transition: background 140ms ease, transform 140ms ease; }
+.hero-rail__promise--tools:hover { background: var(--gray-800); transform: translateY(-1px); }
+
+/* WebMCP explainer ------------------------------------------------------- */
+.webmcp-dialog__showcase { margin-bottom: var(--space-5); padding: var(--space-3); border: 1px solid var(--border-default); border-radius: var(--radius-nav); background: var(--surface-sunken); }
+.webmcp-dialog__showcase-head { display: flex; align-items: center; gap: var(--space-3); margin: 0 0 var(--space-3); }
+.webmcp-dialog__showcase-title { display: flex; flex-direction: column; gap: 3px; }
+.webmcp-dialog__showcase-title strong { color: var(--text-primary); font-size: var(--text-sm); font-weight: var(--weight-medium); }
+.webmcp-dialog__showcase-code { position: relative; padding: var(--space-3) 48px var(--space-3) var(--space-3); border: 1px solid var(--border-subtle); border-radius: var(--radius-xs); background: var(--surface-card); }
+.webmcp-dialog__copy { position: absolute; top: 8px; right: 8px; display: grid; place-items: center; width: 28px; height: 28px; padding: 0; border: 1px solid var(--border-default); border-radius: var(--radius-xs); background: var(--surface-card); color: var(--text-secondary); cursor: pointer; }
+.webmcp-dialog__copy:hover { border-color: var(--border-strong); color: var(--text-primary); }
+.webmcp-dialog__copy.is-copied { border-color: color-mix(in srgb, var(--success) 45%, var(--border-default)); background: color-mix(in srgb, var(--success) 10%, var(--surface-card)); color: var(--success); }
+.webmcp-dialog__showcase pre { max-height: 180px; margin: 0; overflow: auto; white-space: pre-wrap; word-break: break-word; }
+.webmcp-dialog__showcase code { color: var(--text-secondary); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: var(--type-meta); line-height: var(--leading-normal); }
+.webmcp-dialog { width: min(720px, calc(100% - var(--space-8))); max-height: calc(100dvh - var(--space-8)); overflow: auto; padding: 0; border: 0; border-radius: var(--radius-card); background: var(--surface-card); color: var(--text-primary); box-shadow: var(--shadow-modal); }
+.webmcp-dialog::backdrop { background: rgb(0 0 0 / .52); }
+.webmcp-dialog__content { position: relative; padding: var(--space-8); }
+.webmcp-dialog__close { position: absolute; top: var(--space-3); right: var(--space-3); display: grid; place-items: center; width: 36px; height: 36px; padding: 0; border: 1px solid var(--border-default); border-radius: var(--radius-nav); background: var(--surface-card); color: var(--text-secondary); cursor: pointer; }
+.webmcp-dialog__close:hover { background: var(--surface-hover); color: var(--text-primary); }
+.webmcp-dialog h2 { margin: var(--space-2) 48px var(--space-2) 0; font-size: var(--type-heading-lg); font-weight: var(--weight-medium); }
+.webmcp-dialog__intro { max-width: 58ch; margin: 0 0 var(--space-5); color: var(--text-secondary); font-size: var(--text-sm); line-height: var(--leading-normal); }
+.webmcp-dialog__status { display: flex; align-items: center; gap: var(--space-2); margin-bottom: var(--space-4); padding: var(--space-3); border: 1px solid var(--border-subtle); border-radius: var(--radius-nav); color: var(--text-secondary); font-size: var(--text-xs); }
+.webmcp-dialog__status .num { margin-left: auto; color: var(--text-tertiary); }
+.webmcp-dialog__status-dot { width: 8px; height: 8px; border-radius: var(--radius-pill); background: var(--success); box-shadow: 0 0 0 3px color-mix(in srgb, var(--success) 15%, transparent); }
+.webmcp-dialog__list { display: flex; flex-direction: column; border: 1px solid var(--border-subtle); border-radius: var(--radius-nav); }
+.webmcp-dialog__tool { display: grid; grid-template-columns: 32px minmax(0, 1fr) auto; align-items: start; gap: var(--space-3); padding: var(--space-3); border-bottom: 1px solid var(--border-subtle); }
+.webmcp-dialog__tool:last-child { border-bottom: 0; }
+.webmcp-dialog__tool-icon { display: grid; place-items: center; width: 28px; height: 28px; border-radius: var(--radius-xs); background: var(--accent-soft); color: var(--accent-active); font-size: var(--text-sm); }
+.webmcp-dialog__tool code { color: var(--text-primary); font-family: ui-monospace, SFMono-Regular, Consolas, monospace; font-size: var(--text-xs); font-weight: var(--weight-medium); }
+.webmcp-dialog__tool p { overflow: hidden; margin: 3px 0 0; color: var(--text-tertiary); font-size: var(--type-meta); line-height: var(--leading-normal); text-overflow: ellipsis; white-space: nowrap; }
+.webmcp-dialog__badge { padding: 3px 6px; border-radius: var(--radius-pill); background: var(--surface-sunken); color: var(--text-tertiary); font-size: var(--type-meta); white-space: nowrap; }
+.webmcp-dialog__note { display: flex; align-items: center; gap: var(--space-2); margin: var(--space-4) 0 0; color: var(--text-tertiary); font-size: var(--type-meta); }
+.webmcp-dialog__note .ms { color: var(--success); font-size: var(--text-sm); }
+
+@media (max-width: 620px) {
+  .webmcp-dialog { width: calc(100% - var(--space-4)); }
+  .webmcp-dialog__content { padding: var(--space-5); }
+  .webmcp-dialog__showcase-head { align-items: flex-start; flex-direction: column; }
+  .webmcp-dialog__tool { grid-template-columns: 28px minmax(0, 1fr); }
+  .webmcp-dialog__badge { grid-column: 2; justify-self: start; }
+}
 
 @media (max-width: 1240px) {
   .hero-banner__slide { grid-template-columns: minmax(0, 1fr) minmax(0, 38%); gap: var(--space-4); }

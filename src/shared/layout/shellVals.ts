@@ -1,32 +1,47 @@
 import React from "react";
 import { CAT_META } from "../../data/catalog/catalog";
 
-import type { PcSlot } from "../lib/types";
+import type { PcSlot, Slot } from "../lib/types";
 import { CATALOG } from "../../data/catalog/catalog";
 import { money } from "../../entities/build/metrics";
 import { productTitle } from "../../entities/product/queries";
 import type { BuildContext } from "../../entities/build/buildContext";
 
 export function buildShellVals(context: BuildContext) {
-  const { app, s, route, on, shopping, dept, depts, openDept, categories, cat, catList, brandOf, brandLogo } = context;
+  const { app, s, route, on, shopping, dept, depts, openDept, categories, cat, catList, brandOf, brandLogo, brandPool, activeBrandCategory, brandCategoryFilters } = context;
   const searchCategory = shopping ? s.category : "gpu";
   const searchDept = searchCategory === "phones" ? "phone" : searchCategory === "consoles" ? "gaming" : "pc";
+  const brandCategoryNames = (Object.keys(CATALOG) as Slot[])
+    .filter(slot => brandPool.some(product => CATALOG[slot].some(candidate => candidate.id === product.id)))
+    .map(slot => CAT_META[slot].name);
   return {
       depts, catalog: categories,
       deptName: s.brand === "any" ? dept.name : `${s.brand} ${dept.name}`,
       departmentOverview: shopping && Boolean(s.openDept),
+      brandOverview: route === "brand",
+      brandName: s.brand,
+      brandSub: `${brandPool.length} products${brandCategoryNames.length ? ` across ${brandCategoryNames.join(", ")}` : ""}`,
+      brandPool,
+      brandLogo,
+      activeBrandCategory: activeBrandCategory ?? "all",
+      brandCategoryFilters,
+      brandAllCategoriesGo: () => app.setState({ brandCategory: "all" }),
       subcatLabel: s.search ? "Brands in search results" : "Brands in " + CAT_META[cat].name.toLowerCase(),
       catNameLower: CAT_META[cat].name.toLowerCase(),
       brandRowShow: s.brand === "any" ? "flex" : "none",
       brandBackShow: s.brand === "any" ? "none" : "flex",
-      brandClear: () => app.setState({ brand: "any" }),
+      brandClear: () => route === "brand" ? app.go("home") : app.setState({ brand: "any" }),
       gridLabel: s.brand === "any" ? CAT_META[cat].name : s.brand + " " + CAT_META[cat].name.toLowerCase(),
       subcats: Array.from(new Set(catList.map(brandOf))).map(b => ({
         name: b, icon: "verified", logo: brandLogo(b), count: String(catList.filter(x => brandOf(x) === b).length),
         bg: "#fff", bd: "var(--border-subtle)", fg: "var(--text-primary)", ic: "var(--text-secondary)",
         go: () => app.setState({ brand: b }),
       })),
-      crumbs: [
+      crumbs: route === "brand" ? [
+        { label: "Home", current: false, go: () => app.go("home") },
+        { label: "Brands", current: false, go: () => app.go("home") },
+        { label: s.brand, current: true, go: () => undefined },
+      ] : [
         { label: dept.name, current: false, go: () => app.setState({ route: "category", dept: dept.id, category: dept.cats[0], productSlot: dept.cats[0], brand: "any", openDept: dept.id }) },
         ...(dept.name === CAT_META[s.category].name ? [] : [{ label: CAT_META[s.category].name, current: s.brand === "any", go: () => app.setState({ route: "category", dept: dept.id, category: s.category, productSlot: s.category, brand: "any", openDept: null }) }]),
         ...(s.brand === "any" ? [] : [{ label: s.brand, current: true, go: () => app.setState({ route: "category", dept: dept.id, category: s.category, productSlot: s.category, brand: s.brand, openDept: null }) }]),
@@ -34,7 +49,7 @@ export function buildShellVals(context: BuildContext) {
       goHome: () => app.go("home"), goBuilder: () => app.go("builder"),
       goCategory: () => app.go("category"), goCart: () => app.go("cart"),
       goCheckout: () => app.startCheckout(),
-      isHome: on("home"), isCategory: on("category"), isProduct: on("product"),
+      isHome: on("home"), isCategory: on("category") || on("brand"), isProduct: on("product"),
       isBuilder: on("builder"), isCart: on("cart"),
       isCheckout: on("checkout"), isDone: on("done"),
       startGuided: () => app.setState({ route: "builder", chosen: [], builderSlot: "cpu" }),
