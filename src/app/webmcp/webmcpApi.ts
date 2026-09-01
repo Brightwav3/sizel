@@ -9,6 +9,9 @@
 export interface ToolTextContent { type: "text"; text: string }
 export interface ToolCallResult { content: ToolTextContent[]; isError?: boolean }
 
+/** Options supplied by WebMCP for one tool execution. */
+export interface ToolExecuteOptions { signal: AbortSignal }
+
 /**
  * Tool annotations, as `ToolAnnotations` in the specification. They belong
  * under `annotations`; Chrome's origin-trial build also reads them from the
@@ -29,7 +32,7 @@ export interface ToolDescriptor extends ToolAnnotations {
   inputSchema: Record<string, unknown>;
   /** Where the specification puts the hints. */
   annotations?: ToolAnnotations;
-  execute(args: Record<string, any>): Promise<ToolCallResult> | ToolCallResult;
+  execute(args: Record<string, any>, options?: ToolExecuteOptions): Promise<ToolCallResult> | ToolCallResult;
 }
 
 /**

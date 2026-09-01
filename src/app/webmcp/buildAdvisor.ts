@@ -7,26 +7,15 @@
  * stays the single write path.
  */
 import { CATALOG, DEFAULT_PICKS, partIn } from "../../data/catalog/catalog";
-import { RES, buildFits, buildNumbers, compatibilityIssues, metrics, part, powerDraw, requiredPower } from "../../entities/build/metrics";
+import { listingStock } from "../../data/catalog/listingStock";
+import { PERFORMANCE_UNAVAILABLE, buildFits, buildNumbers, compatibilityIssues, part, powerDraw, requiredPower } from "../../entities/build/metrics";
 import type { Resolution } from "../../entities/build/metrics";
 import { partFits } from "../../entities/product/queries";
 import type { Part, PcSlot, Picks } from "../../shared/lib/types";
+import { budgetPlan } from "../../entities/build/budgetPlan";
 
 /** Constraint order: each part narrows the ones after it. */
 const PICK_ORDER: PcSlot[] = ["cpu", "board", "ram", "cooler", "gpu", "psu", "case", "storage", "fans"];
-
-/**
- * Share of the budget each slot may claim, by what the shopper is building for.
- *
- * The resolution decides where the money belongs. At 4K the graphics card sets
- * the frame rate almost alone, so it takes nearly half; at 1080p the processor
- * matters much more and the card much less. Each column sums to 1.
- */
-const BUDGET_SHARE: Record<Resolution, Record<PcSlot, number>> = {
-  "1080p": { gpu: 0.30, cpu: 0.22, board: 0.10, ram: 0.08, storage: 0.08, psu: 0.07, case: 0.06, cooler: 0.06, fans: 0.03 },
-  "1440p": { gpu: 0.36, cpu: 0.17, board: 0.09, ram: 0.08, storage: 0.08, psu: 0.07, case: 0.06, cooler: 0.06, fans: 0.03 },
-  "4K":    { gpu: 0.45, cpu: 0.13, board: 0.08, ram: 0.07, storage: 0.07, psu: 0.06, case: 0.05, cooler: 0.06, fans: 0.03 },
-};
 
 /** How far over the asked-for budget a proposal may go before it is refused. */
 export const BUDGET_TOLERANCE = 0.10;
@@ -57,6 +46,88 @@ const CHEAPEST: Record<PcSlot, number> = Object.fromEntries(
 /** Case fans ship with the case, so the fan pack always follows the chassis. */
 export const fansForCase = (caseId: string) =>
   CATALOG.fans.find(pack => pack.id === `${caseId}::fans`)?.id ?? DEFAULT_PICKS.fans;
+
+/**
+ * The optional starter leaves the graphics card for the agent to choose.
+ *
+ * This is deliberately a small, explicit preset rather than a hidden whole
+ * build recommendation: it fills only the supporting slots, uses 32 GB of
+ * memory and a 750 W supply, and leaves the GPU unchosen. The agent can then
+ * rank cards against the actual budget and ask about a slow or unavailable
+ * candidate before changing anything.
+ */
+export interface BalancedStarter {
+  picks: Picks;
+  chosen: PcSlot[];
+  price: number;
+}
+
+const STARTER_SLOTS: PcSlot[] = ["cpu", "board", "ram", "storage", "cooler", "psu", "case", "fans"];
+const inStock = (slot: PcSlot, product: Part) => listingStock(product, slot) > 0;
+
+const cheapestStarterPart = (
+  slot: PcSlot,
+  picks: Partial<Picks>,
+  predicate: (product: Part) => boolean = () => true,
+) => CATALOG[slot]
+  .filter(product => inStock(slot, product) && predicate(product) && partFits(product, slot, picks))
+  .sort((a, b) => a.price - b.price || a.id.localeCompare(b.id))[0];
+
+/**
+ * Fill the non-GPU foundation for a demo build. A GPU is never selected by
+ * this helper; the default card remains in `picks` only as a compatibility
+ * placeholder until the agent chooses a real one.
+ */
+export function balancedStarter(budget: number, _res: Resolution = "1440p"): BalancedStarter | null {
+  if (!Number.isFinite(budget) || budget <= 0) return null;
+  const picks: Partial<Picks> = { ...DEFAULT_PICKS };
+
+  // Start from the inexpensive default platform, then choose the requested
+  // capacity and supporting parts around it. Every candidate is stock checked
+  // and tested against the same compatibility rules as the public tools.
+  const cpu = cheapestStarterPart("cpu", picks);
+  if (!cpu) return null;
+  picks.cpu = cpu.id;
+  const board = cheapestStarterPart("board", picks);
+  if (!board) return null;
+  picks.board = board.id;
+
+  const ram = cheapestStarterPart("ram", picks, product =>
+    Number((product.specifications as any)?.memory?.capacityGB ?? 0) >= 32);
+  if (!ram) return null;
+  picks.ram = ram.id;
+
+  const storage = cheapestStarterPart("storage", picks, product =>
+    Number((product.specifications as any)?.storage?.capacityGB ?? 0) >= 1000);
+  if (!storage) return null;
+  picks.storage = storage.id;
+
+  const cooler = cheapestStarterPart("cooler", picks);
+  if (!cooler) return null;
+  picks.cooler = cooler.id;
+
+  // A 750 W supply keeps the preset useful for the unavailable GX 5070 Ti
+  // path without pretending that every higher-end card will fit.
+  const psu = cheapestStarterPart("psu", picks, product => (product.watt ?? 0) >= 750);
+  if (!psu) return null;
+  picks.psu = psu.id;
+
+  // Leave enough room for cards up to 315 mm. The case and board are still
+  // selected by the catalog's real form-factor and clearance constraints.
+  const chassis = cheapestStarterPart("case", picks, product => (product.clearance ?? 0) >= 315);
+  if (!chassis) return null;
+  picks.case = chassis.id;
+  picks.fans = fansForCase(chassis.id);
+
+  const complete = { ...DEFAULT_PICKS, ...picks } as Picks;
+  if (compatibilityIssues(complete).length) return null;
+  const price = STARTER_SLOTS.reduce((sum, slot) => sum + (partIn(slot, complete[slot])?.price ?? 0), 0);
+  // There must still be at least one compatible in-stock GPU to choose.
+  const hasGpu = CATALOG.gpu.some(product =>
+    inStock("gpu", product) && partFits(product, "gpu", complete) && price + product.price <= budget);
+  if (!hasGpu) return null;
+  return { picks: complete, chosen: [...STARTER_SLOTS], price };
+}
 
 const quietEnough = (product: Part) => (product.noise ?? 0) <= 34;
 
@@ -173,6 +244,7 @@ function liftSupporting(picks: Picks, quiet: boolean, headroom: number): Picks {
 export interface BuildProposal {
   picks: Picks;
   price: number;
+  /** Internal legacy fixture value; public WebMCP tools return performance unavailable. */
   fps: number;
   watt: number;
   issues: string[];
@@ -199,16 +271,13 @@ export interface BuildProposal {
  * frame rate, again under the same cap. Deterministic: the same request always
  * returns the same machine, so an agent can explain its own suggestion.
  *
- * `targetFps` is where the resolution earns its keep. In the frame-rate model
- * a resolution is a plain multiplier, so it never changes which machine is
- * fastest — only the number it reaches. What it does change is how much
- * machine the shopper needs: 144 frames at 1080p is a far cheaper ask than 144
- * at 4K. Once the build clears the target the upgrades stop, and the rest of
- * the budget stays with the shopper.
+ * `targetFps` is retained for local fixture compatibility only. The underlying
+ * frame-rate model is synthetic, so public WebMCP tools never use it to claim
+ * that a machine meets a real target or to rank recommendations.
  */
 export function recommendBuild(budget: number, res: Resolution = "1440p", quiet = false, targetFps?: number): BuildProposal {
   const cap = budget * (1 + BUDGET_TOLERANCE);
-  const share = BUDGET_SHARE[res] ?? BUDGET_SHARE["1440p"];
+  const share = budgetPlan(budget, res).shares;
   const picks: Partial<Picks> = {};
   const overBudget: PcSlot[] = [];
   let spent = 0;
@@ -357,71 +426,39 @@ export function recommendBuild(budget: number, res: Resolution = "1440p", quiet 
     issues: compatibilityIssues(complete),
     budgetRemainingUSD: budget - numbers.price,
     cap: Math.round(cap),
-    withinBudget: numbers.price <= cap,
+    withinBudget: numbers.price <= budget,
     ...(numbers.price > cap ? { cheapestPossible: floor.price } : {}),
     overBudget,
   };
 }
 
 export interface Bottleneck {
-  slot: PcSlot;
+  slot: PcSlot | null;
   reason: string;
-  currentFps: number;
-  /** Frame rate the graphics card could reach if nothing held it back. */
-  ceilingFps: number;
-  lostFps: number;
-  upgrade: { id: string; name: string; price: number; fps: number } | null;
+  currentFps: null;
+  /** No measured card ceiling is available for this catalog. */
+  ceilingFps: null;
+  lostFps: null;
+  upgrade: null;
+  basis: string;
 }
 
 /**
- * What holds the frame rate down. `metrics` scales the card by the processor
- * and memory scores; this reads the same factors back out and names the part
- * that costs the most frames.
+ * A measured bottleneck cannot be inferred from the catalog. The old version
+ * ranked CPU and memory using the demo FPS formula, which made a synthetic
+ * result look like a hardware diagnosis. Keep the stable shape for callers,
+ * but make every performance claim explicitly unavailable.
  */
-export function bottleneck(picks: Picks, res: Resolution = "1440p"): Bottleneck {
-  const gpu = part(picks, "gpu"), cpu = part(picks, "cpu"), ram = part(picks, "ram");
-  const ceiling = Math.round((gpu.fps ?? 0) * RES[res]);
-  const current = buildNumbers(picks, res).fps;
-  const factors: { slot: PcSlot; factor: number; part: Part }[] = [
-    { slot: "cpu", factor: Math.min(1, (cpu.score ?? 100) / 100), part: cpu },
-    { slot: "ram", factor: Math.min(1, (ram.score ?? 100) / 100), part: ram },
-  ];
-  const worst = factors.reduce((a, b) => b.factor < a.factor ? b : a);
-
-  if (worst.factor >= 1) {
-    return {
-      slot: "gpu",
-      reason: `The ${gpu.name} sets the frame rate; nothing else holds it back at ${res}.`,
-      currentFps: current, ceilingFps: ceiling, lostFps: 0,
-      upgrade: nextBest("gpu", picks, res),
-    };
-  }
+export function bottleneck(_picks: Picks, _res: Resolution = "1440p"): Bottleneck {
   return {
-    slot: worst.slot,
-    reason: `${worst.part.name} runs the ${gpu.name} at ${Math.round(worst.factor * 100)}% of its pace.`,
-    currentFps: current, ceilingFps: ceiling, lostFps: ceiling - current,
-    upgrade: nextBest(worst.slot, picks, res),
+    slot: null,
+    reason: PERFORMANCE_UNAVAILABLE,
+    currentFps: null,
+    ceilingFps: null,
+    lostFps: null,
+    upgrade: null,
+    basis: PERFORMANCE_UNAVAILABLE,
   };
-}
-
-/** The cheapest fitting part in a slot that actually raises the frame rate. */
-function nextBest(slot: PcSlot, picks: Picks, res: Resolution) {
-  const current = part(picks, slot);
-  const now = buildNumbers(picks, res).fps;
-  const measure = PERFORMANCE[slot] ?? ((product: Part) => product.price);
-  const better = CATALOG[slot]
-    .filter(product => product.id !== current.id && measure(product) > measure(current))
-    .sort((a, b) => a.price - b.price)
-    .reduce<{ product: Part; fps: number } | null>((found, product) => {
-      if (found) return found;
-      const next = { ...picks, [slot]: product.id } as Picks;
-      if (!buildFits(next)) return null;
-      const fps = buildNumbers(next, res).fps;
-      return fps > now ? { product, fps } : null;
-    }, null);
-  return better
-    ? { id: better.product.id, name: better.product.name, price: better.product.price, fps: better.fps }
-    : null;
 }
 
 export interface FixOption {
@@ -431,7 +468,7 @@ export interface FixOption {
   price: number;
   /** Price change against the part being replaced. */
   priceDelta: number;
-  fpsDelta: number;
+  fpsDelta: null;
 }
 
 /**
@@ -442,13 +479,11 @@ export interface FixOption {
  * issues mention and returns the swaps that leave the build clean, smallest
  * price change first, so the shopper is offered a fix and not a rebuild.
  */
-export function fixOptions(picks: Picks, res: Resolution = "1440p", preferred?: PcSlot): FixOption[] {
+export function fixOptions(picks: Picks, _res: Resolution = "1440p", preferred?: PcSlot): FixOption[] {
   const issues = compatibilityIssues(picks);
   if (!issues.length) return [];
   const blamed = PICK_ORDER.filter(slot => issues.some(issue => issue.includes(part(picks, slot).name)));
   const slots = preferred ? [preferred] : (blamed.length ? blamed : PICK_ORDER);
-  const baseline = buildNumbers(picks, res);
-
   return slots.flatMap(slot => {
     const current = part(picks, slot);
     return CATALOG[slot]
@@ -468,7 +503,7 @@ export function fixOptions(picks: Picks, res: Resolution = "1440p", preferred?: 
         name: option.product.name,
         price: option.product.price,
         priceDelta: option.product.price - current.price,
-        fpsDelta: buildNumbers(option.next, res).fps - baseline.fps,
+        fpsDelta: null,
       }))
       .sort((a, b) => Math.abs(a.priceDelta) - Math.abs(b.priceDelta))
       .slice(0, 3);

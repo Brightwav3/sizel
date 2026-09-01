@@ -1,10 +1,16 @@
 import { afterEach, describe, expect, it, vi } from 'vitest';
 
+const mockTools = vi.hoisted(() => ({
+  execute: vi.fn((_args: Record<string, unknown>, _options?: { signal: AbortSignal }) => ({ content: [] })),
+}));
+
 vi.mock('./tools', () => ({
   TOOLS: [],
-  toolsForRoute: (route: string) => ['shared', route].map(name => ({
-    name, description: name, inputSchema: {}, execute: () => ({ content: [] }),
+  DEMO_TOOL_NAMES: ['shared', 'stable'],
+  demoTools: () => ['shared', 'stable'].map(name => ({
+    name, description: name, inputSchema: {}, execute: mockTools.execute,
   })),
+  toolsForRoute: vi.fn(),
 }));
 
 import { registeredToolNames, stopWebmcpTools, syncWebmcpTools } from './index';
@@ -13,37 +19,38 @@ afterEach(() => {
   stopWebmcpTools();
   vi.unstubAllGlobals();
   vi.useRealTimers();
+  mockTools.execute.mockClear();
 });
 
 describe('fast browser tool discovery', () => {
   it('submits every tool immediately even when the first browser acknowledgement hangs', () => {
     const registerTool = vi.fn(() => new Promise(() => {}));
     vi.stubGlobal('document', { modelContext: { registerTool } });
-    syncWebmcpTools('home');
+    syncWebmcpTools();
     expect(registerTool.mock.calls).toHaveLength(2);
-    expect(registeredToolNames()).toEqual(['shared', 'home']);
+    expect(registeredToolNames()).toEqual(['shared', 'stable']);
   });
 
-  it('withdraws pending old-route tools without waiting and preserves shared tools', () => {
+  it('keeps the stable demo registry when the shopper changes routes', () => {
     const signals = new Map<string, AbortSignal>();
     const registerTool = vi.fn((tool, options) => {
       signals.set(tool.name, options.signal);
       return new Promise(() => {});
     });
     vi.stubGlobal('document', { modelContext: { registerTool } });
-    syncWebmcpTools('home');
-    syncWebmcpTools('cart');
-    expect(signals.get('home')!.aborted).toBe(true);
+    syncWebmcpTools();
+    syncWebmcpTools();
     expect(signals.get('shared')!.aborted).toBe(false);
-    expect(registeredToolNames()).toEqual(['shared', 'cart']);
-    expect(registerTool).toHaveBeenCalledTimes(3);
+    expect(signals.get('stable')!.aborted).toBe(false);
+    expect(registeredToolNames()).toEqual(['shared', 'stable']);
+    expect(registerTool).toHaveBeenCalledTimes(2);
   });
 
   it('discovers a late browser API within the next 100ms tick', () => {
     vi.useFakeTimers();
     const doc: { modelContext?: unknown } = {};
     vi.stubGlobal('document', doc);
-    syncWebmcpTools('home');
+    syncWebmcpTools();
     const registerTool = vi.fn();
     doc.modelContext = { registerTool };
     vi.advanceTimersByTime(100);
@@ -54,7 +61,7 @@ describe('fast browser tool discovery', () => {
   it('cancels discovery retries on unmount', () => {
     vi.useFakeTimers();
     vi.stubGlobal('document', {});
-    syncWebmcpTools('home');
+    syncWebmcpTools();
     stopWebmcpTools();
     expect(vi.getTimerCount()).toBe(0);
   });
@@ -63,11 +70,25 @@ describe('fast browser tool discovery', () => {
     let rejectOld!: (reason: Error) => void;
     const registerTool = vi.fn().mockImplementationOnce(() => new Promise((_, reject) => { rejectOld = reject; }));
     vi.stubGlobal('document', { modelContext: { registerTool } });
-    syncWebmcpTools('home');
+    syncWebmcpTools();
     stopWebmcpTools();
-    syncWebmcpTools('home');
+    syncWebmcpTools();
     rejectOld(new Error('old registration aborted'));
     await Promise.resolve();
-    expect(registeredToolNames()).toEqual(['shared', 'home']);
+    expect(registeredToolNames()).toEqual(['shared', 'stable']);
+  });
+
+  it('forwards the execution AbortSignal to the registered handler', async () => {
+    let descriptor: any;
+    const registerTool = vi.fn((tool: any) => {
+      descriptor = tool;
+      return undefined;
+    });
+    vi.stubGlobal('document', { modelContext: { registerTool } });
+    syncWebmcpTools();
+    const controller = new AbortController();
+    await descriptor.execute({}, { signal: controller.signal });
+    expect(registerTool).toHaveBeenCalledTimes(2);
+    expect(mockTools.execute).toHaveBeenCalledWith({}, { signal: controller.signal });
   });
 });
