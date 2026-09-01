@@ -7,8 +7,11 @@
  */
 .forge-builder { display: flex; flex-direction: column; min-height: calc(100dvh - 56px); }
 .forge-workspace { flex: 1; min-width: 0; padding: var(--space-5) var(--space-6) var(--space-6); }
-.forge-workspace .forge-catalog-head { padding-bottom: var(--space-4); }
+.forge-workspace .forge-catalog-head { display: flex; align-items: flex-start; justify-content: space-between; gap: var(--space-5); padding-bottom: var(--space-4); }
+.forge-workspace .forge-catalog-head > div { min-width: 0; }
 .forge-workspace .forge-catalog-head h2 { font-size: var(--builder-title-size); }
+.forge-workspace .forge-catalog-head h2 { margin: 0; }
+.forge-workspace .forge-catalog-head p { margin: var(--space-1) 0 0; color: var(--text-secondary); }
 
 /* Build sheet ------------------------------------------------------------- */
 .forge-sheet { display: flex; flex-direction: column; padding: var(--space-3) var(--space-2); }
@@ -41,7 +44,8 @@
 .forge-filters { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2); padding-bottom: var(--space-3); border-bottom: 1px solid var(--border-subtle); }
 .forge-fitswitch { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-pill); font-size: var(--text-sm); }
 .forge-fitswitch.is-on { background: var(--accent-soft); border-color: var(--accent); }
-.forge-fitswitch small { color: var(--text-tertiary); font-size: var(--text-xs); }
+.forge-fitswitch__label { white-space: nowrap; }
+.forge-fitswitch small { margin-left: var(--space-1); color: var(--text-tertiary); font-size: var(--text-xs); white-space: nowrap; }
 .forge-switch { position: relative; width: 28px; height: 16px; flex: 0 0 28px; background: var(--gray-300); border-radius: var(--radius-pill); transition: background var(--motion-standard) ease; }
 .forge-switch.is-on { background: var(--accent); }
 .forge-switch i { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; background: var(--gray-0); border-radius: var(--radius-pill); transition: left var(--motion-emphasis) var(--ease-standard); }
@@ -85,8 +89,9 @@
 /* Match the shop's type scale and density ---------------------------------
    The configurator inherited its own, larger scale. These rules pull it onto
    the same tokens the catalog uses so the two screens read as one product. */
-.forge-workspace .forge-catalog-head label { min-height: var(--control-height-sm); border-radius: var(--control-radius); font-size: var(--text-sm); }
+.forge-workspace .forge-catalog-head label { display: flex; width: min(100%, 420px); min-width: min(260px, 100%); min-height: var(--control-height-sm); align-items: center; gap: var(--space-2); padding: 0 var(--control-pad-x-sm); background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--control-radius); font-size: var(--text-sm); }
 .forge-workspace .forge-catalog-head label .material-symbols-outlined { font-size: var(--text-base); color: var(--text-tertiary); }
+.forge-workspace .forge-catalog-head label input { width: 100%; min-width: 0; padding: 0; background: transparent; border: 0; outline: 0; font-size: inherit; }
 .forge-workspace .forge-catalog-head p { font-size: var(--text-xs); }
 
 .forge-filters .forge-fitswitch,
@@ -115,3 +120,8 @@
 .forge-product-link { padding: 0; color: inherit; background: transparent; border: 0; font: inherit; text-align: left; cursor: pointer; }
 .forge-product-link:hover { color: var(--text-accent); text-decoration: underline; text-underline-offset: 2px; }
 .forge-workspace .forge-product-copy h3 { display: block; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+
+@media (max-width: 620px) {
+  .forge-workspace .forge-catalog-head { flex-direction: column; gap: var(--space-3); }
+  .forge-workspace .forge-catalog-head label { width: 100%; min-width: 0; }
+}

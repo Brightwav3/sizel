@@ -59,7 +59,7 @@ export function BuilderScreen({ v }: { v: Vals }) {
         <div className="forge-filters">
           <button type="button" className={`forge-fitswitch ${v.builderCompatibleOnly ? "is-on" : ""}`} onClick={v.toggleCompatibleOnly} aria-pressed={v.builderCompatibleOnly}>
             <span className={`forge-switch ${v.builderCompatibleOnly ? "is-on" : ""}`}><i /></span>
-            Only what fits
+            <span className="forge-fitswitch__label">Only what fits</span>
             <small>{v.builderCompatibleCount}</small>
           </button>
           {v.builderFacets.map((facet: Vals) => (
