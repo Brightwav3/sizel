@@ -1,8 +1,10 @@
+import { BUILD_SLOTS } from "../build/selection";
+import { listingStock } from "../../data/catalog/listingStock";
 // ADR 0002: one owner per domain rule — this one owns what a cart costs.
 // docs/decisions/0002-single-build-state-and-domain-view-models.md
 import { partIn } from "../../data/catalog/catalog";
 import { productTitle } from "../product/queries";
-import type { CartLine, Slot } from "../../shared/lib/types";
+import type { CartLine, Slot, Picks } from "../../shared/lib/types";
 
 /** Orders above this ship for nothing. */
 export const FREE_SHIPPING_OVER = 99;
@@ -36,7 +38,7 @@ export interface CartTotals {
  * this, so an agent can never quote a total the shopper is not looking at.
  * The assembled machine is priced as one unit from the build metrics.
  */
-export function cartTotals(cart: CartLine[], build: { price: number; days: number }): CartTotals {
+export function cartTotals(cart: CartLine[], build: { price: number; days: number }, picks?: Picks): CartTotals {
   const rows = cart.map((line, index): CartRow => {
     const product = line.kind === "product" && line.slot ? partIn(line.slot, line.id) : undefined;
     const unit = line.kind === "build" ? build.price : product?.price ?? 0;
@@ -51,7 +53,9 @@ export function cartTotals(cart: CartLine[], build: { price: number; days: numbe
       unit,
       total: unit * line.qty,
       days,
-      outOfStock: line.kind === "product" && product?.stock === 0,
+      outOfStock: line.kind === "build"
+        ? !picks || BUILD_SLOTS.some(slot => !partIn(slot, picks[slot]) || listingStock(partIn(slot, picks[slot])!, slot) === 0)
+        : !product || listingStock(product, line.slot!) === 0,
     };
   });
 
