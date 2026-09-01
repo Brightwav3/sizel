@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { CATALOG, DEFAULT_PICKS } from "../../data/catalog/catalog";
+import { reviewsFor } from "../../data/catalog/reviews";
 import { compatibilityIssues, metrics } from "../../entities/build/metrics";
 import type { PcSlot, Picks } from "../../shared/lib/types";
 import { BUDGET_TOLERANCE, bottleneck, cheapestBuild, fixOptions, powerReport, recommendBuild } from "./buildAdvisor";
@@ -39,7 +40,7 @@ describe("tool contract", () => {
 
   it("exposes only the stable judge-facing demo set", () => {
     expect(demoTools().map(tool => tool.name)).toEqual([...DEMO_TOOL_NAMES]);
-    expect(demoTools()).toHaveLength(13);
+    expect(demoTools()).toHaveLength(14);
     expect(demoTools().some(tool => tool.name === "read_shop")).toBe(false);
     expect(demoTools().map(tool => tool.name)).toContain("set_build_components");
     expect(demoTools().map(tool => tool.name)).not.toContain("set_build_component");
@@ -177,6 +178,22 @@ describe("get_deals", () => {
     const sale = JSON.parse(call("get_deals", { kind: "sale", limit: 10 }));
     expect(sale.items.length).toBeGreaterThan(0);
     expect(sale.items.every((item: any) => item.kind === "sale")).toBe(true);
+  });
+});
+
+describe("get_reviews", () => {
+  it("returns only verified commenters and includes their names", () => {
+    const product = CATALOG.phones[0];
+    const result = JSON.parse(call("get_reviews", { productId: product.id, limit: 4 }));
+    expect(result.reviews.length).toBeGreaterThan(0);
+    expect(result.reviews.every((review: any) => review.verified)).toBe(true);
+    expect(result.reviews.every((review: any) => typeof review.author === "string")).toBe(true);
+  });
+
+  it("returns the requested Czech fallback when no returned review is verified", () => {
+    const product = Object.values(CATALOG).flat().find(item => !reviewsFor(item, 1)[0].verified)!;
+    const result = JSON.parse(call("get_reviews", { productId: product.id, limit: 1 }));
+    expect(result).toMatchObject({ message: "nekomentovali overeni", reviews: [] });
   });
 });
 

@@ -112,7 +112,7 @@ describes the UI layering.
 The interactive application, the local catalog, and the WebMCP tool set are working. Deployment, the public repository URL, and the demo video are still pending.
 
 Thirty-seven tool descriptors are implemented in `src/app/webmcp/`; the
-judge-facing demo registers thirteen stable tools from that list. The demo
+judge-facing demo registers fourteen stable tools from that list. The demo
 keeps the same descriptors while the shopper moves between the catalogue,
 product pages and the builder. `show_in_catalog` makes visible navigation
 explicit, while read tools return data without changing the route. The full
@@ -148,7 +148,7 @@ are held inside Chrome's 1.5K character budget.
 | `remove_watchdog` | Stop watching a listing |
 | `list_categories` | The departments and categories, with listing counts |
 | `get_product_variants` | The storage tiers and finishes one device is sold in |
-| `get_reviews` | Rating and recent reviews, labelled as untrusted content |
+| `get_reviews` | Verified reviews only, or `nekomentovali overeni` when none are verified |
 | `select_product_variant` | Open one storage tier or finish on screen |
 | `focus_builder_slot` | Move the configurator to the part being discussed |
 | `compare_build_to_product` | The build against a console or phone |
@@ -163,7 +163,7 @@ Read-only tools carry `readOnlyHint`, so an agent can tell which calls are
 safe to make without asking. The ones that spend money or change the build do
 not: `add_build_to_cart` refuses outright while a conflict is open, and
 `start_checkout` stops at the delivery step rather than placing an order.
-`get_reviews` returns text written by other shoppers, so it carries
+`get_reviews` returns only verified shopper text, so it carries
 `untrustedContentHint`.
 
 ### Documentation
