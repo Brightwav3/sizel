@@ -79,13 +79,13 @@
 .home-quick-categories small { color: var(--text-tertiary); font-size: var(--text-xs); }
 .home-quick-categories button > .ms { color: var(--text-tertiary); font-size: var(--text-sm); }
 
-@media (max-width: 1100px) {
+@media (max-width: 1000px) {
   .home-quick-categories { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .home-quick-categories button:nth-child(3) { border-right: 0; }
   .home-quick-categories button:nth-child(-n+3) { border-bottom: 1px solid var(--border-subtle); }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 620px) {
   .home-quick-categories { grid-template-columns: repeat(2, minmax(0, 1fr)); }
   .home-quick-categories button:nth-child(3) { border-right: 1px solid var(--border-subtle); }
   .home-quick-categories button:nth-child(even) { border-right: 0; }
@@ -103,12 +103,12 @@
 
 /* ---------------------------------------------------------------------------
    Hero: a shop banner, not a landing page. One rotating offer at full width,
-   the next two offers stacked beside it, and the delivery promise underneath
-   them — the shape a large electronics retailer puts above the fold.
+   the next two offers stacked beside it, and delivery plus returns promises in
+   the rail — the shape a large electronics retailer puts above the fold.
 --------------------------------------------------------------------------- */
 .hero { display: grid; grid-template-columns: minmax(0, 1fr) 300px; gap: var(--space-4); align-items: stretch; }
 
-.hero-banner { position: relative; overflow: hidden; min-height: 396px; border: 1px solid var(--border-subtle); border-radius: var(--radius-card); background: linear-gradient(115deg, #f7f8fa 0%, #eef2f8 52%, #e6ecf6 100%); }
+.hero-banner { position: relative; overflow: hidden; min-height: 396px; border: 1px solid var(--border-subtle); border-radius: var(--radius-card); background: var(--surface-sunken); }
 /* The offers sit side by side on one track; changing offer slides the track,
    so the banner physically moves the way a swipe would move it. */
 /* Height is a floor, not a cap. The longest headline wraps to three lines and
@@ -120,36 +120,36 @@
 
 .hero-banner__copy { display: flex; flex-direction: column; align-items: flex-start; gap: var(--space-3); justify-content: center; min-width: 0; }
 .hero-banner__eyebrow { padding: 3px var(--space-3); border-radius: var(--radius-pill); background: var(--surface-inverse); color: var(--text-inverse); font-size: var(--text-xs); font-weight: var(--weight-medium); letter-spacing: 0.5px; text-transform: uppercase; }
-.hero-banner h1 { margin: 0; max-width: 20ch; font-size: clamp(26px, 2.4vw, 38px); font-weight: var(--weight-medium); line-height: 1.12; letter-spacing: -0.8px; }
+.hero-banner h1 { margin: 0; max-width: 20ch; font-size: var(--type-hero); font-weight: var(--weight-medium); line-height: 1.12; letter-spacing: var(--tracking); }
 .hero-banner p { margin: 0; max-width: 48ch; color: var(--text-secondary); font-size: var(--text-base); line-height: var(--leading-normal); }
 
 .hero-banner__actions { display: flex; flex-wrap: wrap; gap: var(--space-2); margin-top: var(--space-2); }
 .hero-banner__cta, .hero-banner__alt { display: inline-flex; align-items: center; min-height: 44px; padding: 0 var(--space-6); border-radius: var(--radius-nav); font: inherit; font-size: var(--text-sm); font-weight: var(--weight-medium); cursor: pointer; transition: background 140ms ease, border-color 140ms ease; }
 .hero-banner__cta { border: 1px solid var(--gray-900); background: var(--gray-900); color: var(--text-inverse); }
-.hero-banner__cta:hover { background: var(--gray-800, #333); }
-.hero-banner__alt { border: 1px solid var(--border-default); background: rgba(255, 255, 255, 0.8); color: var(--text-primary); }
-.hero-banner__alt:hover { background: #fff; }
+.hero-banner__cta:hover { background: var(--gray-800); }
+.hero-banner__alt { border: 1px solid var(--border-default); background: var(--surface-card); color: var(--text-primary); }
+.hero-banner__alt:hover { background: var(--surface-hover); }
 
 .hero-banner__stats { display: flex; flex-wrap: wrap; gap: var(--space-5); margin-top: var(--space-2); color: var(--text-secondary); font-size: var(--text-xs); }
 .hero-banner__stats strong { margin-right: 6px; color: var(--text-primary); font-weight: var(--weight-medium); }
 
 .hero-banner__art { position: relative; display: flex; align-items: center; justify-content: center; min-width: 0; min-height: 0; padding: 0; background: transparent; border: 0; border-radius: 0; box-shadow: none; cursor: pointer; }
-.hero-banner__art .catalog-image { width: 100%; height: 260px; max-width: 100%; max-height: 260px; border-radius: 0; background: transparent; box-shadow: none; object-fit: contain; filter: drop-shadow(0 18px 28px rgba(30, 40, 60, 0.16)); transition: transform 220ms cubic-bezier(0.22, 1, 0.36, 1); }
+.hero-banner__art .catalog-image { width: 100%; height: 260px; max-width: 100%; max-height: 260px; border-radius: 0; background: transparent; box-shadow: none; object-fit: contain; filter: var(--filter-product-art); transition: transform var(--motion-emphasis) var(--ease-standard); }
 .hero-banner__art:hover .catalog-image { transform: translateY(-4px); }
-.hero-banner__tag { position: absolute; right: 0; bottom: calc(var(--space-6) * -1); display: flex; flex-direction: column; gap: 1px; padding: var(--space-2) var(--space-4); border: 1px solid var(--border-subtle); border-radius: var(--radius-nav); background: rgba(255, 255, 255, 0.94); box-shadow: var(--shadow-card); text-align: left; }
+.hero-banner__tag { position: absolute; right: 0; bottom: calc(var(--space-6) * -1); display: flex; flex-direction: column; gap: var(--space-1); padding: var(--space-2) var(--space-4); border: 1px solid var(--border-subtle); border-radius: var(--radius-nav); background: var(--surface-card); box-shadow: var(--shadow-card); text-align: left; }
 .hero-banner__tag small { color: var(--text-tertiary); font-size: var(--text-xs); }
 .hero-banner__tag strong { font-size: var(--text-base); font-weight: var(--weight-medium); }
 .hero-banner__tag em { color: var(--green-600); font-style: normal; font-size: var(--text-xs); }
 
-.hero-banner__nav { position: absolute; top: 50%; display: flex; align-items: center; justify-content: center; width: 36px; height: 36px; margin-top: -18px; padding: 0; border: 1px solid var(--border-subtle); border-radius: var(--radius-pill); background: rgba(255, 255, 255, 0.9); color: var(--text-secondary); cursor: pointer; opacity: 0; transition: opacity 160ms ease, background 140ms ease; }
+.hero-banner__nav { position: absolute; top: 50%; display: flex; align-items: center; justify-content: center; width: var(--control-size-icon); height: var(--control-size-icon); margin-top: -18px; padding: 0; border: 1px solid var(--border-subtle); border-radius: var(--radius-pill); background: var(--surface-card); color: var(--text-secondary); cursor: pointer; opacity: 0; transition: opacity var(--motion-emphasis) ease, background var(--motion-standard) ease; }
 .hero-banner:hover .hero-banner__nav, .hero-banner__nav:focus-visible { opacity: 1; }
-.hero-banner__nav:hover { background: #fff; color: var(--text-primary); }
+.hero-banner__nav:hover { background: var(--surface-hover); color: var(--text-primary); }
 .hero-banner__nav.is-prev { left: var(--space-3); }
 .hero-banner__nav.is-next { right: var(--space-3); }
 
 .hero-banner__dots { position: absolute; left: var(--space-8); bottom: var(--space-5); display: flex; align-items: center; gap: var(--space-2); }
-.hero-banner__dots button { width: 7px; height: 7px; padding: 0; border: 0; border-radius: var(--radius-pill); background: var(--gray-400, #b3b3b3); cursor: pointer; transition: width 260ms cubic-bezier(0.22, 1, 0.36, 1), background 200ms ease; }
-.hero-banner__dots button.is-on { width: 22px; background: var(--accent-active); }
+.hero-banner__dots button { width: var(--indicator-dot-size); height: var(--indicator-dot-size); padding: 0; border: 0; border-radius: var(--radius-pill); background: var(--gray-400); cursor: pointer; transition: width var(--motion-emphasis) var(--ease-standard), background var(--motion-emphasis) ease; }
+.hero-banner__dots button.is-on { width: var(--indicator-dot-active-width); background: var(--accent-active); }
 
 .hero-rail { display: flex; flex-direction: column; gap: var(--space-4); min-width: 0; }
 .hero-rail__card { display: grid; grid-template-columns: 72px minmax(0, 1fr) 16px; align-items: center; gap: var(--space-3); flex: 1 1 auto; max-height: 132px; padding: var(--space-3); border: 1px solid var(--border-subtle); border-radius: var(--radius-card); background: var(--surface-card); font: inherit; text-align: left; cursor: pointer; transition: border-color 140ms ease, box-shadow 140ms ease; }
@@ -163,27 +163,27 @@
 .hero-rail__card > .ms { color: var(--text-tertiary); font-size: var(--text-sm); }
 
 .hero-rail__promise { display: flex; align-items: center; gap: var(--space-3); padding: var(--space-3) var(--space-4); border-radius: var(--radius-card); background: var(--surface-inverse); color: var(--text-inverse); }
-.hero-rail__promise .ms { color: var(--success); font-size: var(--text-xl, 20px); }
+.hero-rail__promise .ms { color: var(--success); font-size: var(--type-icon-lg); }
 .hero-rail__promise span { display: flex; flex-direction: column; gap: 1px; }
 .hero-rail__promise strong { font-size: var(--text-sm); font-weight: var(--weight-medium); }
 .hero-rail__promise small { color: var(--gray-300); font-size: var(--text-xs); }
 
-@media (max-width: 1320px) {
+@media (max-width: 1240px) {
   .hero-banner__slide { grid-template-columns: minmax(0, 1fr) minmax(0, 38%); gap: var(--space-4); }
   .hero-banner__art .catalog-image { height: 220px; max-height: 220px; }
 }
 
-@media (max-width: 1100px) {
+@media (max-width: 1000px) {
   .hero { grid-template-columns: minmax(0, 1fr); }
   .hero-rail { flex-direction: row; flex-wrap: wrap; }
   .hero-rail__card { flex: 1 1 240px; }
   .hero-rail__promise { flex: 1 1 100%; }
 }
 
-@media (max-width: 760px) {
+@media (max-width: 620px) {
   .hero-banner, .hero-banner__track, .hero-banner__slide { min-height: 620px; }
   .hero-banner__slide { grid-template-columns: minmax(0, 1fr); padding: var(--space-6) var(--space-5) var(--space-10); }
-  .hero-banner h1 { font-size: 28px; }
+  .hero-banner h1 { font-size: var(--type-hero-mobile); }
   .hero-banner__art { order: -1; }
   .hero-banner__art .catalog-image { height: 170px; max-height: 170px; }
   .hero-banner__tag { right: var(--space-3); bottom: calc(var(--space-6) * -1); max-width: 70%; padding: var(--space-2) var(--space-3); }
@@ -241,7 +241,7 @@
 .home-card__arrow { font-size: var(--text-sm); vertical-align: -2px; }
 
 /* Promotions ------------------------------------------------------------- */
-.card.promo-card { overflow: hidden; background: var(--gray-0); cursor: pointer; }
+.card.promo-card { display: block; overflow: hidden; width: 100%; padding: 0; background: var(--gray-0); font: inherit; text-align: left; cursor: pointer; }
 .promo-card .ph {
   height: 150px;
   background: var(--gray-0);
@@ -259,7 +259,7 @@
 .promo-card__link { color: var(--text-accent); font-size: var(--text-sm); }
 
 /* Featured products ------------------------------------------------------ */
-.card.feature-card { overflow: hidden; background: var(--gray-0); cursor: pointer; }
+.card.feature-card { display: block; overflow: hidden; width: 100%; padding: 0; background: var(--gray-0); font: inherit; text-align: left; cursor: pointer; }
 .feature-card .ph {
   height: 180px;
   background: var(--gray-0);

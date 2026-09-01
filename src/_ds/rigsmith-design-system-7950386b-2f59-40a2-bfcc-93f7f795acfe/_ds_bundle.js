@@ -1638,7 +1638,7 @@ function KitSettings() {
     }
   }, /*#__PURE__*/React.createElement(Select, {
     label: "Language",
-    options: ["English", "Español", "Français", "Deutsch"]
+    options: ["English"]
   })))), /*#__PURE__*/React.createElement(SectionTitle, null, "Notifications"), /*#__PURE__*/React.createElement(Card, {
     style: {
       marginBottom: 24,

@@ -29,7 +29,8 @@ export const CategoryScreen: React.FC<{ v: Vals }> = ({ v }) => v.departmentOver
       </div>
       <div className="brand-row__tiles">
         {v.subcats.map((c: Vals, i: number) => (
-          <div
+          <button
+            type="button"
             key={i}
             className="card prod brand-tile"
             onClick={c.go}
@@ -40,13 +41,13 @@ export const CategoryScreen: React.FC<{ v: Vals }> = ({ v }) => v.departmentOver
               <div className="brand-tile__name">{c.name}</div>
               <div className="num brand-tile__count">{c.count} products</div>
             </div>
-          </div>
+          </button>
         ))}
       </div>
     </div>
 
     <div className="brand-back" data-show={v.brandBackShow}>
-      <span className="brand-back__link" onClick={v.brandClear}><span className="ms">arrow_back</span>All brands in {v.catNameLower}</span>
+      <button type="button" className="text-button brand-back__link" onClick={v.brandClear}><span className="ms">arrow_back</span>All brands in {v.catNameLower}</button>
     </div>
 
     <div className="category-rule">
@@ -58,28 +59,30 @@ export const CategoryScreen: React.FC<{ v: Vals }> = ({ v }) => v.departmentOver
     <div className="category-controls">
       <div className="sort-group">
         {v.inlineSorts.map((o: Vals, i: number) => (
-          <div
+          <button
+            type="button"
             key={i}
             className="sort-group__option"
             onClick={o.go}
             style={{ "--option-bg": o.bg, "--option-fg": o.fg, "--option-weight": o.fw, "--option-shadow": o.sh } as React.CSSProperties}
-          >{o.label}</div>
+          >{o.label}</button>
         ))}
       </div>
       <div className="category-controls__divider" />
       {v.inlineChips.map((c: Vals, i: number) => (
-        <div
+        <button
+          type="button"
           key={i}
           className="filter-chip"
           onClick={c.go}
           style={{ "--chip-bg": c.bg, "--chip-fg": c.fg, "--chip-border": c.bd, "--chip-weight": c.fw, "--chip-icon-display": c.iconShow } as React.CSSProperties}
         >
           <span className="ms">{c.icon}</span>{c.label}
-        </div>
+        </button>
       ))}
       <div className="category-controls__spacer" />
       {v.anyFilter && (
-        <span className="clear-filters" onClick={v.clearFilters}>Clear filters</span>
+        <button type="button" className="text-button clear-filters" onClick={v.clearFilters}>Clear filters</button>
       )}
     </div>
 
@@ -91,7 +94,7 @@ export const CategoryScreen: React.FC<{ v: Vals }> = ({ v }) => v.departmentOver
         <span className="ms">visibility_off</span>
         <div className="hidden-note__copy">{v.hiddenNote}</div>
         <div className="hidden-note__spacer" />
-        <span className="clear-filters" onClick={v.clearFilters}>Clear filters</span>
+        <button type="button" className="text-button clear-filters" onClick={v.clearFilters}>Clear filters</button>
       </div>
     )}
   </div>
@@ -114,6 +117,14 @@ export const ProductCard: React.FC<{ g: Vals }> = ({ g }) => (
   <div
     className="card prod product-card"
     onClick={g.go}
+    role="link"
+    tabIndex={0}
+    onKeyDown={(event) => {
+      if ((event.key === "Enter" || event.key === " ") && event.target === event.currentTarget) {
+        event.preventDefault();
+        g.go();
+      }
+    }}
     style={{ "--card-border": g.bd, "--card-dim": g.dim } as React.CSSProperties}
   >
     <div className="product-card__frame">
@@ -158,11 +169,12 @@ export const ProductCard: React.FC<{ g: Vals }> = ({ g }) => (
         )}
         <div className="num product-card__price" style={{ "--price-fg": g.priceFg } as React.CSSProperties}>{g.price}</div>
       </div>
-      <div
+      <button
+        type="button"
         className="product-card__add"
-        onClick={g.add}
+        onClick={(event) => { event.stopPropagation(); g.add(); }}
         style={{ "--add-bg": g.addBg, "--add-fg": g.addFg } as React.CSSProperties}
-      ><span className="ms">shopping_bag</span>{g.cta}</div>
+      ><span className="ms">shopping_bag</span>{g.cta}</button>
       <div className="product-card__stock" style={{ "--stock-fg": g.stockFg } as React.CSSProperties}>{g.stock}</div>
     </div>
   </div>

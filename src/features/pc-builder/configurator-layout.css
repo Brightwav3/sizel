@@ -42,31 +42,31 @@
 .forge-fitswitch { display: inline-flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-3); background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-pill); font-size: var(--text-sm); }
 .forge-fitswitch.is-on { background: var(--accent-soft); border-color: var(--accent); }
 .forge-fitswitch small { color: var(--text-tertiary); font-size: var(--text-xs); }
-.forge-switch { position: relative; width: 28px; height: 16px; flex: 0 0 28px; background: var(--gray-300); border-radius: var(--radius-pill); transition: background 140ms ease; }
+.forge-switch { position: relative; width: 28px; height: 16px; flex: 0 0 28px; background: var(--gray-300); border-radius: var(--radius-pill); transition: background var(--motion-standard) ease; }
 .forge-switch.is-on { background: var(--accent); }
-.forge-switch i { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; background: var(--gray-0); border-radius: var(--radius-pill); transition: left 160ms ease; }
+.forge-switch i { position: absolute; top: 2px; left: 2px; width: 12px; height: 12px; background: var(--gray-0); border-radius: var(--radius-pill); transition: left var(--motion-emphasis) var(--ease-standard); }
 .forge-switch.is-on i { left: 14px; }
 
 .forge-facet { position: relative; }
 .forge-facet > button { display: inline-flex; align-items: center; gap: var(--space-1); padding: var(--space-2) var(--space-3); background: var(--surface-card); border: 1px solid var(--border-default); border-radius: var(--radius-pill); font-size: var(--text-sm); }
 .forge-facet > button.is-on { color: var(--text-inverse); background: var(--gray-900); border-color: var(--gray-900); }
 .forge-facet > button .material-symbols-outlined { font-size: var(--text-base); }
-.forge-facet__menu { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; display: flex; flex-direction: column; min-width: 200px; max-height: 280px; overflow-y: auto; padding: var(--space-1); background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-nav); box-shadow: 0 12px 32px rgba(41, 41, 41, .16); }
+.forge-facet__menu { position: absolute; z-index: 20; top: calc(100% + 4px); left: 0; display: flex; flex-direction: column; min-width: 200px; max-height: 280px; overflow-y: auto; padding: var(--space-1); background: var(--surface-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-nav); box-shadow: var(--shadow-popover); }
 .forge-facet__menu button { display: grid; grid-template-columns: 14px minmax(0, 1fr) auto; align-items: center; gap: var(--space-2); padding: var(--space-2); background: transparent; border: 0; border-radius: var(--radius-xs); font-size: var(--text-sm); text-align: left; }
 .forge-facet__menu button:hover { background: var(--surface-hover); }
 .forge-facet__menu small { color: var(--text-tertiary); font-size: var(--text-xs); }
 .forge-tick { display: grid; place-items: center; width: 14px; height: 14px; background: var(--gray-0); border: 1px solid var(--border-default); border-radius: var(--radius-xs); color: var(--text-inverse); }
 .forge-tick.is-on { background: var(--gray-900); border-color: var(--gray-900); }
-.forge-tick .material-symbols-outlined { font-size: 11px; }
+.forge-tick .material-symbols-outlined { font-size: var(--type-meta); }
 .forge-clearfacets { margin-left: auto; padding: var(--space-2); color: var(--text-accent); background: transparent; border: 0; font: inherit; font-size: var(--text-sm); }
 
 /* Compatibility stated on the row ---------------------------------------- */
 .forge-product.is-incompatible { opacity: .75; }
-.forge-product-clash { display: flex; align-items: center; gap: 4px; margin: var(--space-1) 0 0 !important; color: var(--danger) !important; font-size: var(--text-xs); }
-.forge-product-clash .material-symbols-outlined { font-size: 14px; }
+.forge-product-clash { display: flex; align-items: center; gap: var(--space-1); margin: var(--space-1) 0 0 !important; color: var(--danger) !important; font-size: var(--text-xs); }
+.forge-product-clash .material-symbols-outlined { font-size: var(--type-icon-sm); }
 
 /* Bottom bar -------------------------------------------------------------- */
-.forge-bar { position: sticky; bottom: 0; z-index: 15; display: flex; align-items: center; gap: var(--space-6); padding: var(--space-3) var(--space-6); background: var(--surface-card); border-top: 1px solid var(--border-default); box-shadow: 0 -6px 20px rgba(41, 41, 41, .06); }
+.forge-bar { position: sticky; bottom: 0; z-index: 15; display: flex; align-items: center; gap: var(--space-6); padding: var(--space-3) var(--space-6); background: var(--surface-card); border-top: 1px solid var(--border-default); box-shadow: var(--shadow-raised); }
 .forge-bar__figure { display: flex; flex-direction: column; }
 .forge-bar__figure small { color: var(--text-tertiary); font-size: var(--text-xs); }
 .forge-bar__figure strong { font-size: var(--text-base); font-weight: var(--weight-medium); }

@@ -37,8 +37,8 @@ export const FloatingBuildCard: React.FC<{ v: Vals }> = ({ v }) => (
           <span className="ms build-card__grip" data-tip="Drag to move this card">drag_indicator</span>
           <div className="build-card__title">{v.cornerTitle}</div>
           <div className="num build-card__count">{v.cornerCount}</div>
-          <span className="ms build-card__head-action" onClick={v.cornerResume} data-tip="Open the full build">open_in_full</span>
-          <span className="ms build-card__head-action" onClick={v.cornerToggle} data-tip="Collapse to a bubble" data-tip-align="end">remove</span>
+          <button type="button" className="ms build-card__head-action" onPointerDown={(event) => event.stopPropagation()} onClick={v.cornerResume} data-tip="Open the full build" aria-label="Open the full build">open_in_full</button>
+          <button type="button" className="ms build-card__head-action" onPointerDown={(event) => event.stopPropagation()} onClick={v.cornerToggle} data-tip="Collapse to a bubble" data-tip-align="end" aria-label="Collapse to a bubble">remove</button>
         </div>
         <div className="build-card__rows">
           {v.cornerRows.map((c: Vals, i: number) => (
@@ -55,7 +55,7 @@ export const FloatingBuildCard: React.FC<{ v: Vals }> = ({ v }) => (
             <div className="num build-card__spent">{v.cornerSpent}</div>
             <div className="num build-card__left">{v.cornerLeft}</div>
           </div>
-          <div className="pill dark build-card__cta" onClick={v.cornerResume}>{v.cornerCta}</div>
+          <button type="button" className="pill dark build-card__cta" onClick={v.cornerResume}>{v.cornerCta}</button>
         </div>
       </div>
     )}

@@ -5,13 +5,13 @@
   position:absolute;left:50%;top:calc(100% + 8px);
   transform:translateX(-50%) translateY(-2px);
   z-index:60;
-  padding:5px 8px;border-radius:6px;
-  background:var(--gray-900);color:#fff;
-  font-family:var(--font-sans);font-size:12px;font-weight:500;line-height:1.2;
-  letter-spacing:-0.1px;white-space:nowrap;
-  box-shadow:0 4px 12px rgba(41,41,41,.18);
+  padding:var(--space-1) var(--space-2);border-radius:var(--radius-xs);
+  background:var(--gray-900);color:var(--text-inverse);
+  font-family:var(--font-sans);font-size:var(--text-xs);font-weight:var(--weight-medium);line-height:var(--leading-tight);
+  letter-spacing:var(--tracking);white-space:nowrap;
+  box-shadow:var(--shadow-raised);
   opacity:0;pointer-events:none;
-  transition:opacity 120ms ease,transform 120ms ease;
+  transition:opacity var(--motion-fast) ease,transform var(--motion-fast) ease;
   transition-delay:0ms;
 }
 [data-tip]:hover::after,[data-tip]:focus-visible::after{
