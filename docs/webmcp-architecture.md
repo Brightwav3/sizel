@@ -3,7 +3,7 @@
 > Current selection contract (ADR 0009): inspection and explanation fields are optional. Select known catalog ids directly; current stock, compatibility and budget checks remain mandatory. Earlier descriptions of required inspection below are historical.
 
 Rigsmith implements 37 descriptors through `src/app/webmcp`, while the
-judge-facing demo exposes a stable allowlist of 13. [ADR 0007](decisions/0007-agents-select-and-explain-parts.md) supersedes automatic recommendation and pre-commit replies. [ADR 0012](decisions/0012-stable-webmcp-demo-registry.md) defines the demo registry. [Tool reference](webmcp-tools.md) is generated from descriptors.
+judge-facing demo exposes a stable allowlist of 14. [ADR 0007](decisions/0007-agents-select-and-explain-parts.md) supersedes automatic recommendation and pre-commit replies. [ADR 0012](decisions/0012-stable-webmcp-demo-registry.md) defines the demo registry. [Tool reference](webmcp-tools.md) is generated from descriptors.
 
 ## Agent selection, existing UI
 

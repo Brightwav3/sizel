@@ -22,7 +22,7 @@ What we learned is that an agent experience needs explicit actions and stable da
 
 PC configuration is a high-friction task for browser agents: it involves searching, selecting across categories, preserving context, and validating relationships between products. WebMCP can expose these operations directly as structured tools instead of making an agent guess which UI controls to click.
 
-Thirty-seven tools are registered; thirteen are included in the stable demo allowlist. The full reference is in
+Thirty-seven tools are registered; fourteen are included in the stable demo allowlist. The full reference is in
 [webmcp-tools.md](webmcp-tools.md), the design in
 [webmcp-architecture.md](webmcp-architecture.md). The four that
 carry the story are:

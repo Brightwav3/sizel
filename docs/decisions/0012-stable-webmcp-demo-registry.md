@@ -17,9 +17,9 @@ context and selection cost.
 
 ## Decision
 
-The demo registers one stable allowlist of thirteen tools at mount time:
+The demo registers one stable allowlist of fourteen tools at mount time:
 
-`search_products`, `get_product`, `compare_products`, `show_in_catalog`,
+`search_products`, `get_product`, `get_reviews`, `compare_products`, `show_in_catalog`,
 `begin_build`, `list_compatible_parts`, `set_build_components`,
 `check_build_compatibility`, `compare_build_options`, `create_watchdog`,
 `add_to_cart`, `add_build_to_cart`, and `get_cart`.
