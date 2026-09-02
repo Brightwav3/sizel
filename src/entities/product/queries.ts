@@ -63,6 +63,16 @@ export interface FacetSummary { id: string; label: string; fit: boolean; options
 
 export const brandOf = (product: Part) => product.brand || product.name.split(" ")[0];
 
+/** Search the shopper-visible name plus catalog metadata, not just a short card label. */
+const matchesSearch = (product: Part, query: string) => {
+  const terms = query.trim().toLowerCase().split(/\s+/).filter(Boolean);
+  const searchable = [
+    product.name, product.model, product.brand, product.description, product.note, product.blurb,
+    product.tag, ...(product.specs ?? []), JSON.stringify(product.specifications), product.id,
+  ].filter(Boolean).join(" ").toLowerCase();
+  return terms.every(term => searchable.includes(term));
+};
+
 const spec = (product: Part, ...path: string[]) => {
   let value: any = product.specifications;
   for (const key of path) value = value?.[key];
@@ -135,9 +145,7 @@ export function candidatePool(query: ProductQuery): Part[] {
     const searchPool = query.scopeSearchToCategory && query.category
       ? CATALOG[query.category]
       : allProducts();
-    return searchPool.filter(product =>
-      [product.name, product.model, product.description, JSON.stringify(product.specifications)]
-        .join(" ").toLowerCase().includes(search));
+    return searchPool.filter(product => matchesSearch(product, search));
   }
   if (query.departmentId) {
     const department = DEPTS.find(item => item.id === query.departmentId);

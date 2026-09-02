@@ -13,7 +13,7 @@ import { findProduct, productTitle } from "../entities/product/queries";
 import { compatibilityIssues, metrics, noiseWord, shipDate } from "../entities/build/metrics";
 import type { CartLine, PcSlot, Picks, Route, Slot, Watchdog } from "../shared/lib/types";
 
-import { BUILD_SLOTS, bundledFans, buildBlocker, requireQuantity, selectedPicks, selectedPrice, ShopError } from "../entities/build/selection";
+import { BUILD_SLOTS, buildDraftBlocker, bundledFans, buildBlocker, requireQuantity, selectedPicks, selectedPrice, ShopError } from "../entities/build/selection";
 import { cartBlocker } from "../entities/cart/cartValidation";
 import { listingStock } from "../data/catalog/listingStock";
 import { budgetPlan, validateBudgetShares } from "../entities/build/budgetPlan";
@@ -240,14 +240,14 @@ export class RigsmithApp extends React.Component<{}, AppState> {
 
   addBuildToCart() {
     return this.mutate(state => {
-      const blocked = buildBlocker(state.picks, state.chosen, state.budget);
+      const blocked = buildDraftBlocker(state.picks, state.chosen, state.budget);
       if (blocked) throw blocked;
       const alreadyAdded = state.cart.some(line => line.kind === 'build');
       const cart: CartLine[] = alreadyAdded ? state.cart : [...state.cart, { kind: 'build', id: 'build', qty: 1 }];
       const cartIssue = cartBlocker(cart, state.picks, state.chosen, state.budget);
       if (cartIssue) throw cartIssue;
       return { patch: { cart, route: 'cart', toast: 'Build added to cart' },
-        result: { added: 'build', alreadyAdded, price: metrics(state.picks, state.res).price } };
+        result: { added: 'build', alreadyAdded, price: selectedPrice(state.picks, state.chosen) } };
     });
   }
 
@@ -271,6 +271,10 @@ export class RigsmithApp extends React.Component<{}, AppState> {
 
   startCheckout() {
     return this.mutate(state => {
+      if (state.cart.some(line => line.kind === 'build')) {
+        const buildIssue = buildBlocker(state.picks, state.chosen, state.budget);
+        if (buildIssue) throw buildIssue;
+      }
       const blocked = cartBlocker(state.cart, state.picks, state.chosen, state.budget);
       if (blocked) throw blocked;
       return { patch: { route: 'checkout', step: 0, checkoutValues: {}, checkoutErrors: {}, demoOrderId: null }, result: { opened: 'checkout', step: 'delivery', demo: true } };
@@ -377,7 +381,9 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   }
 
   /** Atomic for UI and agents: a case and its included fans are one choice. */
-  set(slot: PcSlot, id: string, decision?: BuildDecision, destination: "builder" | "category" = "builder") {
+  // ADR 0015: build edits preserve the shopper's current page.
+  // docs/decisions/0015-build-edits-preserve-storefront-route.md
+  set(slot: PcSlot, id: string, decision?: BuildDecision, destination: "builder" | "category" | "preserve" = "preserve") {
     return this.mutate(state => {
       const item = partIn(slot, id);
       if (!BUILD_SLOTS.includes(slot) || !item) throw new ShopError('wrong_slot', 'Choose a product from this slot.');
@@ -397,7 +403,6 @@ export class RigsmithApp extends React.Component<{}, AppState> {
       if (slot === 'fans' && state.chosen.includes('case') && id !== bundledFans(state.picks.case))
         throw new ShopError('wrong_fan_pack', 'These fans are bundled with another case. Select the case instead.');
       const issues = compatibilityIssues(selectedPicks(picks, chosen));
-      if (issues.length) throw new ShopError('build_incompatible', issues[0]);
       const price = selectedPrice(picks, chosen);
       if (price > state.budget) throw new ShopError('over_budget', 'Selected parts exceed the agreed budget. Change a part or explicitly update the budget.');
       const decisions = { ...state.decisions };
@@ -406,14 +411,15 @@ export class RigsmithApp extends React.Component<{}, AppState> {
       if (slot === 'case') delete decisions.fans;
       const destinationState = destination === "category"
         ? { route: "category" as const, dept: "pc", openDept: null, category: slot, productSlot: slot, brand: "any", search: "" }
-        : { route: "builder" as const, builderSlot: slot };
+        : destination === "builder" ? { route: "builder" as const, builderSlot: slot } : {};
       return { patch: { picks, chosen, decisions, prev: this.snapshot(state), inspected: null,
         buildRevision: state.buildRevision + 1, lastChange: null,
         ...(chosen.length === BUILD_SLOTS.length ? { cornerMin: true } : {}),
         ...destinationState,
         toast: `${item.name} selected` },
         result: { slot, fitted: item.name, selectedPrice: price, budgetRemainingUSD: state.budget - price,
-          selectedCount: chosen.length, complete: BUILD_SLOTS.every(s => chosen.includes(s)), compatible: true,
+          selectedCount: chosen.length, complete: BUILD_SLOTS.every(s => chosen.includes(s)), compatible: issues.length === 0,
+          ...(issues.length ? { issues: issues.slice(0, 2) } : {}),
           ...(slot === 'case' ? { bundledFans: picks.fans } : {}) } };
     });
   }
@@ -449,7 +455,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
         patch: {
           picks, chosen, decisions: {}, inspected: null,
           prev: this.snapshot(state), buildRevision: state.buildRevision + 1,
-          lastChange: null, route: 'builder', builderSlot: state.builderSlot, cornerMin: true,
+          lastChange: null, cornerMin: true,
           toast: 'PC build applied',
         },
         result: {
@@ -471,8 +477,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
       for (const key of remove) delete decisions[key as PcSlot];
       return { patch: { picks: { ...state.picks, [slot]: DEFAULT_PICKS[slot], ...(slot === 'case' ? { fans: DEFAULT_PICKS.fans } : {}) },
         chosen: state.chosen.filter(key => !remove.includes(key)), decisions,
-        prev: this.snapshot(state), inspected: null, buildRevision: state.buildRevision + 1, lastChange: null,
-        route: 'builder', builderSlot: slot },
+        prev: this.snapshot(state), inspected: null, buildRevision: state.buildRevision + 1, lastChange: null },
         result: { slot, action: 'reset' } };
     });
   }
@@ -497,7 +502,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     });
   }
 
-  // ADR 0013: begin_build opens a blank workspace; the agent owns component order and selection.
+  // ADR 0013: begin_build opens the build panel in place; the agent owns component order and selection.
   // docs/decisions/0013-agent-chooses-build-order.md
   beginBuild(brief: string, budget: number, res: AppState['res'], reset = false, requestedShares?: unknown) {
     return this.mutate(state => {
@@ -506,13 +511,13 @@ export class RigsmithApp extends React.Component<{}, AppState> {
       const checked = validateBudgetShares(requestedShares);
       if (!checked.valid) throw new ShopError('invalid_budget_allocation', checked.message);
       const plan = budgetPlan(budget, res, checked.shares);
-      const patch: Partial<AppState> = { buildBrief: brief.trim(), budget, res, route: 'builder', inspected: null, cornerMin: false,
+      const patch: Partial<AppState> = { buildBrief: brief.trim(), budget, res, inspected: null, cornerMin: false,
         budgetShares: checked.shares,
         buildRevision: state.buildRevision + 1,
         ...(reset ? { picks: { ...DEFAULT_PICKS }, chosen: [], decisions: {}, prev: this.snapshot(state) } : {}) };
-      return { patch: { buildBrief: brief.trim(), budget, res, route: 'builder', inspected: null,
+      return { patch: { buildBrief: brief.trim(), budget, res, inspected: null,
         ...patch },
-        result: { opened: 'builder', budget, resolution: res, reset,
+        result: { opened: 'build_panel', budget, resolution: res, reset,
           budgetAllocation: { source: plan.source, slots: plan.rows },
         } };
     });
@@ -523,7 +528,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
       if (!BUILD_SLOTS.includes(slot) || !Array.isArray(ids) || ids.length < 1 || ids.length > 4 || new Set(ids).size !== ids.length)
         throw new ShopError('invalid_candidates', 'Inspect one to four distinct products in one build slot.');
       if (ids.some(id => !partIn(slot, id))) throw new ShopError('wrong_slot', 'All candidates must belong to the requested slot.');
-      return { patch: { buildBrief: state.buildBrief || 'Compare parts for the current build', inspected: { slot, ids: [...ids], revision: state.buildRevision }, route: 'builder', builderSlot: slot }, result: { inspected: ids } };
+      return { patch: { buildBrief: state.buildBrief || 'Compare parts for the current build', inspected: { slot, ids: [...ids], revision: state.buildRevision } }, result: { inspected: ids } };
     });
   }
 

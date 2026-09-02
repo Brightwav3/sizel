@@ -1,7 +1,8 @@
 import type React from "react";
 import { CATALOG, ORDER } from "../../data/catalog/catalog";
-import { money } from "../../entities/build/metrics";
+import { compatibilityIssues, money } from "../../entities/build/metrics";
 import { RigsmithApp } from "../../app/App";
+import { buildDraftBlocker } from "../../entities/build/selection";
 import type { BuildContext } from "../../entities/build/buildContext";
 
 /**
@@ -20,6 +21,19 @@ export function buildOverlayVals(context: BuildContext) {
   const chosenParts = s.chosen.map(slot => CATALOG[slot].find(part => part.id === s.picks[slot])!);
   const spent = chosenParts.reduce((total, part) => total + part.price, 0);
   const started = Boolean(s.buildBrief.trim()) && s.chosen.length < steps.length;
+  const draftIssue = buildDraftBlocker(s.picks, s.chosen, s.budget);
+  const selectedPicks = app.chosenPicks();
+  const issues = compatibilityIssues(selectedPicks);
+
+  // A compatibility message can involve two parts. Attribute it to every
+  // selected slot whose removal would resolve the message, so the red state
+  // stays attached to the actual choices rather than a generic banner.
+  const issueFor = (slot: typeof steps[number]) => {
+    if (!s.chosen.includes(slot) || !issues.length) return "";
+    const without = { ...selectedPicks };
+    delete without[slot];
+    return issues.find(issue => !compatibilityIssues(without).includes(issue)) ?? "";
+  };
 
   return {
       cornerShow: s.chosen.length > 0 || Boolean(s.buildBrief.trim()),
@@ -44,13 +58,17 @@ export function buildOverlayVals(context: BuildContext) {
         const done = s.chosen.includes(slot);
         const part = CATALOG[slot].find(item => item.id === s.picks[slot])!;
         const order = ORDER.find(item => item.slot === slot)!;
+        const issue = issueFor(slot);
         return {
           slot,
           slotLabel: order.cat,
           name: done ? part.name : "Not selected",
-          icon: done ? "check" : "radio_button_checked",
-          ic: done ? "var(--success)" : "var(--accent)",
-          fg: done ? "var(--text-primary)" : "var(--accent-active)",
+          icon: issue ? "close" : done ? "check" : "radio_button_checked",
+          ic: issue ? "var(--danger)" : done ? "var(--success)" : "var(--accent)",
+          fg: issue ? "var(--danger)" : done ? "var(--text-primary)" : "var(--accent-active)",
+          issue,
+          canRemove: done,
+          remove: () => app.resetSlot(slot),
           price: done ? money(part.price) : "not chosen",
           open: () => app.setState({ route: "category", dept: "pc", openDept: null, category: slot, productSlot: slot, brand: "any", search: "" }),
         };
@@ -60,7 +78,11 @@ export function buildOverlayVals(context: BuildContext) {
       cornerLeft: spent > s.budget
         ? money(spent - s.budget) + " over budget"
         : money(s.budget - spent) + " left of " + money(s.budget),
-      cornerCta: "Browse next slot",
+      cornerCta: "Browse next",
       cornerResume: () => app.setState({ route: "category", dept: "pc", openDept: null, category: steps.find(slot => !s.chosen.includes(slot)) ?? steps[0], productSlot: steps.find(slot => !s.chosen.includes(slot)) ?? steps[0], brand: "any", search: "" }),
+      cornerAddLabel: s.cart.some(line => line.kind === "build") ? "In cart" : "Add to cart",
+      cornerAddDisabled: Boolean(draftIssue),
+      cornerAddReason: draftIssue?.message ?? "",
+      cornerAdd: () => app.addBuildToCart(),
   };
 }

@@ -1,4 +1,4 @@
-import { buildBlocker, bundledFans } from "../../entities/build/selection";
+import { buildDraftBlocker, bundledFans } from "../../entities/build/selection";
 import React from "react";
 import { CATALOG, ORDER } from "../../data/catalog/catalog";
 import { compatibilityIssues, money } from "../../entities/build/metrics";
@@ -20,7 +20,7 @@ export function buildBuilderVals(context: BuildContext) {
   const builderGpu = selectedPart("gpu"), builderCpu = selectedPart("cpu"), builderPsu = selectedPart("psu");
   const builderDraw = selectedCount ? (builderGpu?.watt ?? 0) + (builderCpu?.cpuPowerW ?? 0) + 80 : 0;
   const builderComplete = selectedCount === steps.length;
-  const blocked = buildBlocker(s.picks, s.chosen, s.budget);
+  const blocked = buildDraftBlocker(s.picks, s.chosen, s.budget);
   const activeSlot = s.builderSlot;
   const nextGap = steps.find(slot => !s.chosen.includes(slot));
 
@@ -69,8 +69,11 @@ export function buildBuilderVals(context: BuildContext) {
           incompatibleReason: incompatibility ?? "",
           price: money(part.price), priceKind: part.merchandising ?? "standard",
           installed, incompatible: Boolean(incompatibility), unavailable,
-          disabled: installed || unavailable || Boolean(incompatibility),
-          actionLabel: installed ? "Selected" : incompatibility ? "Does not fit" : unavailable ? "Unavailable" : "Select",
+          // Incompatible parts remain selectable so the builder can show the
+          // conflict in context; only stock and the already-installed row are
+          // hard-disabled.
+          disabled: installed || unavailable,
+          actionLabel: installed ? "Selected" : incompatibility ? "Select anyway" : unavailable ? "Unavailable" : "Select",
           select: () => app.setBuilderPart(activeSlot, part.id),
           open: () => app.setState({ route: "product", productSlot: activeSlot, productId: part.id }),
         };

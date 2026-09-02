@@ -4,7 +4,7 @@ import { listingStock } from "../../data/catalog/listingStock";
 // docs/decisions/0002-single-build-state-and-domain-view-models.md
 import { partIn } from "../../data/catalog/catalog";
 import { productTitle } from "../product/queries";
-import type { CartLine, Slot, Picks } from "../../shared/lib/types";
+import type { CartLine, PcSlot, Slot, Picks } from "../../shared/lib/types";
 
 /** Orders above this ship for nothing. */
 export const FREE_SHIPPING_OVER = 99;
@@ -38,11 +38,18 @@ export interface CartTotals {
  * this, so an agent can never quote a total the shopper is not looking at.
  * The assembled machine is priced as one unit from the build metrics.
  */
-export function cartTotals(cart: CartLine[], build: { price: number; days: number }, picks?: Picks): CartTotals {
+export function cartTotals(cart: CartLine[], build: { price: number; days: number }, picks?: Picks, chosen?: PcSlot[]): CartTotals {
+  const buildParts = picks && chosen ? chosen.map(slot => ({ slot, product: partIn(slot, picks[slot]) })).filter((item): item is { slot: PcSlot; product: NonNullable<ReturnType<typeof partIn>> } => Boolean(item.product)) : [];
+  const draftBuild = chosen !== undefined;
+  const buildPrice = draftBuild ? buildParts.reduce((sum, item) => sum + item.product.price, 0) : build.price;
+  const buildDays = draftBuild ? Math.max(0, ...buildParts.map(item => item.product.days)) : build.days;
+  const buildOutOfStock = draftBuild
+    ? !chosen?.length || buildParts.length !== chosen.length || buildParts.some(item => listingStock(item.product, item.slot) === 0)
+    : !picks || BUILD_SLOTS.some(slot => !partIn(slot, picks[slot]) || listingStock(partIn(slot, picks[slot])!, slot) === 0);
   const rows = cart.map((line, index): CartRow => {
     const product = line.kind === "product" && line.slot ? partIn(line.slot, line.id) : undefined;
-    const unit = line.kind === "build" ? build.price : product?.price ?? 0;
-    const days = line.kind === "build" ? build.days : product?.days ?? 0;
+    const unit = line.kind === "build" ? buildPrice : product?.price ?? 0;
+    const days = line.kind === "build" ? buildDays : product?.days ?? 0;
     return {
       index,
       kind: line.kind,
@@ -53,9 +60,7 @@ export function cartTotals(cart: CartLine[], build: { price: number; days: numbe
       unit,
       total: unit * line.qty,
       days,
-      outOfStock: line.kind === "build"
-        ? !picks || BUILD_SLOTS.some(slot => !partIn(slot, picks[slot]) || listingStock(partIn(slot, picks[slot])!, slot) === 0)
-        : !product || listingStock(product, line.slot!) === 0,
+      outOfStock: line.kind === "build" ? buildOutOfStock : !product || listingStock(product, line.slot!) === 0,
     };
   });
 

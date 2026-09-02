@@ -1,18 +1,16 @@
 import { partIn } from '../../data/catalog/catalog';
 import { listingStock } from '../../data/catalog/listingStock';
-import { BUILD_SLOTS, buildBlocker, requireQuantity, ShopError } from '../build/selection';
+import { requireQuantity, ShopError } from '../build/selection';
 import type { CartLine, PcSlot, Picks } from '../../shared/lib/types';
 
 export function cartBlocker(cart: CartLine[], picks: Picks, chosen: PcSlot[], budget: number): ShopError | null {
-  if (!cart.length) return new ShopError('cart_empty', 'Add a product or completed build first.');
+  if (!cart.length) return new ShopError('cart_empty', 'Add a product or build first.');
   const needed = new Map<string, { slot: PcSlot | NonNullable<CartLine['slot']>; qty: number }>();
   for (const line of cart) {
     try { requireQuantity(line.qty, line.kind === 'build' ? 1 : 5); } catch (error) { return error as ShopError; }
     if (line.qty === 0) return new ShopError('invalid_quantity', 'Remove empty cart lines.');
     if (line.kind === 'build') {
-      const blocked = buildBlocker(picks, chosen, budget);
-      if (blocked) return blocked;
-      for (const slot of BUILD_SLOTS) {
+      for (const slot of chosen) {
         const previous = needed.get(picks[slot]);
         needed.set(picks[slot], { slot, qty: (previous?.qty ?? 0) + 1 });
       }

@@ -36,6 +36,14 @@ describe("candidatePool", () => {
     expect(hits.every(product => findProduct(product.id)?.category === "phones")).toBe(true);
   });
 
+  it("finds phone model names and catalog tags", () => {
+    const pro = candidatePool({ category: "phones", search: "pro", scopeSearchToCategory: true });
+    const flagship = candidatePool({ category: "phones", search: "flagship", scopeSearchToCategory: true });
+    expect(pro.length).toBeGreaterThan(0);
+    expect(pro.every(product => findProduct(product.id)?.category === "phones")).toBe(true);
+    expect(flagship.length).toBeGreaterThan(0);
+  });
+
   it("flattens a department into its categories", () => {
     const pc = DEPTS.find(d => d.id === "pc")!;
     expect(candidatePool({ departmentId: "pc" }))

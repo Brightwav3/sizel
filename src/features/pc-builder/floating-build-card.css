@@ -78,8 +78,10 @@
 /* Expanded panel --------------------------------------------------------- */
 .build-card__panel {
   width: 296px;
-  max-height: calc(100dvh - 32px);
-  overflow-y: auto;
+  height: min(440px, calc(100dvh - 72px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
   border-color: var(--border-default);
   box-shadow: var(--shadow-raised);
 }
@@ -112,9 +114,12 @@
 
 .build-card__rows {
   display: flex;
+  min-height: 0;
+  flex: 1;
   flex-direction: column;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4);
+  overflow-y: auto;
 }
 /* Each row is coloured by whether the slot is chosen, defaulted or missing. */
 .build-card__row {
@@ -122,16 +127,39 @@
   align-items: center;
   width: 100%;
   gap: var(--space-2);
+  min-height: 31px;
+  color: var(--row-fg);
+}
+.build-card__row-main {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+  gap: var(--space-2);
   padding: 3px 0;
   border: 0;
   background: transparent;
-  color: var(--row-fg);
+  color: inherit;
+  font: inherit;
   font-size: var(--text-sm);
   text-align: left;
   cursor: pointer;
 }
-.build-card__row:hover { color: var(--text-accent); }
-.build-card__row .ms { font-size: var(--text-base); color: var(--row-icon); }
+.build-card__row-main:hover { color: var(--text-accent); }
+.build-card__row-main .ms { font-size: var(--text-base); color: var(--row-icon); }
+.build-card__row-remove {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: var(--text-tertiary);
+  font-size: var(--text-base);
+  cursor: pointer;
+}
+.build-card__row-remove:hover { background: color-mix(in srgb, var(--danger) 10%, transparent); color: var(--danger); }
 .build-card__row-copy { display: flex; min-width: 0; flex: 1; flex-direction: column; gap: 1px; }
 .build-card__row-copy small { color: var(--text-tertiary); font-size: var(--type-meta); line-height: 1.1; }
 .build-card__row-name { overflow: hidden; color: inherit; font-size: var(--text-xs); font-weight: var(--weight-medium); text-overflow: ellipsis; white-space: nowrap; }
@@ -140,16 +168,18 @@
 .build-card__rest { padding-left: 22px; font-size: var(--text-xs); color: var(--text-tertiary); }
 
 .build-card__foot {
-  display: flex;
-  align-items: center;
+  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
   gap: var(--space-2);
   padding: var(--space-3) var(--space-4) var(--space-3);
   border-top: 1px solid var(--border-subtle);
 }
-.build-card__totals { flex: 1; }
+.build-card__totals { grid-column: 1 / -1; display: flex; justify-content: space-between; gap: var(--space-2); }
 .build-card__spent { font-size: var(--text-sm); font-weight: var(--weight-medium); }
 .build-card__left { font-size: var(--text-xs); color: var(--text-secondary); }
-.build-card__cta { height: var(--control-height-xs); padding: 0 var(--space-3); font-size: var(--text-xs); }
+.build-card__cta { min-width: 0; height: var(--control-height-xs); padding: 0 var(--space-2); font-size: var(--text-xs); white-space: nowrap; }
 
 /* Toast ------------------------------------------------------------------ */
 .build-toast {

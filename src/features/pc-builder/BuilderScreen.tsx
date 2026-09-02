@@ -154,14 +154,16 @@ function ProductRow({ part }: { part: Vals }) {
         <h3><button type="button" className="forge-product-link" onClick={part.open}>{part.name}</button></h3>
         <p>{part.specs} · {part.stock}</p>
         {part.incompatible && (
-          <p className="forge-product-clash"><span className="material-symbols-outlined">error</span>{part.incompatibleReason}</p>
+          <p className="forge-product-clash" data-tip={part.incompatibleReason}>
+            <span className="material-symbols-outlined" aria-hidden="true">error</span>{part.incompatibleReason}
+          </p>
         )}
       </div>
       <div className={`forge-product-price is-${part.priceKind}`}>
         {part.priceKind !== "standard" && <span>{part.priceKind === "sale" ? "Price bomb" : "New"}</span>}
         <strong>{part.price}</strong>
       </div>
-      <button className="forge-select" disabled={part.disabled} onClick={part.select}>{part.actionLabel}</button>
+      <button className="forge-select" disabled={part.disabled} onClick={part.select} data-tip={part.incompatibleReason || undefined}>{part.actionLabel}</button>
     </article>
   );
 }

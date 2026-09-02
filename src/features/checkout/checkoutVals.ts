@@ -19,7 +19,7 @@ export function buildCheckoutVals(context: BuildContext) {
     line.slot ? CATALOG[line.slot as keyof typeof CATALOG]?.find(part => part.id === line.id) : undefined;
 
   /** Prices come from the cart entity, so this screen and the tools agree. */
-  const totals = cartTotals(s.cart, m, s.picks);
+  const totals = cartTotals(s.cart, m, s.picks, s.chosen);
 
   /** One row per cart line. A build is priced and shipped as a single unit. */
   const cartLines = totals.rows.map((row) => {
@@ -35,9 +35,9 @@ export function buildCheckoutVals(context: BuildContext) {
       name: row.name,
       brand: line.kind === "build" ? "Sizel assembly service" : part?.brand ?? "",
       note: line.kind === "build"
-        ? [m.cpu.name, m.gpu.name, m.ram.name].join(" · ") + " · 6 more"
+        ? `${s.chosen.length} of 9 components selected`
         : (part?.specs ?? []).slice(0, 3).join(" · "),
-      image: line.kind === "build" ? m.gpu.imagePath : part?.imagePath,
+      image: line.kind === "build" ? (s.chosen.map(slot => CATALOG[slot].find(candidate => candidate.id === s.picks[slot])?.imagePath).find(Boolean) ?? m.gpu.imagePath) : part?.imagePath,
       qty: line.qty,
       unitLabel: money(row.unit),
       totalLabel: money(row.total),

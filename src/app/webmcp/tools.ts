@@ -501,10 +501,10 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "show_in_catalog",
     description:
-      "Change the visible storefront view to a category, product, builder or cart without editing shopping state.",
+      "Change the visible storefront view to a category, product or cart without editing shopping state. Use the build pill to review the active PC build.",
     routes: [],
     inputSchema: schema({
-      view: str("Default: category listing.", ["category", "product", "builder", "cart"]),
+      view: str("Default: category listing.", ["category", "product", "cart"]),
       category: str("Category to show.", CATEGORIES),
       productId: str("Required when view is 'product'."),
       query: str("Text for the search box."),
@@ -525,7 +525,8 @@ export const TOOLS: RigsmithTool[] = [
         });
         return ok({ shown: "product", product: productDetail(found.product, found.category) });
       }
-      if (view === "builder" || view === "cart") {
+      if (view === "builder") return fail("builder_view_unavailable", "Build actions keep the shopper on the current storefront page; use the build pill to review the build.");
+      if (view === "cart") {
         await instance.showInCatalog({ route: view });
         return ok({ shown: view });
       }
@@ -783,9 +784,9 @@ export const TOOLS: RigsmithTool[] = [
 
   {
     name: "begin_build",
-    // ADR 0013: this tool opens the workspace but never chooses a starting slot or part.
+    // ADR 0013: this tool opens the build panel but never chooses a starting slot or part.
     // docs/decisions/0013-agent-chooses-build-order.md
-    description: "Open the PC configurator with a shopper brief, resolution and hard budget, returning optional slot-share planning hints.",
+    description: "Start a PC build in place: open the build panel with a shopper brief, resolution and hard budget, without changing the current page.",
     routes: ["home", "category", "product", "builder"],
     inputSchema: schema({
       brief: { ...str("Shopper needs and constraints, 5–500 characters."), minLength: 5, maxLength: 500 },
@@ -965,7 +966,7 @@ export const TOOLS: RigsmithTool[] = [
     inputSchema: NO_INPUT,
     execute() {
       const instance = app();
-      const totals = cartTotals(instance.state.cart, instance.metrics(), instance.state.picks);
+      const totals = cartTotals(instance.state.cart, instance.metrics(), instance.state.picks, instance.state.chosen);
       return ok({
         blockedBy: cartBlocker(instance.state.cart, instance.state.picks, instance.state.chosen, instance.state.budget)?.code ?? null,
         empty: totals.rows.length === 0,
@@ -1227,7 +1228,7 @@ export const TOOLS: RigsmithTool[] = [
     async execute(args) {
       const instance = app();
       const slot = args.slot as PcSlot;
-      await instance.showInCatalog({ route: "builder", builderSlot: slot });
+      await instance.showInCatalog({ route: "category", category: slot, productSlot: slot, dept: "pc", brand: "any", search: "" });
       return ok({
         showing: slot,
         slotName: slotName(slot),

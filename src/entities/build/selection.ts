@@ -30,6 +30,15 @@ export function buildBlocker(picks: Picks, chosen: PcSlot[], budget: number): Sh
   return null;
 }
 
+/** A build draft may be saved to the cart before every slot is selected. */
+export function buildDraftBlocker(picks: Picks, chosen: PcSlot[], budget: number): ShopError | null {
+  if (!chosen.length) return new ShopError('build_empty', 'Choose at least one component before adding the build to your cart.');
+  const unavailable = chosen.find(slot => !partIn(slot, picks[slot]) || listingStock(partIn(slot, picks[slot])!, slot) === 0);
+  if (unavailable) return new ShopError('out_of_stock', `${unavailable} is unavailable. Choose an available part.`);
+  if (selectedPrice(picks, chosen) > budget) return new ShopError('over_budget', 'Selected parts exceed the agreed budget. Change parts or explicitly update the budget.');
+  return null;
+}
+
 export function requireQuantity(quantity: number, max = 5) {
   if (!Number.isInteger(quantity) || quantity < 0 || quantity > max)
     throw new ShopError('invalid_quantity', `Use a whole quantity between 0 and ${max}.`);

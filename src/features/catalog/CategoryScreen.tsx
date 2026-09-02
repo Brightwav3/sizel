@@ -226,6 +226,13 @@ export const ProductCard: React.FC<{ g: Vals }> = ({ g }) => (
           onClick={(event) => { event.stopPropagation(); g.watch(); }}>
           <span className="ms">{"sound_detection_dog_barking"}</span>
         </button>
+        {g.canAddToBuild && <button type="button" className="product-card__build"
+          aria-label={g.inBuild ? "Component already in your PC build" : "Add component to your PC build"}
+          data-tip={g.inBuild ? "Already in your PC build" : "Add to PC build"} data-tip-align="end"
+          aria-pressed={g.inBuild}
+          onClick={(event) => { event.stopPropagation(); g.addToBuild(); }}>
+          <span className="ms">construction</span>
+        </button>}
       </div>
       <div className="product-card__name">{g.name}</div>
       {g.inBuild && <div className="product-card__in-build">In your build</div>}

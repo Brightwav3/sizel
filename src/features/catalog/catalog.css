@@ -250,7 +250,8 @@
 }
 .product-card__spacer { flex: 1; }
 
-.product-card__watch {
+.product-card__watch,
+.product-card__build {
   display: inline-flex;
   padding: 0;
   background: transparent;
@@ -259,7 +260,9 @@
   cursor: pointer;
 }
 .product-card__watch[aria-pressed="true"] { color: var(--accent-active); }
-.product-card__watch .ms { font-size: var(--type-icon-md); }
+.product-card__build[aria-pressed="true"] { color: var(--accent-active); }
+.product-card__watch .ms,
+.product-card__build .ms { font-size: var(--type-icon-md); }
 
 .product-card__name {
   font-size: var(--text-sm);

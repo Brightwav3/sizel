@@ -37,9 +37,9 @@ function fullBuild() {
 }
 
 describe('independent agent selections', () => {
-  it('opens a workspace without choosing default parts', async () => {
-    expect(await call('begin_build', { brief: 'A quiet gaming PC', budget: 800 })).toMatchObject({ opened: 'builder', budget: 800 });
-    expect(app.state.route).toBe('builder');
+  it('opens the build panel without choosing parts or navigating away', async () => {
+    expect(await call('begin_build', { brief: 'A quiet gaming PC', budget: 800 })).toMatchObject({ opened: 'build_panel', budget: 800 });
+    expect(app.state.route).toBe('home');
     expect(app.state.cornerMin).toBe(false);
     expect(app.state.chosen).toEqual([]);
     expect(TOOLS.some(tool => tool.name === 'recommend_build')).toBe(false);
@@ -57,14 +57,23 @@ describe('independent agent selections', () => {
     const [first, second] = CATALOG.cpu.filter(p => p.stock !== 0).slice(0, 2);
     const args = { slot: 'cpu', productId: first.id, reason, tradeoff, alternativeId: second.id };
     expect(await call('set_build_component', { slot: 'cpu', productId: first.id })).not.toHaveProperty('error');
-    expect(app.state.route).toBe('builder');
+    expect(app.state.route).toBe('home');
     expect(app.state.decisions.cpu?.comparedIds).toEqual([]);
     await call('inspect_build_options', { slot: 'cpu', productIds: [first.id, second.id] });
     expect(await call('set_build_component', { ...args, alternativeId: first.id })).toMatchObject({ error: 'invalid_alternative' });
     expect(await call('set_build_component', args)).not.toHaveProperty('error');
     expect(app.state.decisions.cpu).toMatchObject({ reason, tradeoff, alternativeId: second.id, comparedIds: [first.id, second.id] });
     expect(app.state.picks.cpu).toBe(first.id);
-    expect(app.state.route).toBe('builder');
+    expect(app.state.route).toBe('home');
+  });
+  it('keeps an incompatible direct choice visible and reports the conflict', async () => {
+    const cpu = CATALOG.cpu.find(p => p.stock !== 0)!;
+    const board = CATALOG.board.find(p => p.stock !== 0 && p.socket !== cpu.socket)!;
+    expect(await call('set_build_component', { slot: 'cpu', productId: cpu.id })).not.toHaveProperty('error');
+    const result = await call('set_build_component', { slot: 'board', productId: board.id });
+    expect(result).toMatchObject({ compatible: false, selectedCount: 2 });
+    expect(result.issues?.[0]).toContain('uses');
+    expect(app.state.chosen).toEqual(expect.arrayContaining(['cpu', 'board']));
   });
   it('does not require reinspection after target changes but still enforces the current budget', async () => {
     const item = CATALOG.cpu.find(p => p.stock !== 0)!;
@@ -127,15 +136,15 @@ describe('visible catalog flow', () => {
     expect(app.state).toMatchObject({ route: 'product', productId: phone.id, productSlot: 'phones' });
 
     await call('begin_build', { brief: 'A gaming PC under budget', budget: 1800 });
-    expect(app.state.route).toBe('builder');
+    expect(app.state.route).toBe('product');
 
     await call('compare_products', { productIds: [gpu.id, otherGpu.id] });
-    expect(app.state.route).toBe('builder');
+    expect(app.state.route).toBe('product');
 
     await call('show_in_catalog', { view: 'product', productId: gpu.id });
     expect(app.state).toMatchObject({ route: 'product', productId: gpu.id, productSlot: 'gpu' });
-    await call('show_in_catalog', { view: 'builder' });
-    expect(app.state.route).toBe('builder');
+    expect(await call('show_in_catalog', { view: 'builder' })).toMatchObject({ error: 'builder_view_unavailable' });
+    expect(app.state.route).toBe('product');
   });
 
   it('keeps phone searches on phones and resolves a stale product slot by id', async () => {
@@ -233,7 +242,7 @@ describe('visible catalog flow', () => {
       reset: true,
     });
     expect(started).toMatchObject({
-      opened: 'builder',
+      opened: 'build_panel',
       budget: 1500,
       resolution: '1440p',
     });
@@ -259,7 +268,7 @@ describe('visible catalog flow', () => {
     });
     expect(app.state.chosen).toEqual(BUILD_SLOTS);
     expect(app.state.picks).toMatchObject({ ...picks, fans: bundledFans(picks.case) });
-    expect(app.state.route).toBe('builder');
+    expect(app.state.route).toBe('home');
   });
 
   it('rejects an invalid batch without partially changing the build', async () => {
@@ -437,10 +446,12 @@ describe('whole-build tradeoffs without automatic selection', () => {
 });
 
 describe('shared orderability and committed writes', () => {
-  it('rejects adding an incomplete build through UI and tool commands', async () => {
-    expect(await app.addBuildToCart()).toMatchObject({ error: 'build_incomplete' });
-    expect(await call('add_build_to_cart')).toMatchObject({ error: 'build_incomplete' });
-    expect(app.state.cart).toEqual([]);
+  it('allows an unfinished build in the cart, but requires it to be complete at checkout', async () => {
+    const cpu = CATALOG.cpu.find(item => listingStock(item, 'cpu') > 0)!;
+    await app.setBuilderPart('cpu', cpu.id);
+    expect(await app.addBuildToCart()).toMatchObject({ added: 'build', price: cpu.price });
+    expect(app.state.cart).toEqual([{ kind: 'build', id: 'build', qty: 1 }]);
+    expect(await call('start_checkout')).toMatchObject({ error: 'build_incomplete' });
   });
   it('blocks unavailable builds at add and checkout and flags them in cart', async () => {
     fullBuild();

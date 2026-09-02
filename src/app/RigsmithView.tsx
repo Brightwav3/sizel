@@ -8,10 +8,11 @@ import { CheckoutScreen, DoneScreen } from "../features/checkout/CheckoutScreens
 import { FloatingBuildCard, Toast } from "../features/pc-builder/FloatingBuildCard";
 import { NotFoundScreen } from "../features/errors/NotFoundScreen";
 import { StorefrontSkeleton } from "../shared/layout/StorefrontSkeleton";
+import { TooltipLayer } from "../shared/styles/TooltipLayer";
 
 export function RigsmithView({ v }: { v: Vals }) {
-  if (v.isLoading) return <StorefrontSkeleton />;
-  if (v.isNotFound) return <><NotFoundScreen v={v} /><Toast v={v} /></>;
+  if (v.isLoading) return <><StorefrontSkeleton /><TooltipLayer /></>;
+  if (v.isNotFound) return <><NotFoundScreen v={v} /><Toast v={v} /><TooltipLayer /></>;
   return (
     <>
       <AppShell v={v}>
@@ -25,6 +26,7 @@ export function RigsmithView({ v }: { v: Vals }) {
       </AppShell>
       {v.cornerShow && <FloatingBuildCard v={v} />}
       <Toast v={v} />
+      <TooltipLayer />
     </>
   );
 }
