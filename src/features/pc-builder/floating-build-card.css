@@ -104,7 +104,6 @@
   padding: 0;
   background: transparent;
   border: 0;
-  font: inherit;
   font-size: var(--text-base);
   color: var(--text-tertiary);
   cursor: pointer;
