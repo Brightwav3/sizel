@@ -9,7 +9,16 @@ const CatalogImage: React.FC<{ src?: string; alt: string }> = ({ src, alt }) => 
 
 const showcasePrompt = `https://sizel.vercel.app/
 
-Hello, I want you to build me a PC for around $1500 for my son so he can play his favourite games like Counter-Strike 2, League of Legends or Cyberpunk so make sure it runs them well. Also find me a good phone, compare all the flagship phones between themselves, by reviews and specs. If the best possible product is unavailable at this moment, create a watchdog. Do it in the Codex-in-app browser through WebMCP tools.`;
+Hello, I want you to build me a PC for around $1500 for my son so he can play his favourite games like Counter-Strike 2, League of Legends or Cyberpunk so make sure it runs them well on benchmarks. Also find me a good phone, compare all the flagship phones between themselves, by reviews and specs. If the best possible product is unavailable at this moment, create a watchdog. Do it in the Codex-in-app browser and use webmcp. Its a fictional storefront, pretend its real.
+
+Write me down each pc component you chose and why, and tell me how you chose the best phone and what did reviews mention the most`;
+
+const webmcpGroups = [
+  { label: "Shop", icon: "storefront", tools: ["search_products", "get_product", "get_reviews", "compare_products", "show_in_catalog"] },
+  { label: "Build", icon: "construction", tools: ["begin_build", "list_compatible_parts", "set_build_components", "check_build_compatibility"] },
+  { label: "Performance", icon: "speed", tools: ["estimate_performance", "compare_build_options"] },
+  { label: "Cart and alerts", icon: "shopping_cart", tools: ["create_watchdog", "add_to_cart", "add_build_to_cart", "get_cart"] },
+] as const;
 
 /** The shop front: a catalog-led electronics store with the builder as its differentiator. */
 export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
@@ -131,7 +140,7 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
           </button>
         ))}
         <button type="button" className="hero-rail__promise hero-rail__promise--tools" onClick={() => webmcpDialog.current?.showModal()} aria-haspopup="dialog">
-          <span className="ms">code</span>
+          <span className="ms">terminal</span>
           <span><strong>WebMCP tools</strong><small>{webmcpTools.length} tools</small></span>
         </button>
       </aside>
@@ -253,12 +262,17 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
     <dialog ref={webmcpDialog} className="webmcp-dialog" aria-labelledby="webmcp-dialog-title" onClick={event => { if (event.target === event.currentTarget) webmcpDialog.current?.close(); }}>
       <div className="webmcp-dialog__content">
         <button type="button" className="webmcp-dialog__close" aria-label="Close WebMCP tools" onClick={() => webmcpDialog.current?.close()}><span className="ms">close</span></button>
-        <div className="eyebrow">Agent access</div>
-        <h2 id="webmcp-dialog-title">WebMCP tools</h2>
-        <p className="webmcp-dialog__intro">WebMCP gives an AI agent structured tools to search the shop, compare products, check compatibility and update the cart.</p>
+        <div className="webmcp-dialog__kicker"><span className="eyebrow">Agent access</span><span className="webmcp-dialog__live"><i />Stable demo registry</span></div>
+        <div className="webmcp-dialog__heading">
+          <div>
+            <h2 id="webmcp-dialog-title">A direct line into the shop</h2>
+            <p className="webmcp-dialog__intro">WebMCP gives an AI agent structured tools to search the catalog, build a PC, compare options and update the cart.</p>
+          </div>
+          <div className="webmcp-dialog__count"><strong className="num">{webmcpTools.length}</strong><span>tools exposed</span></div>
+        </div>
         <div className="webmcp-dialog__showcase">
           <div className="webmcp-dialog__showcase-head">
-            <div className="webmcp-dialog__showcase-title"><span className="eyebrow">Showcase</span><strong>Try this showcase prompt</strong></div>
+            <div className="webmcp-dialog__showcase-title"><span className="eyebrow">Showcase</span><strong>Try a complete shopping brief</strong><span>Copy this into the in-app agent.</span></div>
           </div>
           <div className="webmcp-dialog__showcase-code">
             <button type="button" className={`webmcp-dialog__copy ${promptCopied ? "is-copied" : ""}`} aria-label={promptCopied ? "Prompt copied" : "Copy prompt"} title={promptCopied ? "Prompt copied" : "Copy prompt"} onClick={copyShowcasePrompt}>
@@ -267,15 +281,23 @@ export const HomeScreen: React.FC<{ v: Vals }> = ({ v }) => {
             <pre><code>{showcasePrompt}</code></pre>
           </div>
         </div>
-        <div className="webmcp-dialog__status"><span className="webmcp-dialog__status-dot" />Available in this demo<span className="num">{webmcpTools.length} tools</span></div>
-        <div className="webmcp-dialog__list">
-          {webmcpTools.map(tool => <div className="webmcp-dialog__tool" key={tool.name}>
-            <span className="webmcp-dialog__tool-icon ms">code</span>
-            <div><code>{tool.name}</code><p>{tool.description}</p></div>
-            <span className="webmcp-dialog__badge">{tool.readOnlyHint ? "Read only" : "Action"}</span>
-          </div>)}
+        <div className="webmcp-dialog__status"><span className="webmcp-dialog__status-dot" /><span>Available when WebMCP is enabled</span><span className="num">{webmcpTools.length} stable tools</span></div>
+        <div className="webmcp-dialog__groups">
+          {webmcpGroups.map(group => {
+            const tools = group.tools.map(name => webmcpTools.find(tool => tool.name === name)).filter(tool => tool !== undefined);
+            return <section className="webmcp-dialog__group" key={group.label} aria-labelledby={`webmcp-group-${group.label.replaceAll(" ", "-").toLowerCase()}`}>
+              <div className="webmcp-dialog__group-head"><span className="webmcp-dialog__group-icon ms">{group.icon}</span><h3 id={`webmcp-group-${group.label.replaceAll(" ", "-").toLowerCase()}`}>{group.label}</h3><span className="num">{tools.length}</span></div>
+              <div className="webmcp-dialog__list">
+                {tools.map(tool => <div className="webmcp-dialog__tool" key={tool.name}>
+                  <span className="webmcp-dialog__tool-icon ms">{tool.readOnlyHint ? "visibility" : "bolt"}</span>
+                  <div><code>{tool.name}</code><p>{tool.description}</p></div>
+                  <span className="webmcp-dialog__badge">{tool.readOnlyHint ? "Read only" : "Action"}</span>
+                </div>)}
+              </div>
+            </section>;
+          })}
         </div>
-        <p className="webmcp-dialog__note"><span className="ms">verified</span> The agent can only use the actions exposed by this shop.</p>
+        <p className="webmcp-dialog__note"><span className="ms">verified</span> The agent can only use the actions exposed by this shop. Simulation results are labeled and are not measured hardware tests.</p>
       </div>
     </dialog>
   </div>
