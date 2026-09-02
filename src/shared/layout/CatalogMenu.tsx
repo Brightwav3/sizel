@@ -162,7 +162,7 @@ export const CatalogMenu: React.FC<{ v: Vals; variant?: "rail" | "bar" }> = ({ v
                 <span>
                   <strong>{group.title}</strong>
                   <small>{group.hint}</small>
-                  <em>{group.featured ? "Open builder" : "View category"} <span className="ms">arrow_forward</span></em>
+                  <em>{group.featured ? "Browse PC parts" : "View category"} <span className="ms">arrow_forward</span></em>
                 </span>
               </button>
             ))}

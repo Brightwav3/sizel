@@ -10,7 +10,7 @@ All products, brands, logos, and product images are fictional. The application d
 
 ## Agent-led building (31 August 2026)
 
-`recommend_build` is no longer exposed. For PC requests, agents start with `begin_build`, decide which slot to solve first, choose catalog products, and apply the complete selection with `set_build_components`. `begin_build` accepts optional `budgetShares`, such as {cpu: 20, gpu: 40}, and returns dollar allowances for every slot. It never selects a starting slot or part. Omitted slots receive the resolution-aware remainder; these are planning hints, not hard caps. `list_compatible_parts` repeats the current slot allowance next to fitting candidates and can batch several slots, while `compare_build_options` calculates explicit simulated results and deltas for alternatives supplied by the agent. Phone searches group storage variants by model by default, so one search can supply distinct comparison candidates. `inspect_build_options` is optional when more facts are needed, as are reason and tradeoff fields. The existing builder opens before selection and shows the selected parts as the agent works. Material tradeoffs belong in the agent conversation, not an additional page panel.
+`recommend_build` is no longer exposed. For PC requests, agents start with `begin_build`, decide which slot to solve first, choose catalog products, and apply the complete selection with `set_build_components`. `begin_build` accepts optional `budgetShares`, such as {cpu: 20, gpu: 40}, and returns dollar allowances for every slot. It never selects a starting slot or part. Omitted slots receive the resolution-aware remainder; these are planning hints, not hard caps. `list_compatible_parts` repeats the current slot allowance next to fitting candidates and can batch several slots, while `compare_build_options` calculates explicit simulated results and deltas for alternatives supplied by the agent. Phone searches group storage variants by model by default, so one search can supply distinct comparison candidates. `inspect_build_options` is optional when more facts are needed, as are reason and tradeoff fields. The structured WebMCP route can still use the internal builder state; the public UI path uses the in-progress popup and category/product pages so visual agents compare specifications before selecting. Material tradeoffs belong in the agent conversation, not an additional page panel.
 
 Build and cart writes share UI validation and finish after React commits. A complete build must fit the exact budget and stock limits before checkout. Catalog data remain synthetic; checkout is a preview, not a payment or order service. See [ADR 0007](docs/decisions/0007-agents-select-and-explain-parts.md).
 
@@ -188,10 +188,11 @@ origin trial token and an origin-isolated document, so do not serve it with
 `Origin-Agent-Cluster: ?0`.
 
 When a browser agent builds a PC without WebMCP, follow the evidence-first
-workflow in [`AGENTS.md`](AGENTS.md): open each candidate's product detail,
-read its **Specifications** section, verify it against the current build, then
-select it in the builder. The structured WebMCP path keeps its optional-
-inspection contract from ADR 0009.
+workflow in [`AGENTS.md`](AGENTS.md): use the in-progress build popup to open
+each slot's category, open candidate product details, read **Specifications**,
+verify them against the current build, and add the part from its product page.
+The public `/pc-builder` route is intentionally unavailable; the structured
+WebMCP path keeps its optional-inspection contract from ADR 0009.
 
 ## Data and licensing
 

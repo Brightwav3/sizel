@@ -27,8 +27,10 @@ const firstSlotForBrand = (brand: string) => allSlots.find(slot => CATALOG[slot]
 export function stateFromLocation(): Partial<AppState> {
   const segments = window.location.pathname.split("/").filter(Boolean).map(segment => decodeURIComponent(segment));
   if (segments.length === 0) return { route: "home" };
-  if (segments[0] === "pc-builder") return { route: "builder" };
-  if (segments[0] === "build") return { route: "builder" };
+  // The guided builder is intentionally not a public route. Visual agents
+  // should use the build popup to open and compare one category at a time.
+  if (segments[0] === "pc-builder") return { route: "not-found" };
+  if (segments[0] === "build") return { route: "not-found" };
   if (segments[0] === "cart") return { route: "cart" };
   if (segments[0] === "checkout") return { route: "checkout", step: 0 };
   if (segments[0] === "order-complete") return { route: "done" };

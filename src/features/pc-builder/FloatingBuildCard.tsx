@@ -37,16 +37,16 @@ export const FloatingBuildCard: React.FC<{ v: Vals }> = ({ v }) => (
           <span className="ms build-card__grip" data-tip="Drag to move this card">drag_indicator</span>
           <div className="build-card__title">{v.cornerTitle}</div>
           <div className="num build-card__count">{v.cornerCount}</div>
-          <button type="button" className="ms build-card__head-action" onPointerDown={(event) => event.stopPropagation()} onClick={v.cornerResume} data-tip="Open the full build" aria-label="Open the full build">open_in_full</button>
+          <button type="button" className="ms build-card__head-action" onPointerDown={(event) => event.stopPropagation()} onClick={v.cornerResume} data-tip="Browse the next slot" aria-label="Browse the next slot">arrow_forward</button>
           <button type="button" className="ms build-card__head-action" onPointerDown={(event) => event.stopPropagation()} onClick={v.cornerToggle} data-tip="Collapse to a bubble" data-tip-align="end" aria-label="Collapse to a bubble">remove</button>
         </div>
         <div className="build-card__rows">
           {v.cornerRows.map((c: Vals, i: number) => (
-            <div key={i} className="build-card__row" style={{ "--row-fg": c.fg, "--row-icon": c.ic } as React.CSSProperties}>
+            <button type="button" key={i} className="build-card__row" onClick={c.open} aria-label={`Open ${c.slotLabel} category`} style={{ "--row-fg": c.fg, "--row-icon": c.ic } as React.CSSProperties}>
               <span className="ms">{c.icon}</span>
-              <span className="build-card__row-name">{c.name}</span>
+              <span className="build-card__row-copy"><small>{c.slotLabel}</small><strong className="build-card__row-name">{c.name}</strong></span>
               <span className="num build-card__row-price">{c.price}</span>
-            </div>
+            </button>
           ))}
           <div className="build-card__rest">{v.cornerRest}</div>
         </div>

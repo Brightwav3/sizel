@@ -105,6 +105,6 @@ export function buildProductVals(context: BuildContext) {
       pMobileAction: stockCount > 0 ? () => app.addToCart(pSlot, pick.id) : () => app.toggleWatchdog(pSlot, pick.id, watchKind),
       pBuildActionShow: buildableProduct ? "flex" : "none",
       pBuildActionLabel: "Add to my PC build",
-      pAddToBuild: () => app.set(pSlot as PcSlot, pick.id),
+      pAddToBuild: () => app.setFromProduct(pSlot as PcSlot, pick.id),
   };
 }

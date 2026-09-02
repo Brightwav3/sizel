@@ -39,8 +39,9 @@ use the storefront UI as an evidence-first workflow:
    and power), plus price and availability.
 3. Compare those values with the parts already chosen. If a required value is
    missing or unclear, do not guess: inspect another candidate or ask for help.
-4. Return to the builder, select the verified part, and re-check the builder's
-   compatibility and budget status before moving to the next slot.
+4. Add the verified part from its product page, then use the in-progress build
+   popup to open the next slot's category and re-check compatibility and budget
+   status before moving on.
 
 This rule applies only when WebMCP is unavailable. It does not change the
 optional-inspection contract documented in `docs/decisions/0009-inspection-is-optional.md`.

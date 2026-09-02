@@ -182,7 +182,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
 
   dockPoint() {
     const w = window.innerWidth || 1280, h = window.innerHeight || 800;
-    const box = this.state.cornerMin ? { w: 168, h: 44 } : { w: 296, h: 232 };
+    const box = this.state.cornerMin ? { w: 168, h: 44 } : { w: 296, h: 440 };
     const x = this.state.cornerX === null ? w - box.w - 24 : this.state.cornerX;
     const y = this.state.cornerY === null ? h - box.h - 24 : this.state.cornerY;
     return {
@@ -377,7 +377,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   }
 
   /** Atomic for UI and agents: a case and its included fans are one choice. */
-  set(slot: PcSlot, id: string, decision?: BuildDecision) {
+  set(slot: PcSlot, id: string, decision?: BuildDecision, destination: "builder" | "category" = "builder") {
     return this.mutate(state => {
       const item = partIn(slot, id);
       if (!BUILD_SLOTS.includes(slot) || !item) throw new ShopError('wrong_slot', 'Choose a product from this slot.');
@@ -404,12 +404,12 @@ export class RigsmithApp extends React.Component<{}, AppState> {
       delete decisions[slot];
       if (decision) decisions[slot] = decision;
       if (slot === 'case') delete decisions.fans;
+      const destinationState = destination === "category"
+        ? { route: "category" as const, dept: "pc", openDept: null, category: slot, productSlot: slot, brand: "any", search: "" }
+        : { route: "builder" as const, builderSlot: slot };
       return { patch: { picks, chosen, decisions, prev: this.snapshot(state), inspected: null,
         buildRevision: state.buildRevision + 1, lastChange: null,
-        // A product detail or category page is a useful place to inspect a
-        // candidate, but the committed choice always brings the shopper back
-        // to the configurator and focuses the slot that changed.
-        route: 'builder' as const, builderSlot: slot,
+        ...destinationState,
         toast: `${item.name} selected` },
         result: { slot, fitted: item.name, selectedPrice: price, budgetRemainingUSD: state.budget - price,
           selectedCount: chosen.length, complete: BUILD_SLOTS.every(s => chosen.includes(s)), compatible: true,
@@ -536,6 +536,14 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   static readonly BUILD_STEPS: PcSlot[] = ['cpu', 'board', 'ram', 'gpu', 'storage', 'cooler', 'psu', 'case', 'fans'];
 
   setBuilderPart(slot: PcSlot, id: string) { return this.set(slot, id); }
+
+  /** UI product pages return to the category after adding a part to the build. */
+  setFromProduct(slot: PcSlot, id: string) { return this.set(slot, id, undefined, "category"); }
+
+  /** The public UI build path starts at a category, not the retired builder. */
+  openBuildSlot(slot: PcSlot = "cpu") {
+    this.setState({ route: "category", dept: "pc", openDept: null, category: slot, productSlot: slot, brand: "any", search: "" });
+  }
 
   /**
    * Drag the floating card, and tell a tap apart from a drag.

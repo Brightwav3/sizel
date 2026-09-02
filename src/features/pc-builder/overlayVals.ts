@@ -37,26 +37,30 @@ export function buildOverlayVals(context: BuildContext) {
       cornerRemaining: `${steps.length - s.chosen.length} to go`,
       cornerTitle: started ? "Build in progress" : s.chosen.length ? "Your build" : "Start a build",
       cornerCount: `${s.chosen.length} / ${steps.length}`,
-      cornerRows: steps.slice(0, 3).map(slot => {
+      /** Every slot is a real navigation target. The builder is intentionally
+       * not the UI path for visual agents: each click opens the category where
+       * the part's full product details can be compared. */
+      cornerRows: steps.map(slot => {
         const done = s.chosen.includes(slot);
         const part = CATALOG[slot].find(item => item.id === s.picks[slot])!;
         const order = ORDER.find(item => item.slot === slot)!;
         return {
-          name: done ? part.name : order.cat,
+          slot,
+          slotLabel: order.cat,
+          name: done ? part.name : "Not selected",
           icon: done ? "check" : "radio_button_checked",
           ic: done ? "var(--success)" : "var(--accent)",
           fg: done ? "var(--text-primary)" : "var(--accent-active)",
           price: done ? money(part.price) : "not chosen",
+          open: () => app.setState({ route: "category", dept: "pc", openDept: null, category: slot, productSlot: slot, brand: "any", search: "" }),
         };
       }),
-      cornerRest: steps.slice(3)
-        .map(slot => ORDER.find(item => item.slot === slot)!.cat.toLowerCase())
-        .join(", "),
+      cornerRest: "Open a slot to compare its products and specifications.",
       cornerSpent: s.chosen.length ? money(spent) + " so far" : "Nothing chosen yet",
       cornerLeft: spent > s.budget
         ? money(spent - s.budget) + " over budget"
         : money(s.budget - spent) + " left of " + money(s.budget),
-      cornerCta: started ? "Resume" : "Open",
-      cornerResume: () => app.go("builder"),
+      cornerCta: "Browse next slot",
+      cornerResume: () => app.setState({ route: "category", dept: "pc", openDept: null, category: steps.find(slot => !s.chosen.includes(slot)) ?? steps[0], productSlot: steps.find(slot => !s.chosen.includes(slot)) ?? steps[0], brand: "any", search: "" }),
   };
 }

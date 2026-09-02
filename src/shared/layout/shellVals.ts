@@ -46,14 +46,14 @@ export function buildShellVals(context: BuildContext) {
         ...(dept.name === CAT_META[s.category].name ? [] : [{ label: CAT_META[s.category].name, current: s.brand === "any", go: () => app.setState({ route: "category", dept: dept.id, category: s.category, productSlot: s.category, brand: "any", openDept: null }) }]),
         ...(s.brand === "any" ? [] : [{ label: s.brand, current: true, go: () => app.setState({ route: "category", dept: dept.id, category: s.category, productSlot: s.category, brand: s.brand, openDept: null }) }]),
       ],
-      goHome: () => app.go("home"), goBuilder: () => app.go("builder"),
+      goHome: () => app.go("home"), goBuilder: () => app.openBuildSlot("cpu"),
       goCategory: () => app.go("category"), goCart: () => app.go("cart"),
       goCheckout: () => app.startCheckout(),
       isLoading: s.isLoading,
       isHome: on("home"), isCategory: on("category") || on("brand"), isProduct: on("product"),
       isBuilder: on("builder"), isCart: on("cart"),
       isCheckout: on("checkout"), isDone: on("done"), isNotFound: on("not-found"),
-      startGuided: () => app.setState({ route: "builder", chosen: [], builderSlot: "cpu" }),
+      startGuided: () => app.openBuildSlot("cpu"),
 
       /** Watched products, newest first, each removable from the panel. */
       watchCount: s.watchdogs.length,
