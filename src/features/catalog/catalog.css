@@ -378,3 +378,10 @@
   font-weight: var(--weight-medium);
   text-align: center;
 }
+
+/* A 150px phone card cannot fit a readable price panel and purchase button
+   side by side. Stack them so both "New" and "Price bomb" remain intact. */
+@media (max-width: 620px) {
+  .product-card__buy { grid-template-columns: minmax(0, 1fr); }
+  .product-card__stock { grid-column: 1; }
+}

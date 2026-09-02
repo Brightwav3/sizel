@@ -49,4 +49,4 @@
 
 /* Catalog ---------------------------------------------------------------- */
 .catalog-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(196px, 1fr)); gap: var(--space-3); }
-@media (max-width: 620px) { .catalog-grid { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--space-2); } }
+@media (max-width: 620px) { .catalog-grid { grid-template-columns: repeat(auto-fill, minmax(0, 1fr)); gap: var(--space-2); } }
