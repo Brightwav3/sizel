@@ -187,6 +187,12 @@ Without WebMCP the shop runs exactly as before: registration is skipped when
 origin trial token and an origin-isolated document, so do not serve it with
 `Origin-Agent-Cluster: ?0`.
 
+When a browser agent builds a PC without WebMCP, follow the evidence-first
+workflow in [`AGENTS.md`](AGENTS.md): open each candidate's product detail,
+read its **Specifications** section, verify it against the current build, then
+select it in the builder. The structured WebMCP path keeps its optional-
+inspection contract from ADR 0009.
+
 ## Data and licensing
 
 - `public/catalog/products.json` — canonical product catalog.

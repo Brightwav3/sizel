@@ -25,6 +25,26 @@ Project-specific instructions may extend these rules. A more specific
 - Do not introduce secrets, credentials, or unnecessary dependencies.
 - Preserve unrelated user changes already present in the worktree.
 
+## PC building without WebMCP
+
+The structured WebMCP workflow may use catalog facts directly because its
+selection tools validate stock, compatibility, and budget at commit time. A
+visual/browser agent does not have that structured inspection path, so it must
+use the storefront UI as an evidence-first workflow:
+
+1. Open the product detail page for every candidate part before selecting it;
+   clicking only a listing row or relying on its short spec chips is not enough.
+2. Read the **Specifications** section and record the values needed for the
+   decision (for example socket, memory type, interface, dimensions/clearance,
+   and power), plus price and availability.
+3. Compare those values with the parts already chosen. If a required value is
+   missing or unclear, do not guess: inspect another candidate or ask for help.
+4. Return to the builder, select the verified part, and re-check the builder's
+   compatibility and budget status before moving to the next slot.
+
+This rule applies only when WebMCP is unavailable. It does not change the
+optional-inspection contract documented in `docs/decisions/0009-inspection-is-optional.md`.
+
 ## Before and after changes
 
 1. Inspect the relevant implementation and its tests.
