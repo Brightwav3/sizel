@@ -36,7 +36,7 @@ describe("README", () => {
     const written = readme.match(/^([A-Z][a-z-]+(?:-[a-z]+)?) tool descriptors are implemented/m)?.[1];
     const demoWritten = readme.match(/registers ([a-z-]+) stable tools/m)?.[1];
     const words: Record<string, number> = {
-      Thirteen: 13, Fourteen: 14, Nineteen: 19, "Twenty-seven": 27, "Thirty-three": 33, "Thirty-four": 34, "Thirty-five": 35, "Thirty-six": 36, "Thirty-seven": 37,
+      Thirteen: 13, Fourteen: 14, Fifteen: 15, Nineteen: 19, "Twenty-seven": 27, "Thirty-three": 33, "Thirty-four": 34, "Thirty-five": 35, "Thirty-six": 36, "Thirty-seven": 37,
     };
     expect(written, "implemented tool count sentence not found in README").toBeDefined();
     expect(words[written!], `README says "${written}"`).toBe(TOOLS.length);

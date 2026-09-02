@@ -14,7 +14,7 @@
  */
 import { BUILD_SLOTS, selectedPrice, selectedPicks, ShopError } from "../../entities/build/selection";
 import { compareBuildOptions } from "./compareBuildOptions";
-import { BENCHMARK_SCENARIOS, SIMULATED_GAMES, SIMULATION_BASIS, simulatedBenchmarks } from "../../entities/build/simulatedBenchmarks";
+import { BENCHMARK_SCENARIOS, SIMULATION_BASIS, simulatedBenchmarks } from "../../entities/build/simulatedBenchmarks";
 import type { BenchmarkScenario, SimulatedGame } from "../../data/benchmarks/types";
 import { compatibilityIssues } from "../../entities/build/metrics";
 import { cartBlocker } from "../../entities/cart/cartValidation";
@@ -54,8 +54,19 @@ const SORTS: SortId[] = ["popular", "price", "priceDesc", "new"];
 
 const app = (): RigsmithApp => requireRigsmithApp();
 const commandResult = (result: Record<string, any>) => result.error ? fail(result.error, result.hint) : ok(result);
-const isSimulatedGame = (value: unknown): value is SimulatedGame =>
-  typeof value === "string" && (SIMULATED_GAMES as readonly string[]).includes(value);
+const GAME_ALIASES: Record<string, SimulatedGame> = {
+  "counter-strike-2": "counter-strike-2",
+  "counter-strike 2": "counter-strike-2",
+  "counter strike 2": "counter-strike-2",
+  "counterstrike 2": "counter-strike-2",
+  cs2: "counter-strike-2",
+  fortnite: "fortnite",
+  cyberpunk: "cyberpunk-2077",
+  "cyberpunk 2077": "cyberpunk-2077",
+  "cyberpunk-2077": "cyberpunk-2077",
+};
+const normalizeGame = (value: string): SimulatedGame | undefined =>
+  GAME_ALIASES[value.trim().toLowerCase().replace(/\s+/g, " ")];
 const noGameBenchmark = (game: string) => ok({
   game,
   benchmark: "no benchmark",
@@ -713,15 +724,16 @@ export const TOOLS: RigsmithTool[] = [
   {
     name: "estimate_performance",
     description:
-      "Return explicitly SIMULATED performance for a complete build. Choose game (CS2, Fortnite, Cyberpunk) OR generic scenario; default cinematic. Game-labeled fixtures are invented, not measurements or predictions for those real games. Unknown game names return the requested game with benchmark: no benchmark. Returns fixed preset, average FPS and 1% lows for known games. Measured FPS/noise remain unknown. Compare alternatives with compare_build_options.",
+      "Return explicitly SIMULATED performance for a complete build. Choose game (CS2, Counter-Strike 2, Fortnite, Cyberpunk or Cyberpunk 2077) OR generic scenario; default cinematic. Game-labeled fixtures are invented, not measurements or predictions for those real games. Unknown game names return the requested game with benchmark: no benchmark. Returns fixed preset, average FPS and 1% lows for known games. Measured FPS/noise remain unknown. Compare alternatives with compare_build_options.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
-    inputSchema: schema({ resolution: str("Default: the shopper's setting.", RESOLUTIONS), scenario: str("Generic fictional workload; default cinematic. Do not combine with game.", BENCHMARK_SCENARIOS), game: str("Optional game-labeled simulation. Known games use fixtures; any other game returns benchmark: no benchmark. Do not combine with scenario.") }),
+    inputSchema: schema({ resolution: str("Default: the shopper's setting.", RESOLUTIONS), scenario: str("Generic fictional workload; default cinematic. Do not combine with game.", BENCHMARK_SCENARIOS), game: str("Optional game label or canonical id; supported labels include CS2, Counter-Strike 2, Fortnite and Cyberpunk. Do not combine with scenario.") }),
     execute(args) {
       const instance = app();
       if (args.game !== undefined && typeof args.game !== "string") return fail("invalid_game", "Game must be a string.");
-      if (typeof args.game === "string" && !isSimulatedGame(args.game)) return noGameBenchmark(args.game);
+      const game = typeof args.game === "string" ? normalizeGame(args.game) : undefined;
+      if (typeof args.game === "string" && !game) return noGameBenchmark(args.game);
       if (!BUILD_SLOTS.every(slot => instance.state.chosen.includes(slot))) return fail("build_incomplete", "Select every slot first; default parts are not your build.");
       if (args.scenario !== undefined && !BENCHMARK_SCENARIOS.includes(args.scenario)) return fail("invalid_scenario", "Use competitive or cinematic.");
       if (args.game !== undefined && args.scenario !== undefined) return fail("conflicting_workload", "Choose game or scenario, not both.");
@@ -731,7 +743,7 @@ export const TOOLS: RigsmithTool[] = [
         resolution: res,
          fps: null,
          basis: PERFORMANCE_UNAVAILABLE,
-         simulation: simulatedBenchmarks(instance.state.picks, res, args.scenario as BenchmarkScenario | undefined, args.game),
+         simulation: simulatedBenchmarks(instance.state.picks, res, args.scenario as BenchmarkScenario | undefined, game),
          simulationBasis: SIMULATION_BASIS,
          noise: null,
          noiseDb: null,
@@ -804,7 +816,7 @@ export const TOOLS: RigsmithTool[] = [
   },
   {
     name: "compare_build_options",
-    description: "Baseline is always the current build. Do not include the current build as an alternative. Compare one to three agent-supplied PC alternatives by cost, eligibility, availability and explicitly simulated performance. Known games use fixtures; any other game returns the requested game with benchmark: no benchmark. This tool does not apply changes.",
+    description: "Baseline is always the current build. Do not include the current build as an alternative. Compare one to three agent-supplied PC alternatives by cost, eligibility, availability and explicitly simulated performance. Known games accept canonical ids or common labels; any other game returns the requested game with benchmark: no benchmark. This tool does not apply changes.",
     readOnlyHint: true,
     annotations: { readOnlyHint: true },
     routes: [],
@@ -812,22 +824,23 @@ export const TOOLS: RigsmithTool[] = [
       type: "array", minItems: 1, maxItems: 3,
       description: "Changes vs current build; unchanged slots are inherited. Each must change one slot; current build is baseline.",
       items: { ...schema(Object.fromEntries(PC_SLOTS.map(slot => [slot, str("Catalog product id for this slot.")]))), minProperties: 1 },
-    }, scenario: str("Generic fictional workload, default cinematic. Do not combine with game(s).", BENCHMARK_SCENARIOS), game: str("One game simulation; known games use fixtures and any other game returns benchmark: no benchmark. Use games for a batch."), games: { type: "array", minItems: 1, maxItems: 3, uniqueItems: true, items: str("Known game simulation; any other game returns benchmark: no benchmark."), description: "One to three game simulations in one read." } }, ["alternatives"]),
+    }, scenario: str("Generic fictional workload, default cinematic. Do not combine with game(s).", BENCHMARK_SCENARIOS), game: str("One game label or canonical id; unsupported games return benchmark: no benchmark. Use games for a batch."), games: { type: "array", minItems: 1, maxItems: 3, uniqueItems: true, items: str("Game label or canonical id; unsupported games return benchmark: no benchmark."), description: "One to three game simulations in one read." } }, ["alternatives"]),
     execute(args) {
       if (args.scenario !== undefined && !BENCHMARK_SCENARIOS.includes(args.scenario)) return fail("invalid_scenario", "Use competitive or cinematic.");
       if (args.game !== undefined && typeof args.game !== "string") return fail("invalid_game", "Game must be a string.");
-      if (typeof args.game === "string" && !isSimulatedGame(args.game)) return noGameBenchmark(args.game);
+      const game = typeof args.game === "string" ? normalizeGame(args.game) : undefined;
+      if (typeof args.game === "string" && !game) return noGameBenchmark(args.game);
       if (args.games !== undefined && (!Array.isArray(args.games) || args.games.length < 1 || args.games.length > 3 || args.games.some((game: unknown) => typeof game !== "string")))
         return fail("invalid_game", "Games must contain one to three strings.");
+      const games = Array.isArray(args.games) ? args.games.map((value: string) => normalizeGame(value)) : undefined;
       if (Array.isArray(args.games)) {
-        const unknownGame = args.games.find((game: unknown) => typeof game === "string" && !isSimulatedGame(game));
-        if (unknownGame !== undefined) return noGameBenchmark(unknownGame);
+        const unknownIndex = games!.findIndex(game => !game);
+        if (unknownIndex >= 0) return noGameBenchmark(args.games[unknownIndex]);
       }
       if (args.game !== undefined && args.games !== undefined) return fail("conflicting_workload", "Choose game, games or scenario, not more than one.");
       if ((args.game !== undefined || args.games !== undefined) && args.scenario !== undefined) return fail("conflicting_workload", "Choose game(s) or scenario, not both.");
       try {
-        const games = Array.isArray(args.games) ? args.games as SimulatedGame[] : undefined;
-        return ok(compareBuildOptions(app().state, args.alternatives, args.scenario, args.game, games), undefined, undefined, SNAPSHOT_OUTPUT_BUDGET);
+        return ok(compareBuildOptions(app().state, args.alternatives, args.scenario, game, games as SimulatedGame[] | undefined), undefined, undefined, SNAPSHOT_OUTPUT_BUDGET);
       }
       catch (error) {
         if (error instanceof ShopError) return fail(error.code, error.message);
@@ -1353,6 +1366,7 @@ export const DEMO_TOOL_NAMES = [
   "list_compatible_parts",
   "set_build_components",
   "check_build_compatibility",
+  "estimate_performance",
   "compare_build_options",
   "create_watchdog",
   "add_to_cart",

@@ -22,7 +22,7 @@ When the agent compares alternatives across all three game simulations, the resu
 
 ### Simulated benchmarks
 
-Game-labeled simulations are available through `game: "counter-strike-2"`, `"fortnite"` or `"cyberpunk-2077"` in `estimate_performance` and `compare_build_options`. Two additional category agents authored independent CPU and GPU fixtures. Results include fixed presets, average FPS and 1% lows, and are explicitly invented test data, **not real-game measurements or predictions**. Choose `game` or a generic `scenario`, not both. See [the game simulation protocol](docs/decisions/0011-game-labeled-simulation-fixtures.md).
+Game-labeled simulations are available through `estimate_performance` and `compare_build_options`. Use canonical ids (`counter-strike-2`, `fortnite`, `cyberpunk-2077`) or common labels such as `CS2`, `Counter-Strike 2`, `Cyberpunk` and `Cyberpunk 2077`. Two additional category agents authored independent CPU and GPU fixtures. Results include fixed presets, average FPS and 1% lows, and are explicitly invented test data, **not real-game measurements or predictions**. Choose `game` or a generic `scenario`, not both. See [the game simulation protocol](docs/decisions/0011-game-labeled-simulation-fixtures.md).
 
 Three category-specific agents authored CPU, GPU, and memory/storage fixtures. `estimate_performance` and `compare_build_options` expose `competitive` and `cinematic` scenarios at 1080p, 1440p and 4K, including simulated average FPS, 1% lows and loading time. Every result is versioned and labeled simulation; measured FPS and noise remain unavailable. The shop compares agent-proposed options without selecting a winner. See [the simulation protocol](docs/decisions/0010-explicit-simulated-benchmarks.md), [CPU fixtures](docs/benchmarks-cpu.md), [GPU fixtures](docs/benchmarks-gpu.md) and [memory/storage fixtures](docs/benchmarks-memory-storage.md).
 
@@ -112,7 +112,7 @@ describes the UI layering.
 The interactive application, the local catalog, and the WebMCP tool set are working. Deployment, the public repository URL, and the demo video are still pending.
 
 Thirty-seven tool descriptors are implemented in `src/app/webmcp/`; the
-judge-facing demo registers fourteen stable tools from that list. The demo
+judge-facing demo registers fifteen stable tools from that list. The demo
 keeps the same descriptors while the shopper moves between the catalogue,
 product pages and the builder. `show_in_catalog` makes visible navigation
 explicit, while read tools return data without changing the route. The full

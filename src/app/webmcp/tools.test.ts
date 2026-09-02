@@ -48,9 +48,10 @@ describe("tool contract", () => {
 
   it("exposes only the stable judge-facing demo set", () => {
     expect(demoTools().map(tool => tool.name)).toEqual([...DEMO_TOOL_NAMES]);
-    expect(demoTools()).toHaveLength(14);
+    expect(demoTools()).toHaveLength(15);
     expect(demoTools().some(tool => tool.name === "read_shop")).toBe(false);
     expect(demoTools().map(tool => tool.name)).toContain("set_build_components");
+    expect(demoTools().map(tool => tool.name)).toContain("estimate_performance");
     expect(demoTools().map(tool => tool.name)).not.toContain("set_build_component");
   });
 

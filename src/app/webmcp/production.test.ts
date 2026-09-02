@@ -347,6 +347,24 @@ describe('whole-build tradeoffs without automatic selection', () => {
     expect(result.simulations['counter-strike-2'].alternatives).toHaveLength(3);
     expect(result.simulations['cyberpunk-2077'].baseline.kind).toBe('simulation');
   });
+  it('exposes a dedicated performance read and accepts common game labels', async () => {
+    fullBuild();
+    const labels = [
+      ['Counter-Strike 2', 'counter-strike-2'],
+      ['Counter Strike 2', 'counter-strike-2'],
+      ['CS2', 'counter-strike-2'],
+      ['Cyberpunk', 'cyberpunk-2077'],
+      ['Cyberpunk 2077', 'cyberpunk-2077'],
+    ] as const;
+    for (const [label, game] of labels) {
+      const estimate = await call('estimate_performance', { game: label });
+      expect(estimate).toMatchObject({ simulation: { game, status: 'available' } });
+      const alternatives = CATALOG.gpu.filter(p => p.id !== app.state.picks.gpu).slice(0, 1).map(p => ({ gpu: p.id }));
+      const comparison = await call('compare_build_options', { game: label, alternatives });
+      expect(comparison).toMatchObject({ baseline: { simulation: { game } } });
+    }
+    expect(await call('estimate_performance', { game: 'League of Legends' })).toMatchObject({ game: 'League of Legends', benchmark: 'no benchmark', status: 'unavailable' });
+  });
   it('returns comparison facts without deciding whether to create a watchdog', async () => {
     const proposal = recommendBuild(1500, '1440p', true);
     app.state = { ...app.state, picks: proposal.picks, budget: 1500, res: '1440p', chosen: [...BUILD_SLOTS] };
