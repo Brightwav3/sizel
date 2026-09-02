@@ -40,9 +40,18 @@ describe('independent agent selections', () => {
   it('opens a workspace without choosing default parts', async () => {
     expect(await call('begin_build', { brief: 'A quiet gaming PC', budget: 800 })).toMatchObject({ opened: 'builder', budget: 800 });
     expect(app.state.route).toBe('builder');
+    expect(app.state.cornerMin).toBe(false);
     expect(app.state.chosen).toEqual([]);
     expect(TOOLS.some(tool => tool.name === 'recommend_build')).toBe(false);
     expect(await call('check_build_compatibility')).toMatchObject({ complete: false, price: 0, slots: [], performance: null });
+  });
+
+  it('shows the filled build pill after an atomic build completes', async () => {
+    await call('begin_build', { brief: 'A compatible gaming PC', budget: 5000, reset: true });
+    const picks = recommendBuild(1700).picks;
+    await call('set_build_components', { components: Object.fromEntries(Object.entries(picks).filter(([slot]) => slot !== 'fans')) });
+    expect(app.state.chosen).toHaveLength(BUILD_SLOTS.length);
+    expect(app.state.cornerMin).toBe(true);
   });
   it('allows direct choices and retains optional fresh inspection evidence', async () => {
     const [first, second] = CATALOG.cpu.filter(p => p.stock !== 0).slice(0, 2);

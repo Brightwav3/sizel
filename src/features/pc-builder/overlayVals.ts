@@ -15,15 +15,15 @@ import type { BuildContext } from "../../entities/build/buildContext";
  * hero and the product page all still lead into it.
  */
 export function buildOverlayVals(context: BuildContext) {
-  const { app, s, route } = context;
+  const { app, s } = context;
   const steps = RigsmithApp.BUILD_STEPS;
   const chosenParts = s.chosen.map(slot => CATALOG[slot].find(part => part.id === s.picks[slot])!);
   const spent = chosenParts.reduce((total, part) => total + part.price, 0);
-  const started = s.chosen.length > 0 && s.chosen.length < steps.length;
+  const started = Boolean(s.buildBrief.trim()) && s.chosen.length < steps.length;
 
   return {
-      cornerShow: s.chosen.length > 0,
-      cornerOpen: route !== "builder" ? "true" : "false",
+      cornerShow: s.chosen.length > 0 || Boolean(s.buildBrief.trim()),
+      cornerOpen: "true",
       cornerTransform: "translate(" + app.dockPoint().x + "px," + app.dockPoint().y + "px)",
       cornerExpanded: !s.cornerMin, cornerCollapsed: s.cornerMin,
       cornerToggle: () => app.setState({ cornerMin: !s.cornerMin }),

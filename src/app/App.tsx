@@ -409,6 +409,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
         : { route: "builder" as const, builderSlot: slot };
       return { patch: { picks, chosen, decisions, prev: this.snapshot(state), inspected: null,
         buildRevision: state.buildRevision + 1, lastChange: null,
+        ...(chosen.length === BUILD_SLOTS.length ? { cornerMin: true } : {}),
         ...destinationState,
         toast: `${item.name} selected` },
         result: { slot, fitted: item.name, selectedPrice: price, budgetRemainingUSD: state.budget - price,
@@ -448,7 +449,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
         patch: {
           picks, chosen, decisions: {}, inspected: null,
           prev: this.snapshot(state), buildRevision: state.buildRevision + 1,
-          lastChange: null, route: 'builder', builderSlot: state.builderSlot,
+          lastChange: null, route: 'builder', builderSlot: state.builderSlot, cornerMin: true,
           toast: 'PC build applied',
         },
         result: {
@@ -478,7 +479,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
 
   resetBuild() {
     return this.mutate(state => ({ patch: { picks: { ...DEFAULT_PICKS }, chosen: [], decisions: {}, inspected: null,
-      prev: this.snapshot(state), buildRevision: state.buildRevision + 1, builderSearch: '', lastChange: null }, result: { reset: true } }));
+      buildBrief: '', cornerMin: true, prev: this.snapshot(state), buildRevision: state.buildRevision + 1, builderSearch: '', lastChange: null }, result: { reset: true } }));
   }
 
   undoBuild() {
@@ -505,7 +506,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
       const checked = validateBudgetShares(requestedShares);
       if (!checked.valid) throw new ShopError('invalid_budget_allocation', checked.message);
       const plan = budgetPlan(budget, res, checked.shares);
-      const patch: Partial<AppState> = { buildBrief: brief.trim(), budget, res, route: 'builder', inspected: null,
+      const patch: Partial<AppState> = { buildBrief: brief.trim(), budget, res, route: 'builder', inspected: null, cornerMin: false,
         budgetShares: checked.shares,
         buildRevision: state.buildRevision + 1,
         ...(reset ? { picks: { ...DEFAULT_PICKS }, chosen: [], decisions: {}, prev: this.snapshot(state) } : {}) };
@@ -542,7 +543,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
 
   /** The public UI build path starts at a category, not the retired builder. */
   openBuildSlot(slot: PcSlot = "cpu") {
-    this.setState({ route: "category", dept: "pc", openDept: null, category: slot, productSlot: slot, brand: "any", search: "" });
+    this.setState({ buildBrief: this.state.buildBrief || "PC build in progress", cornerMin: true, route: "category", dept: "pc", openDept: null, category: slot, productSlot: slot, brand: "any", search: "" });
   }
 
   /**
