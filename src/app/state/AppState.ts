@@ -27,11 +27,6 @@ export interface AppState {
   picks: Picks;
   /** Slots the shopper (or an agent) explicitly chose; the rest are defaults. */
   chosen: PcSlot[];
-  builderSlot: PcSlot; builderSearch: string;
-  /** Configurator: hide parts that clash with what is already chosen. */
-  builderCompatibleOnly: boolean;
-  /** Configurator facet filters, kept apart from the catalog's own. */
-  builderFacets: Record<string, string[]>;
   cornerMin: boolean; cornerX: number | null; cornerY: number | null;
   budget: number; budgetShares: BudgetShares; target: number; res: keyof typeof RES; quiet: boolean;
   /** Only parts that slot into the current build without an issue. */

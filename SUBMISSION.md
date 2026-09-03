@@ -6,8 +6,8 @@ Vite. The repository uses **Rigsmith** in some internal names.
 ## Public links
 
 - Live app: https://sizel.vercel.app/
-- Reviewed source branch: https://github.com/Brightwav3/sizel/tree/codex/submission-ready
-- Pull request under review: https://github.com/Brightwav3/sizel/pull/8
+- Reviewed source branch: https://github.com/Brightwav3/sizel/tree/codex/remove-dead-builder
+- Pull request under review: https://github.com/Brightwav3/sizel/pull/9
 - Public demo video (2:43): https://youtu.be/OWxUgB0Qxs0
 
 The source branch is named explicitly because the pull request is intentionally

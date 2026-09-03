@@ -7,7 +7,6 @@ import { buildShellVals } from "../../shared/layout/shellVals";
 import { buildHomeVals } from "../../features/catalog/home/homeVals";
 import { buildCatalogVals } from "../../features/catalog/catalogVals";
 import { buildProductVals } from "../../features/product/productVals";
-import { buildBuilderVals } from "../../features/pc-builder/builderVals";
 import { buildOverlayVals } from "../../features/pc-builder/overlayVals";
 import { buildCheckoutVals } from "../../features/checkout/checkoutVals";
 
@@ -20,7 +19,6 @@ export function buildVals(app: RigsmithApp): Vals {
     ...buildHomeVals(context),
     ...buildCatalogVals(context),
     ...buildProductVals(context),
-    ...buildBuilderVals(context),
     ...buildOverlayVals(context),
     ...buildCheckoutVals(context),
   };

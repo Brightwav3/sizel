@@ -64,7 +64,7 @@ export const CheckoutScreen: React.FC<{ v: Vals }> = ({ v }) => (
           <span>Total</span>
           <span className="num checkout-summary__amount">{v.totalLabel}</span>
         </div>
-        <div className="checkout-summary__note">Ships {v.shipLabel}. Free returns within 30 days.</div>
+        <div className="checkout-summary__note">{v.cartDeliveryLine}. Free returns within 30 days.</div>
       </div>
     </div>
   </div>

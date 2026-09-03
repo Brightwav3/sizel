@@ -68,10 +68,6 @@ export const EshopSidebar: React.FC<{ v: Vals }> = ({ v }) => {
     return () => { window.removeEventListener("keydown", close); window.clearTimeout(catalogTimer.current); };
   }, []);
 
-  if (v.isBuilder) {
-    return <aside className="eshop-rail eshop-rail--builder"><div id="forge-sidebar-host" className="forge-sidebar-host" /></aside>;
-  }
-
   const browsing = Boolean(v.isCategory || v.isProduct);
   const departmentItems = (
     <>

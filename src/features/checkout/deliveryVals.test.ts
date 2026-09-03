@@ -14,6 +14,7 @@ const app = {
   setState: vi.fn(),
   setCartQty: vi.fn(),
   removeCartLine: vi.fn(),
+  openBuildSlot: vi.fn(),
   go: vi.fn(),
   flash: vi.fn(),
 } as any;
@@ -49,5 +50,22 @@ describe("delivery presentation", () => {
 
     expect(values.cartLines[0].stock).toBe("In stock · Ships in 2 days");
     expect(values.cartDeliveryLine).toBe("Ships date+2");
+  });
+
+  it("opens a build cart line through the active build flow", () => {
+    app.openBuildSlot.mockClear();
+    app.setState.mockClear();
+
+    const values = buildCheckoutVals({
+      app,
+      s: { cart: [{ kind: "build", id: "build", qty: 1 }], picks: DEFAULT_PICKS, chosen: [], step: 0 },
+      m: metrics(DEFAULT_PICKS),
+      st: CHECKOUT_STEPS[0],
+    } as any);
+
+    values.cartLines[0].open();
+
+    expect(app.openBuildSlot).toHaveBeenCalledOnce();
+    expect(app.setState).not.toHaveBeenCalledWith({ route: "builder" });
   });
 });

@@ -48,7 +48,7 @@ export function buildCheckoutVals(context: BuildContext) {
       dec: () => app.setCartQty(index, line.qty - 1),
       remove: () => app.removeCartLine(index),
       open: () => line.kind === "build"
-        ? app.setState({ route: "builder" })
+        ? app.openBuildSlot()
         : app.setState({ route: "product", productSlot: line.slot ?? "gpu", productId: line.id }),
     };
   });

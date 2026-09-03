@@ -19,7 +19,6 @@ export { FilterPanel } from "../features/catalog/EshopFilters";
 export { HomeScreen } from "../features/catalog/home/HomeScreen";
 export { CategoryScreen, ProductCard } from "../features/catalog/CategoryScreen";
 export { ProductScreen } from "../features/product/ProductScreen";
-export { BuilderScreen } from "../features/pc-builder/BuilderScreen";
 export { CartScreen } from "../features/cart/CartScreen";
 export { CheckoutScreen, DoneScreen } from "../features/checkout/CheckoutScreens";
 export { FloatingBuildCard, Toast } from "../features/pc-builder/FloatingBuildCard";
