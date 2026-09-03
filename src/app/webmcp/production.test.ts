@@ -53,58 +53,6 @@ describe('independent agent selections', () => {
     expect(app.state.chosen).toHaveLength(BUILD_SLOTS.length);
     expect(app.state.cornerMin).toBe(true);
   });
-  it('allows direct choices and retains optional fresh inspection evidence', async () => {
-    const [first, second] = CATALOG.cpu.filter(p => p.stock !== 0).slice(0, 2);
-    const args = { slot: 'cpu', productId: first.id, reason, tradeoff, alternativeId: second.id };
-    expect(await call('set_build_component', { slot: 'cpu', productId: first.id })).not.toHaveProperty('error');
-    expect(app.state.route).toBe('home');
-    expect(app.state.decisions.cpu?.comparedIds).toEqual([]);
-    await call('inspect_build_options', { slot: 'cpu', productIds: [first.id, second.id] });
-    expect(await call('set_build_component', { ...args, alternativeId: first.id })).toMatchObject({ error: 'invalid_alternative' });
-    expect(await call('set_build_component', args)).not.toHaveProperty('error');
-    expect(app.state.decisions.cpu).toMatchObject({ reason, tradeoff, alternativeId: second.id, comparedIds: [first.id, second.id] });
-    expect(app.state.picks.cpu).toBe(first.id);
-    expect(app.state.route).toBe('home');
-  });
-  it('keeps an incompatible direct choice visible and reports the conflict', async () => {
-    const cpu = CATALOG.cpu.find(p => p.stock !== 0)!;
-    const board = CATALOG.board.find(p => p.stock !== 0 && p.socket !== cpu.socket)!;
-    expect(await call('set_build_component', { slot: 'cpu', productId: cpu.id })).not.toHaveProperty('error');
-    const result = await call('set_build_component', { slot: 'board', productId: board.id });
-    expect(result).toMatchObject({ compatible: false, selectedCount: 2 });
-    expect(result.issues?.[0]).toContain('uses');
-    expect(app.state.chosen).toEqual(expect.arrayContaining(['cpu', 'board']));
-  });
-  it('does not require reinspection after target changes but still enforces the current budget', async () => {
-    const item = CATALOG.cpu.find(p => p.stock !== 0)!;
-    await call('inspect_build_options', { slot: 'cpu', productIds: [item.id] });
-    await app.setTargets({ budget: 2000 });
-    expect(await call('set_build_component', { slot: 'cpu', productId: item.id })).not.toHaveProperty('error');
-    expect(app.state.decisions.cpu?.comparedIds).toEqual([]);
-    await app.resetBuild();
-    await app.setTargets({ budget: item.price - 1 });
-    expect(await call('set_build_component', { slot: 'cpu', productId: item.id })).toMatchObject({ error: 'over_budget' });
-  });
-  it('does not reset a slot when the agent accidentally omits productId', async () => {
-    const before = app.state.picks;
-    expect(await call('set_build_component', { slot: 'cpu' })).toMatchObject({ error: 'missing_argument' });
-    expect(app.state.picks).toBe(before);
-  });
-  it('commits case and included fans together, and undo restores selection state', async () => {
-    const cs = CATALOG.case.find(p => p.stock !== 0 && p.id !== DEFAULT_PICKS.case)!;
-    await call('inspect_build_options', { slot: 'case', productIds: [cs.id] });
-    const result = await call('set_build_component', { slot: 'case', productId: cs.id, reason, tradeoff });
-    expect(result).not.toHaveProperty('error');
-    expect(app.state.picks.case).toBe(cs.id);
-    expect(app.state.picks.fans).toBe(bundledFans(cs.id));
-    expect(app.state.chosen).toEqual(['case', 'fans']);
-    expect(await call('get_current_build')).toMatchObject({ complete: false, compatible: true, issueCount: 0, fps: null, price: cs.price });
-    expect(await call('estimate_performance')).toMatchObject({ error: 'build_incomplete' });
-    await call('undo_build_change');
-    expect(app.state.chosen).toEqual([]);
-    expect(app.state.picks).toEqual(DEFAULT_PICKS);
-    expect(app.state.decisions).toEqual({});
-  });
   it('enforces the exact agreed budget and rejects bad numeric input', async () => {
     await app.setTargets({ budget: 1 });
     expect(await app.set('cpu', CATALOG.cpu.find(p => p.stock !== 0)!.id)).toMatchObject({ error: 'over_budget' });
@@ -469,7 +417,7 @@ describe('shared orderability and committed writes', () => {
     await app.setBuilderPart('cpu', cpu.id);
     expect(await app.addBuildToCart()).toMatchObject({ added: 'build', price: cpu.price });
     expect(app.state.cart).toEqual([{ kind: 'build', id: 'build', qty: 1 }]);
-    expect(await call('start_checkout')).toMatchObject({ error: 'build_incomplete' });
+    expect(await app.startCheckout()).toMatchObject({ error: 'build_incomplete' });
   });
   it('blocks unavailable builds at add and checkout and flags them in cart', async () => {
     fullBuild();
@@ -478,7 +426,7 @@ describe('shared orderability and committed writes', () => {
     expect(await call('add_build_to_cart')).toMatchObject({ error: 'out_of_stock' });
     app.state.cart = [{ kind: 'build', id: 'build', qty: 1 }];
     expect(cartTotals(app.state.cart, app.metrics(), app.state.picks).rows[0].outOfStock).toBe(true);
-    expect(await call('start_checkout')).toMatchObject({ error: 'out_of_stock' });
+    expect(await app.startCheckout()).toMatchObject({ error: 'out_of_stock' });
   });
   it('does not add quantities beyond stock or the total per-line limit', async () => {
     const product = CATALOG.gpu.find(p => listingStock(p, 'gpu') > 0 && listingStock(p, 'gpu') < 5)!;
@@ -499,9 +447,9 @@ describe('shared orderability and committed writes', () => {
     const product = CATALOG.storage.find(p => listingStock(p, 'storage') > 0)!;
     await app.addToCart('storage', product.id);
     app.state.step = 2;
-    expect(await call('start_checkout')).toMatchObject({ opened: 'checkout', step: 'delivery' });
+    expect(await app.startCheckout()).toMatchObject({ opened: 'checkout', step: 'delivery' });
     expect(app.state.route).toBe('checkout');
-    expect((await call('get_checkout_fields')).currentStep).toBe('delivery');
+    expect(app.state.step).toBe(0);
   });
   it('allows removal of a broken cart line', async () => {
     app.state.cart = [{ kind: 'build', id: 'build', qty: 1 }];
@@ -531,12 +479,6 @@ describe('shared orderability and committed writes', () => {
     }
     expect(new Set(ids).size).toBe(CATALOG.cpu.length);
     expect(ids.length).toBe(CATALOG.cpu.length);
-  });
-  it('awaits asynchronous read sections', async () => {
-    const productTool = TOOLS.find(tool => tool.name === 'get_product')!;
-    vi.spyOn(productTool, 'execute').mockImplementation(async () => ({ content: [{ type: 'text', text: '{"asyncResult":true}' }] }));
-    const snapshot = await call('read_shop', { productIds: [CATALOG.cpu[0].id] });
-    expect(snapshot.sections[`product:${CATALOG.cpu[0].id}`]).toEqual({ asyncResult: true });
   });
   it('calculates delivery from today, with an explicit date available for tests', () => {
     expect(shipDate(2, new Date(2026, 8, 10))).toBe('Sat 12 Sep');

@@ -20,13 +20,9 @@ import { compatibilityIssues } from "../../entities/build/metrics";
 import { cartBlocker } from "../../entities/cart/cartValidation";
 import type { RigsmithApp } from "../App";
 import { requireRigsmithApp } from "../state/appInstance";
-import { CATALOG, CAT_META, DEPTS, ORDER } from "../../data/catalog/catalog";
-import { colorwaysFor } from "../../data/catalog/colorways";
-import { siblingVariants } from "../../data/catalog/storageVariants";
+import { CATALOG, CAT_META, ORDER } from "../../data/catalog/catalog";
 import { ratingFor, reviewsFor } from "../../data/catalog/reviews";
 import { FREE_SHIPPING_OVER, cartTotals } from "../../entities/cart/cartTotals";
-import { CHECKOUT_STEPS } from "../../entities/checkout/checkoutSteps";
-import { MERCHANDISING } from "../../data/catalog/merchandising";
 import { FACETS } from "../../features/catalog/catalogFacets";
 import { listingStock, stockLabel } from "../../data/catalog/listingStock";
 import { NOISE_UNAVAILABLE, PERFORMANCE_UNAVAILABLE, metrics, money, part, shipDate } from "../../entities/build/metrics";
@@ -36,7 +32,7 @@ import {
 } from "../../entities/product/queries";
 import type { SortId } from "../../entities/product/queries";
 import type { Part, PcSlot, Picks, Route, Slot } from "../../shared/lib/types";
-import { bottleneck, fixOptions, powerReport } from "./buildAdvisor";
+import { bottleneck, powerReport } from "./buildAdvisor";
 import { budgetPlan } from "../../entities/build/budgetPlan";
 import { BATCH_CANDIDATE_OUTPUT_BUDGET, BUILD_REPORT_BUDGET, fail, ok, SNAPSHOT_OUTPUT_BUDGET } from "./toolResult";
 import type { ToolCallResult, ToolDescriptor, ToolExecuteOptions } from "./webmcpApi";
@@ -133,9 +129,9 @@ const distinctModelListings = (items: Part[], category: Slot | undefined, enable
 };
 
 /**
- * Every selected slot, with the same stock the storefront and `check_stock`
- * show. Bundled fans are a slot like any other: an agent that cannot see them
- * here goes looking for them one product at a time.
+ * Every selected slot, with the same stock the storefront shows. Bundled fans
+ * are included in the complete report so the agent does not need a separate
+ * stock call for each part.
  */
 const slotReport = (picks: Picks) => PC_SLOTS.map(slot => {
   const item = part(picks, slot);
@@ -239,92 +235,9 @@ const readFilters = (category: Slot | undefined, raw: unknown) => {
 };
 
 // Tools ----------------------------------------------------------------
+// ADR 0016: TOOLS is the complete 15-tool browser-facing surface; legacy
+// unregistered descriptors are intentionally not retained here.
 export const TOOLS: RigsmithTool[] = [
-  {
-    name: "read_shop",
-    description: "Read-only snapshot with no shopping edits or navigation. Request only needed searches, comparisons and current-state sections. To build a PC, first begin_build and choose parts yourself. USD prices; measured game performance is unavailable because the catalog has no benchmarks. Partial errors stay in their section. Use specific tools for edits; reread affected sections afterward.",
-    readOnlyHint: true,
-    annotations: { readOnlyHint: true },
-    routes: [],
-    inputSchema: schema({
-      search: QUICK_SEARCH,
-      compareDeviceSearch: QUICK_SEARCH,
-      productIds: { type: "array", minItems: 1, maxItems: 3, items: { type: "string" }, description: "Details for up to three known product ids." },
-      compareProductIds: { type: "array", minItems: 2, maxItems: 4, items: { type: "string" }, description: "Compare two to four known product ids." },
-      compareDeviceIds: { type: "array", minItems: 1, maxItems: 3, items: { type: "string" }, description: "Compare the PC with up to three known console or phone ids." },
-      include: { type: "array", uniqueItems: true, maxItems: 3, items: { type: "string", enum: ["build", "cart", "watchdogs"] }, description: "Optional current-state sections; build includes compatibility, stock and performance." },
-      resolution: str("Console comparison resolution; build uses the current target.", RESOLUTIONS),
-    }),
-    async execute(args, options?: ToolExecuteOptions) {
-      // ADR 0006: an explicit read-only allowlist, never a generic tool executor.
-      const sections: Record<string, any> = {};
-      const read = async (section: string, name: string, input: Record<string, any>) => {
-        try {
-          const tool = TOOLS.find(entry => entry.name === name)!;
-          if (!tool.readOnlyHint) throw new Error("Read-only section required");
-          const result = await tool.execute(input, options);
-          sections[section] = JSON.parse(result.content[0].text);
-        } catch {
-          sections[section] = { error: "section_unavailable", hint: "Retry this section with its individual read tool." };
-        }
-      };
-      const validIds = (value: unknown, min: number, max: number): value is string[] =>
-        Array.isArray(value) && value.length >= min && value.length <= max && value.every(id => typeof id === "string" && id.length > 0 && id.length <= 200);
-      const searchAndCompare = async (query: Record<string, any>, devices: boolean) => {
-        const { compare, ...input } = query;
-        const section = devices ? "deviceSearch" : "search";
-        await read(section, "search_products", { ...input, ...(devices ? { category: input.category ?? "consoles" } : {}), limit: Math.min(5, Math.max(1, Number(input.limit) || 5)) });
-        if (!compare && !devices) return;
-        const models = new Set<string>();
-        const ids: string[] = [];
-        for (const item of sections[section].items ?? []) {
-          const model = item.id.split("::")[0];
-          if (!models.has(model) && ids.length < 3) { models.add(model); ids.push(item.id); }
-        }
-        const output = devices ? "devices" : "searchComparison";
-        if (ids.length >= (devices ? 1 : 2)) await read(output, devices ? "compare_build_to_product" : "compare_products", { productIds: ids, resolution: args.resolution });
-        else sections[output] = { error: "not_enough_matches", found: ids.length };
-        // Comparison already carries the ids, prices and names. Avoid duplicating them.
-        sections[section] = { total: sections[section].total, selectedIds: ids, selection: "first distinct models in requested search order" };
-      };
-      if (args.search) await searchAndCompare(args.search, false);
-      if (args.compareDeviceSearch) await searchAndCompare(args.compareDeviceSearch, true);
-      if (args.compareProductIds) {
-        if (validIds(args.compareProductIds, 2, 4)) await read("comparison", "compare_products", { productIds: args.compareProductIds });
-        else sections.comparison = { error: "invalid_ids", hint: "Provide two to four product ids." };
-      }
-      if (args.productIds) {
-        if (validIds(args.productIds, 1, 3)) {
-          // Keep product details in the requested order so the response stays
-          // easy to follow without changing the shopper's current page.
-          for (const productId of args.productIds) {
-            await read(`product:${productId}`, "get_product", { productId });
-          }
-        }
-        else sections.products = { error: "invalid_ids", hint: "Provide one to three product ids." };
-      }
-      if (args.compareDeviceIds) await read("devices", "compare_build_to_product", { productIds: args.compareDeviceIds, resolution: args.resolution });
-      for (const section of Array.isArray(args.include) ? new Set(args.include) : []) {
-        const tool = ({ build: "check_build_compatibility", cart: "get_cart", watchdogs: "list_watchdogs" } as Record<string, string>)[section as string];
-        if (tool) await read(section as string, tool, {});
-      }
-      if (!Object.keys(sections).length) return fail("nothing_to_read", "Request search, product ids, comparisons or include sections.");
-      // Bound context cost while naming every section not delivered in full.
-      let body = JSON.stringify({ currency: "USD", sections });
-      while (body.length > SNAPSHOT_OUTPUT_BUDGET) {
-        // The build report is the section an agent cannot reconstruct without
-        // ten more calls, so it is the last one to go, never the first.
-        const droppable = Object.keys(sections).filter(key => !sections[key].error && key !== "build");
-        const candidates = droppable.length ? droppable : Object.keys(sections).filter(key => !sections[key].error);
-        const largest = candidates
-          .sort((a, b) => JSON.stringify(sections[b]).length - JSON.stringify(sections[a]).length)[0];
-        if (!largest) break;
-        sections[largest] = { error: "section_too_large", hint: "Request this section separately." };
-        body = JSON.stringify({ currency: "USD", sections });
-      }
-      return { content: [{ type: "text", text: body }] };
-    },
-  },
   {
     name: "search_products",
     description:
@@ -344,7 +257,7 @@ export const TOOLS: RigsmithTool[] = [
       filters: {
         type: "object",
         additionalProperties: { type: "array", items: { type: "string" } },
-        description: "Facet id to values, from list_filters. Needs category.",
+        description: "Facet id to values for the selected category.",
       },
       distinctModels: bool("Phones: group storage variants and return one listing per model. Default true for phones."),
       limit: num("1 to 20, default 5."),
@@ -354,7 +267,7 @@ export const TOOLS: RigsmithTool[] = [
       const category = (args.category ?? undefined) as Slot | undefined;
       const { facets, unknown } = readFilters(category, args.filters);
       if (unknown.length) {
-        return fail("unknown_filter", `No ${category} filter named ${unknown.join(", ")}. Call list_filters.`);
+        return fail("unknown_filter", `No ${category} filter named ${unknown.join(", ")}. Use a facet id supported by that category.`);
       }
       if (args.filters && !category) return fail("category_required", "Filters apply within one category.");
       const result = searchProducts({
@@ -404,49 +317,6 @@ export const TOOLS: RigsmithTool[] = [
   },
 
   {
-    name: "get_current_build",
-    description: "Selected parts only, completion, hard budget and known conflicts. Defaults in unselected slots are not a build. Use check_build_compatibility for the complete report.",
-    readOnlyHint: true,
-    annotations: { readOnlyHint: true },
-    routes: [],
-    inputSchema: NO_INPUT,
-    execute() {
-      const instance = app();
-      const chosen = instance.state.chosen;
-      const complete = BUILD_SLOTS.every(slot => chosen.includes(slot));
-      const issues = compatibilityIssues(selectedPicks(instance.state.picks, chosen));
-      const price = selectedPrice(instance.state.picks, chosen);
-      return ok({
-        slots: chosen.map(slot => { const item = part(instance.state.picks, slot); return { slot, id: item.id, name: item.name, price: item.price }; }),
-        selectedSlots: chosen, complete, price, budget: instance.state.budget,
-        withinBudget: price <= instance.state.budget, budgetRemainingUSD: instance.state.budget - price,
-         fps: null, resolution: instance.state.res,
-         performanceBasis: PERFORMANCE_UNAVAILABLE,
-        compatible: issues.length === 0, issueCount: issues.length,
-      }, 'slots');
-    },
-  },
-
-  {
-    name: "list_filters",
-    description:
-      "The filters a category supports and the values in the catalog. Read before naming a filter for show_in_catalog.",
-    readOnlyHint: true,
-    annotations: { readOnlyHint: true },
-    routes: ["category", "builder"],
-    inputSchema: schema({ category: str("Category to describe.", CATEGORIES) }, ["category"]),
-    execute(args) {
-      const facets = facetSummary({ category: args.category as Slot }).map(facet => ({
-        id: facet.id,
-        label: facet.label,
-        affectsFit: facet.fit,
-        values: facet.options.slice(0, 6).map(option => option.value),
-      }));
-      return ok({ category: args.category, facets }, "facets");
-    },
-  },
-
-  {
     name: "compare_products",
     description:
       "Compare two to four catalog listings by price, stock, delivery and differing specifications.",
@@ -482,30 +352,6 @@ export const TOOLS: RigsmithTool[] = [
         })),
       }, "items", undefined, args.includeDetails === true ? SNAPSHOT_OUTPUT_BUDGET : undefined);
       return response;
-    },
-  },
-
-  {
-    name: "check_stock",
-    description:
-      "Return current stock, shipping time and ship date for one catalog listing. Arrival timing is not modeled.",
-    readOnlyHint: true,
-    annotations: { readOnlyHint: true },
-    routes: [],
-    inputSchema: schema({ productId: str("Id from another tool.") }, ["productId"]),
-    execute(args) {
-      const found = locate(args.productId);
-      if (!found) return fail("product_not_found", "Call search_products to get a valid id.");
-      const count = listingStock(found.product, found.category);
-      return ok({
-        id: found.product.id,
-        name: productTitle(found.product, found.category),
-        inStock: count > 0,
-        units: stockLabel(count),
-        shipsInDays: found.product.days,
-        shipsOn: shipDate(found.product.days),
-        arrival: null,
-      });
     },
   },
 
@@ -570,7 +416,7 @@ export const TOOLS: RigsmithTool[] = [
       filters: {
         type: "object",
         additionalProperties: { type: "array", items: { type: "string" } },
-        description: "Facet id to values for a single slot; use list_filters first.",
+        description: "Facet id to values for a single requested slot.",
       },
       sort: str("Ordering; default catalog order.", SORTS),
       includeDetails: bool("Include compact descriptions and compatibility facts for a single slot; batches stay compact."),
@@ -597,7 +443,7 @@ export const TOOLS: RigsmithTool[] = [
       // Arguments are checked before the build is read: a bad filter is a bad
       // filter whether or not there is a machine on screen to compare against.
       const filterResult = requested.length ? readFilters(requested[0], args.filters) : { facets: undefined, unknown: [] as string[] };
-      if (filterResult.unknown.length) return fail("unknown_filter", `No ${requested[0]} filter named ${filterResult.unknown.join(", ")}. Call list_filters.`);
+      if (filterResult.unknown.length) return fail("unknown_filter", `No ${requested[0]} filter named ${filterResult.unknown.join(", ")}. Use a facet id supported by that slot.`);
       const requestedLimit = Math.min(10, Math.max(1, Math.round(args.limit ?? 5)));
       // A batch is the fast path for a new build. `limit` is per slot, not a
       // global candidate budget, and is never silently reduced. Batch rows
@@ -632,28 +478,6 @@ export const TOOLS: RigsmithTool[] = [
         requested: requested.length,
         allRemaining: args.allRemaining === true,
       }, "slots", undefined, batch ? BATCH_CANDIDATE_OUTPUT_BUDGET : SNAPSHOT_OUTPUT_BUDGET);
-    },
-  },
-
-  {
-    name: "set_build_component",
-    description: "Set or reset one PC build slot. The command validates the catalog id, stock, compatibility and hard budget; a case includes its fans atomically.",
-    routes: ["category", "product", "builder"],
-    inputSchema: schema({
-      slot: str("Slot to change.", PC_SLOTS), productId: str("Chosen catalog product id. Required for set."),
-      action: str("Default set; reset clears the slot.", ["set", "reset"]),
-      reason: { ...str("Optional short reason for this choice."), maxLength: 600 },
-      alternativeId: str("Optional different catalog product from the same slot."),
-      tradeoff: { ...str("Optional tradeoff or uncertainty."), maxLength: 400 },
-    }, ["slot"]),
-    async execute(args) {
-      if (args.action === "reset") return commandResult(await app().resetSlot(args.slot));
-      if (!args.productId)
-        return fail("missing_argument", "Provide productId, or explicitly use action reset.");
-      return commandResult(await app().set(args.slot, args.productId, {
-        productId: args.productId, reason: args.reason === undefined ? '' : args.reason, tradeoff: args.tradeoff === undefined ? '' : args.tradeoff,
-        alternativeId: args.alternativeId, comparedIds: [],
-      }));
     },
   },
 
@@ -759,42 +583,6 @@ export const TOOLS: RigsmithTool[] = [
   },
 
   {
-    name: "explain_build_bottleneck",
-    description:
-      "Whether the build has a measured performance bottleneck. This catalog has no game benchmarks, so the result reports performance as unavailable.",
-    readOnlyHint: true,
-    annotations: { readOnlyHint: true },
-    routes: [],
-    inputSchema: schema({ resolution: str("Default: the shopper's setting.", RESOLUTIONS) }),
-    execute(args) {
-      const instance = app();
-      if (!BUILD_SLOTS.every(slot => instance.state.chosen.includes(slot))) return fail("build_incomplete", "Select every slot first; default parts are not your build.");
-      const res = resolutionOf(args.resolution, instance.state.res as Resolution);
-      return ok({ resolution: res, ...bottleneck(instance.state.picks, res) });
-    },
-  },
-
-  {
-    name: "fix_build_issue",
-    description:
-      "Swaps that clear every open conflict in the build on screen, smallest price change first. Performance impact is unavailable without measured game benchmarks. Empty when the build already fits. Offer them; let the shopper pick.",
-    readOnlyHint: true,
-    annotations: { readOnlyHint: true },
-    routes: ["builder"],
-    inputSchema: schema({ slot: str("Omit to consider every part the conflict names.", PC_SLOTS) }),
-    execute(args) {
-      const instance = app();
-      const model = instance.metrics();
-      if (model.fits) return ok({ compatible: true, issues: [], options: [] });
-      const options = fixOptions(instance.state.picks, instance.state.res as Resolution, args.slot as PcSlot | undefined);
-      if (!options.length) {
-        return ok({ compatible: false, issues: model.issues.slice(0, 2), options: [], hint: "No single swap clears this. Inspect alternatives and choose replacements yourself." });
-      }
-      return ok({ compatible: false, issues: model.issues.slice(0, 2), options: options.slice(0, 6) }, "options");
-    },
-  },
-
-  {
     name: "begin_build",
     // ADR 0013: this tool opens the build panel but never chooses a starting slot or part.
     // docs/decisions/0013-agent-chooses-build-order.md
@@ -848,81 +636,6 @@ export const TOOLS: RigsmithTool[] = [
       }
     },
   },
-  {
-    name: "inspect_build_options",
-    description: "Return detailed facts, stock and current fit for one to four candidates in a PC build slot without selecting one.",
-    routes: ["builder", "category", "product"],
-    inputSchema: schema({
-      slot: str("Build slot to inspect.", PC_SLOTS),
-      productIds: { type: "array", minItems: 1, maxItems: 4, uniqueItems: true, items: { type: "string" }, description: "Candidate ids from catalog search. Inspect alternatives where available." },
-    }, ["slot", "productIds"]),
-    async execute(args) {
-      const instance = app();
-      const result = await instance.inspectBuildOptions(args.slot, args.productIds);
-      if (result.error) return commandResult(result);
-      const selected = selectedPicks(instance.state.picks, instance.state.chosen);
-      return ok({
-        slot: args.slot, brief: instance.state.buildBrief, budget: instance.state.budget,
-        selectedPrice: selectedPrice(instance.state.picks, instance.state.chosen),
-        revision: instance.state.buildRevision,
-        candidates: args.productIds.map((id: string) => {
-          const found = locate(id)!;
-          return { ...brief(found.product, found.category), specs: found.product.specs,
-            facts: facts(found.product), issues: compatibilityIssues({ ...selected, [args.slot]: id }) };
-        }),
-        limitations: "Synthetic catalog. Measured game performance is unavailable; FPS formulas cannot support a recommendation. Noise is a catalog specification, not a lab measurement. Fit checks cover seven rules, not BIOS, radiator or cooler clearance. Choose and explain using available facts; disclose unknowns.",
-      }, undefined, undefined, SNAPSHOT_OUTPUT_BUDGET);
-    },
-  },
-
-  {
-    name: "set_build_target",
-    description:
-      "Set what the shopper is aiming for. The controls move on screen, and selections must stay within the hard budget.",
-    routes: ["home", "builder"],
-    inputSchema: schema({
-      budget: num("Budget for the whole machine."),
-      resolution: str("Resolution to build for.", RESOLUTIONS),
-      targetFps: num("Frame rate aimed for."),
-      quiet: bool("Whether quiet matters."),
-    }),
-    async execute(args) {
-      const instance = app();
-      const patch: Record<string, unknown> = {};
-      if (typeof args.budget === "number") patch.budget = args.budget;
-      if (args.resolution) patch.res = resolutionOf(args.resolution, instance.state.res as Resolution);
-      if (typeof args.targetFps === "number") patch.target = args.targetFps;
-      if (typeof args.quiet === "boolean") patch.quiet = args.quiet;
-      if (!Object.keys(patch).length) return fail("nothing_to_set", "Pass at least one of budget, resolution, targetFps or quiet.");
-      // React applies state on its own schedule, so the answer is the merge we
-      // just handed it — reading the instance back here returns the old values.
-      const result = await instance.setTargets(patch);
-      if (result.error) return commandResult(result);
-      const next = instance.state;
-      const allocation = budgetPlan(next.budget, next.res as Resolution, next.budgetShares);
-      return ok({
-        budget: next.budget,
-        resolution: next.res,
-        targetFps: next.target,
-        quiet: next.quiet,
-        budgetAllocation: {
-          source: allocation.source,
-          slots: allocation.rows,
-        },
-      });
-    },
-  },
-
-  {
-    name: "undo_build_change",
-    description:
-      "Step the build back one change, the same as the button on screen. Use it when the shopper rejects a swap you just made.",
-    routes: ["category", "product", "builder"],
-    inputSchema: NO_INPUT,
-    async execute() { return commandResult(await app().undoBuild());
-    },
-  },
-
   {
     name: "create_watchdog",
     description:
@@ -999,101 +712,7 @@ export const TOOLS: RigsmithTool[] = [
     },
   },
 
-  {
-    name: "update_cart_line",
-    description:
-      "Change how many of a cart line the shopper wants, or remove it. Take the line number from get_cart. Quantity 0 removes. The assembled PC is one line and its quantity is fixed at one.",
-    routes: ["cart", "checkout"],
-    inputSchema: schema({
-      line: num("Line number from get_cart."),
-      quantity: num("New quantity, 0 to 5. 0 removes the line."),
-    }, ["line", "quantity"]),
-    async execute(args) { return commandResult(await app().setCartQty(args.line, args.quantity));
-    },
-  },
-
-  {
-    name: "start_checkout",
-    description:
-      "Open the checkout for the cart as it stands. It stops at the first step and asks the shopper for delivery details; it does not place an order and never fills in their details for them.",
-    routes: ["cart", "builder"],
-    inputSchema: NO_INPUT,
-    async execute() { return commandResult(await app().startCheckout());
-    },
-  },
-
-  {
-    name: "list_watchdogs",
-    description:
-      "Listings the shopper is watching, with the price at the time the watch was set and the price now. Read it before offering another watch on the same product.",
-    readOnlyHint: true,
-    annotations: { readOnlyHint: true },
-    routes: [],
-    inputSchema: NO_INPUT,
-    execute() {
-      const instance = app();
-      return ok({
-        watching: instance.state.watchdogs.map(watch => {
-          const found = locate(watch.productId);
-          return {
-            id: watch.productId,
-            name: found ? productTitle(found.product, found.category) : watch.productId,
-            kind: watch.kind,
-            priceAtWatch: watch.priceAtWatch,
-            priceNow: found?.product.price ?? null,
-            inStock: found ? listingStock(found.product, found.category) > 0 : null,
-          };
-        }),
-      }, "watching");
-    },
-  },
-
-  {
-    name: "remove_watchdog",
-    description:
-      "Stop watching a listing. Use the id and kind from list_watchdogs.",
-    routes: ["product", "cart"],
-    inputSchema: schema({
-      productId: str("Id from list_watchdogs."),
-      kind: str("Default: availability.", ["availability", "price"]),
-    }, ["productId"]),
-    execute(args) {
-      const instance = app();
-      const kind = args.kind === "price" ? "price" : "availability";
-      if (!instance.isWatched(args.productId, kind)) return fail("not_watched", "Call list_watchdogs to see what is being watched.");
-      const found = locate(args.productId);
-      if (!found) return fail("product_not_found", "Call list_watchdogs for valid ids.");
-      instance.toggleWatchdog(found.category, args.productId, kind);
-      return ok({ removed: args.productId, kind, watching: instance.state.watchdogs.length - 1 });
-    },
-  },
-
   // Listings ------------------------------------------------------------
-  {
-    name: "get_product_variants",
-    description:
-      "The other ways one device is sold: storage tiers and finishes, each with its own id and price. Phones and consoles only. Quote the tier the shopper asked for, not the base listing.",
-    readOnlyHint: true,
-    annotations: { readOnlyHint: true },
-    routes: ["product"],
-    inputSchema: schema({ productId: str("Id from another tool.") }, ["productId"]),
-    execute(args) {
-      const found = locate(args.productId);
-      if (!found) return fail("product_not_found", "Call search_products to get a valid id.");
-      const { product, category } = found;
-      const tiers = siblingVariants(product, CATALOG[category]);
-      const finishes = colorwaysFor(product, category);
-      if (!tiers.length && !finishes.length) {
-        return ok({ id: product.id, storage: [], finishes: [], note: "Sold in one configuration." });
-      }
-      return ok({
-        id: product.id,
-        storage: tiers.map(tier => ({ id: tier.id, label: tier.variantLabel ?? tier.name, price: tier.price, current: tier.id === product.id })),
-        finishes: finishes.map(finish => ({ id: finish.id, name: finish.name })),
-      }, "storage");
-    },
-  },
-
   {
     name: "get_reviews",
     description:
@@ -1132,229 +751,11 @@ export const TOOLS: RigsmithTool[] = [
     },
   },
 
-  {
-    name: "list_categories",
-    description:
-      "The departments the shop is arranged in and how many listings each category holds. Read it to pick a category name for search_products or show_in_catalog.",
-    readOnlyHint: true,
-    annotations: { readOnlyHint: true },
-    routes: ["home", "category"],
-    inputSchema: NO_INPUT,
-    execute() {
-      return ok({
-        departments: DEPTS.map(department => ({
-          id: department.id,
-          name: department.name,
-          categories: department.cats.map(slot => ({ id: slot, name: CAT_META[slot].name, count: CAT_META[slot].count })),
-        })),
-      }, "departments");
-    },
-  },
-  {
-    name: "list_brands",
-    description:
-      "Every brand the shop carries and how many listings each has, optionally within one category. Take the spelling from here before passing a brand to search_products.",
-    readOnlyHint: true,
-    annotations: { readOnlyHint: true },
-    routes: ["home", "category"],
-    inputSchema: schema({ category: str("Narrow to one category.", CATEGORIES) }),
-    execute(args) {
-      const pool = args.category ? CATALOG[args.category as Slot] : Object.values(CATALOG).flat();
-      const counts = new Map<string, number>();
-      for (const product of pool) counts.set(brandOf(product), (counts.get(brandOf(product)) ?? 0) + 1);
-      return ok({
-        category: args.category ?? "all",
-        brands: [...counts.entries()].sort((a, b) => b[1] - a[1]).map(([name, count]) => ({ name, count })),
-      }, "brands");
-    },
-  },
-
-  {
-    name: "get_deals",
-    description:
-      "Listings the shop is currently flagging as on sale or newly arrived, newest and cheapest first. A sale listing shows what it was before.",
-    readOnlyHint: true,
-    annotations: { readOnlyHint: true },
-    routes: ["home", "category"],
-    inputSchema: schema({
-      kind: str("Default: both.", ["sale", "new"]),
-      category: str("Narrow to one category.", CATEGORIES),
-      limit: num("1 to 10, default 6."),
-    }),
-    execute(args) {
-      const limit = Math.min(10, Math.max(1, Math.round(args.limit ?? 6)));
-      const items = Object.entries(MERCHANDISING)
-        .filter(([, kind]) => !args.kind || kind === args.kind)
-        .flatMap(([id, kind]) => {
-          const found = locate(id);
-          return found ? [{ found, kind: kind as string }] : [];
-        })
-        .filter(entry => !args.category || entry.found.category === args.category)
-        .sort((a, b) => a.found.product.price - b.found.product.price)
-        .slice(0, limit)
-        .map(entry => ({
-          ...brief(entry.found.product, entry.found.category),
-          kind: entry.kind,
-          ...(entry.found.product.was ? { was: entry.found.product.was } : {}),
-        }));
-      return ok({ total: items.length, items }, "items");
-    },
-  },
-
-  {
-    name: "select_product_variant",
-    description:
-      "Open a particular storage tier or finish of a device on screen, so the shopper sees the one being discussed. Take the ids from get_product_variants. Selecting is not buying.",
-    routes: ["product"],
-    inputSchema: schema({
-      productId: str("Storage tier id from get_product_variants."),
-      finishId: str("Finish id from get_product_variants."),
-    }, ["productId"]),
-    async execute(args) {
-      const found = locate(args.productId);
-      if (!found) return fail("product_not_found", "Call get_product_variants for the tier ids.");
-      const { product, category } = found;
-      const finishes = colorwaysFor(product, category);
-      if (args.finishId && !finishes.some(finish => finish.id === args.finishId)) {
-        return fail("no_such_finish", finishes.length ? `Offered: ${finishes.map(f => f.id).join(", ")}.` : "This product has one finish.");
-      }
-      await app().showInCatalog({
-        route: "product", productId: product.id, productSlot: category, category,
-        productColorId: args.finishId ?? null,
-        dept: category === "phones" ? "phone" : category === "consoles" ? "gaming" : "pc",
-      });
-      return ok({
-        shown: product.id,
-        name: productTitle(product, category),
-        price: product.price,
-        finish: args.finishId ?? null,
-      });
-    },
-  },
-
-  {
-    name: "focus_builder_slot",
-    description:
-      "Move the configurator to one slot, so the shopper is looking at the part being discussed. Shows the screen only; it fits nothing. Use set_build_component to choose.",
-    routes: ["builder", "product"],
-    inputSchema: schema({ slot: str("Slot to show.", PC_SLOTS) }, ["slot"]),
-    async execute(args) {
-      const instance = app();
-      const slot = args.slot as PcSlot;
-      await instance.showInCatalog({ route: "category", category: slot, productSlot: slot, dept: "pc", brand: "any", search: "" });
-      return ok({
-        showing: slot,
-        slotName: slotName(slot),
-        fitted: part(instance.state.picks, slot).name,
-        chosenByShopper: instance.state.chosen.includes(slot),
-      });
-    },
-  },
-
-  {
-    name: "compare_build_to_product",
-    description:
-      "Set the PC on screen against a console or phone: price, delivery, and what each one states it can do. The PC has no measured game performance in this catalog, so compare its hardware facts with the device's stated output without treating the figures as equivalent measurements.",
-    readOnlyHint: true,
-    annotations: { readOnlyHint: true },
-    routes: [],
-    inputSchema: schema({
-      productId: str("One console or phone id; alternatively pass productIds."),
-      productIds: { type: "array", minItems: 1, maxItems: 3, items: { type: "string" }, description: "Compare up to three devices in one call." },
-      resolution: str("Default: the shopper's setting.", RESOLUTIONS),
-    }),
-    execute(args) {
-      const instance = app();
-      if (!BUILD_SLOTS.every(slot => instance.state.chosen.includes(slot))) return fail("build_incomplete", "Select every slot first; default parts are not your build.");
-      const ids = args.productIds ?? [args.productId];
-      if (!Array.isArray(ids) || ids.length < 1 || ids.length > 3 || ids.some((id: unknown) => typeof id !== "string"))
-        return fail("product_not_found", "Provide productId or one to three productIds.");
-      if (args.productIds) {
-        const single = TOOLS.find(tool => tool.name === "compare_build_to_product")!;
-        const results = ids.map((productId: string) => {
-          const result = single.execute({ productId, resolution: args.resolution }) as ToolCallResult;
-          return JSON.parse(result.content[0].text);
-        });
-        const failed = results.find(result => result.error);
-        if (failed) return fail(failed.error, failed.hint);
-        return ok({ build: results[0].build,
-          devices: results.map(result => ({ ...result.device, priceDifference: result.priceDifference })),
-          note: results[0].note }, "devices");
-      }
-      const found = locate(args.productId);
-      if (!found) return fail("product_not_found", "Call search_products in the consoles or phones category.");
-      if (found.category !== "consoles" && found.category !== "phones") {
-        return fail("not_a_device", "This compares the build against a console or phone. Use compare_products for parts.");
-      }
-      const res = resolutionOf(args.resolution, instance.state.res as Resolution);
-      const model = metrics(instance.state.picks, res);
-      const device = found.product;
-      const output = found.category === "consoles"
-        ? {
-            maxResolution: spec(device, "output", "maxResolution"),
-            maxRefreshRateHz: spec(device, "output", "maxRefreshRateHz"),
-            rayTracing: spec(device, "output", "rayTracing"),
-            storageGB: spec(device, "hardware", "storageGB"),
-          }
-        : {
-            display: spec(device, "display", "type"),
-            refreshRateHz: spec(device, "display", "refreshRateHz"),
-            storageGB: spec(device, "storage", "capacityGB"),
-          };
-      return ok({
-        build: {
-          price: model.price,
-          fps: null,
-          performanceBasis: PERFORMANCE_UNAVAILABLE,
-          resolution: res,
-          noise: null,
-          noiseBasis: NOISE_UNAVAILABLE,
-          powerW: model.watt,
-          shipsOn: shipDate(model.days),
-          arrival: null,
-          upgradeable: true,
-        },
-        device: {
-          id: device.id,
-          name: productTitle(device, found.category),
-          price: device.price,
-          shipsOn: shipDate(device.days),
-          arrival: null,
-          stated: output,
-          upgradeable: false,
-        },
-        priceDifference: model.price - device.price,
-        note: `Build performance is unavailable: ${PERFORMANCE_UNAVAILABLE} Device figures are the device's stated capabilities and are not measured the same way.`,
-      });
-    },
-  },
-
-  {
-    name: "get_checkout_fields",
-    description:
-      "What checkout will ask the shopper for, step by step. Use it to tell them what to have ready. No tool fills these in: names, addresses and card details are the shopper's own to enter.",
-    readOnlyHint: true,
-    annotations: { readOnlyHint: true },
-    routes: ["cart", "checkout"],
-    inputSchema: NO_INPUT,
-    execute() {
-      return ok({
-        currentStep: CHECKOUT_STEPS[Math.min(app().state.step, CHECKOUT_STEPS.length - 1)].id,
-        steps: CHECKOUT_STEPS.map(step => ({
-          id: step.id,
-          asksFor: step.kind,
-          fields: step.kind === "confirmation" ? [] : step.fields.map(field => field.label),
-        })),
-        enteredBy: "shopper",
-      }, "steps");
-    },
-  },
 ];
 
 /**
- * The small, stable set exposed by the judge-facing demo. The full catalogue
- * remains implemented above for the storefront and its tests, but these are
- * the only descriptors sent to WebMCP so discovery stays predictable.
+ * The stable descriptor set exposed by the judge-facing demo. Keeping this
+ * list explicit makes the browser-facing contract predictable.
  */
 export const DEMO_TOOL_NAMES = [
   "search_products",

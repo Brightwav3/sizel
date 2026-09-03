@@ -32,16 +32,14 @@ describe("README", () => {
     expect(listed).toEqual(NAMES);
   });
 
-  it("states both the implemented and demo-exposed tool counts", () => {
+  it("states the implemented and registered tool count", () => {
     const written = readme.match(/^([A-Z][a-z-]+(?:-[a-z]+)?) tool descriptors are implemented/m)?.[1];
-    const demoWritten = readme.match(/registers ([a-z-]+) stable tools/m)?.[1];
     const words: Record<string, number> = {
       Thirteen: 13, Fourteen: 14, Fifteen: 15, Nineteen: 19, "Twenty-seven": 27, "Thirty-three": 33, "Thirty-four": 34, "Thirty-five": 35, "Thirty-six": 36, "Thirty-seven": 37,
     };
     expect(written, "implemented tool count sentence not found in README").toBeDefined();
     expect(words[written!], `README says "${written}"`).toBe(TOOLS.length);
-    expect(demoWritten, "demo tool count sentence not found in README").toBeDefined();
-    expect(words[`${demoWritten![0].toUpperCase()}${demoWritten!.slice(1)}`], `README says "${demoWritten}"`).toBe(DEMO_TOOL_NAMES.length);
+    expect(DEMO_TOOL_NAMES.length).toBe(TOOLS.length);
   });
 });
 
