@@ -1,3 +1,5 @@
+# Sizel submission instructions
+
 Sizel is a fictional electronics e-shop I built with React, TypeScript and Vite. You'll run into **Rigsmith** in some internal names — that was the working title, and some identifiers and old docs still carry it.
 
 ## Public links
