@@ -102,7 +102,7 @@ tool reference and submission instructions are in `docs/webmcp-tools.md` and
 
 ## WebMCP Challenge status
 
-The interactive application, the local catalog, and the WebMCP tool set are working. A live demo is available at [sizel.vercel.app](https://sizel.vercel.app/), and the public source repository is [github.com/Brightwav3/sizel](https://github.com/Brightwav3/sizel). The reviewed submission state is on the [`codex/submission-ready` branch](https://github.com/Brightwav3/sizel/tree/codex/submission-ready) while PR #8 remains open. The video comparison recorded 6 minutes 31 seconds without WebMCP and 2 minutes 35 seconds with WebMCP; those are run-specific observations, not a universal benchmark.
+The interactive application, the local catalog, and the WebMCP tool set are working. A live demo is available at [sizel.vercel.app](https://sizel.vercel.app/), and the public source repository is [github.com/Brightwav3/sizel/tree/master](https://github.com/Brightwav3/sizel/tree/master). The current submission source is `master`; PR #9, which removed the retired standalone builder and repaired the active build flow, is merged. The public demo video is 2 minutes 43 seconds; any timings shown in it are run-specific observations, not a universal benchmark.
 
 Fifteen tool descriptors are implemented in `src/app/webmcp/` and registered
 by the judge-facing demo. The demo keeps the same descriptors while the shopper

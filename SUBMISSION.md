@@ -1,40 +1,39 @@
 # Sizel submission instructions
 
-Sizel is a fictional electronics storefront built with React, TypeScript and
-Vite. The repository uses **Rigsmith** in some internal names.
+Sizel is a fictional electronics storefront I built with React, TypeScript and
+Vite. You'll see **Rigsmith** in some internal names — that was the working
+title, and some internal identifiers and historical documentation still use it.
 
 ## Public links
 
 - Live app: https://sizel.vercel.app/
-- Reviewed source branch: https://github.com/Brightwav3/sizel/tree/codex/remove-dead-builder
-- Pull request under review: https://github.com/Brightwav3/sizel/pull/9
+- Public source repository: https://github.com/Brightwav3/sizel/tree/master
 - Public demo video (2:43): https://youtu.be/OWxUgB0Qxs0
 
-The source branch is named explicitly because the pull request is intentionally
-not merged into `master`.
+`master` is the current submission source. The cleanup work from PR #9 is
+merged there.
 
 ## Run locally
 
-Requirements: Node.js 20 or newer.
+You'll need Node.js 20 or newer.
 
 ```bash
 npm install
 npm run dev
 ```
 
-Open the local URL printed by Vite. The app works as a normal storefront even
-when WebMCP is unavailable.
+Open whatever local URL Vite prints. The store works as a normal e-shop even
+without WebMCP — that part was never optional.
 
 ## Enable WebMCP
 
-Use ChatGPT's in-app browser, which supports WebMCP by default, or use Chrome
-149 or newer:
+Use ChatGPT's in-app browser (WebMCP works there by default), or Chrome 149+:
 
 1. Open `chrome://flags/#enable-webmcp-testing`.
-2. Enable the flag and restart Chrome.
-3. Open the live app or the local Vite URL.
+2. Enable it, then restart Chrome.
+3. Open the live app or your local Vite URL.
 
-The judge-facing demo registers exactly these 15 tools:
+The judge-facing demo registers exactly 15 tools:
 
 `search_products`, `get_product`, `get_reviews`, `compare_products`,
 `show_in_catalog`, `begin_build`, `list_compatible_parts`,
@@ -42,21 +41,33 @@ The judge-facing demo registers exactly these 15 tools:
 `compare_build_options`, `create_watchdog`, `add_to_cart`,
 `add_build_to_cart`, and `get_cart`.
 
+I kept this list to the stable judge-facing capabilities that map to the real
+catalog, build, navigation, and cart flows.
+
 ## Recommended demonstration flow
 
-Ask the agent to build a gaming PC within a fixed budget. The agent should:
+Ask the agent to build a gaming PC within a fixed budget. It should:
 
 1. Search the catalog and start a build with `begin_build`.
-2. Choose compatible parts with `list_compatible_parts`.
-3. Apply the complete eight-part selection with `set_build_components`.
+2. Pick compatible parts with `list_compatible_parts`.
+3. Apply the eight independently selected components with
+   `set_build_components`. Case fans are bundled with the case.
 4. Verify the nine-slot build with `check_build_compatibility`.
-5. Request simulated performance with `estimate_performance`.
-6. Compare an agent-supplied alternative with `compare_build_options`.
-7. Add a product or completed build to the cart only when requested.
+5. Pull simulated performance with `estimate_performance`.
+6. Compare against an agent-suggested alternative with
+   `compare_build_options`.
+7. Add a product or finished build to the cart only when the user asks.
 
-All catalog data, reviews, prices, stock and performance fixtures are
-fictional or synthetic. Performance results are labelled simulations, not
-measured game benchmarks. Checkout is a preview and does not place an order.
+The public UI uses the in-progress build popup and category/product pages; it
+does not expose a standalone `/pc-builder` page. The structured WebMCP flow
+selects known catalog ids directly and still validates stock, compatibility,
+budget, and completeness.
+
+Everything in the catalog — products, reviews, prices, stock, delivery details,
+and performance numbers — is fictional or synthetic for this demo. Performance
+results are labeled simulations, not real benchmarks. Checkout is a preview; it
+doesn't place an order. `create_watchdog` records a local demo watch only when
+the agent calls it; it does not send an external notification.
 
 ## Verification
 
@@ -67,6 +78,6 @@ npm run check:catalog
 npm run audit:catalog
 ```
 
-`npm test` checks that the committed `docs/webmcp-tools.md` reference matches the
-current tool descriptors before running Vitest. After changing a descriptor,
-run `npm run generate:webmcp-docs`, review the diff, and commit the result.
+`npm test` first checks that the committed `docs/webmcp-tools.md` reference
+still matches the current tool descriptors, then runs Vitest. If you change a
+descriptor, run `npm run generate:webmcp-docs`, check the diff, and commit it.
