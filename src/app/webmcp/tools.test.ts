@@ -2,8 +2,8 @@ import { describe, expect, it } from "vitest";
 import { CATALOG, DEFAULT_PICKS } from "../../data/catalog/catalog";
 import { reviewsFor } from "../../data/catalog/reviews";
 import { compatibilityIssues, metrics } from "../../entities/build/metrics";
-import type { PcSlot, Picks } from "../../shared/lib/types";
-import { BUDGET_TOLERANCE, bottleneck, cheapestBuild, fixOptions, powerReport, recommendBuild } from "./buildAdvisor";
+import type { Picks } from "../../shared/lib/types";
+import { BUDGET_TOLERANCE, cheapestBuild, powerReport, recommendBuild } from "./buildAdvisor";
 import { part } from "../../entities/build/metrics";
 import { OUTPUT_BUDGET, SNAPSHOT_OUTPUT_BUDGET, ok } from "./toolResult";
 import { DEMO_TOOL_NAMES, TOOLS, demoTools, toolsForRoute } from "./tools";
@@ -12,13 +12,6 @@ const text = (result: { content: { text: string }[] }) => result.content[0].text
 const call = (name: string, args: Record<string, unknown> = {}) => {
   const tool = TOOLS.find(entry => entry.name === name)!;
   return text(tool.execute(args) as { content: { text: string }[] });
-};
-
-/** A build with a socket clash, for the fix path. */
-const clashing = (): Picks => {
-  const cpu = CATALOG.cpu.find(part => part.socket === "AM5") ?? CATALOG.cpu[0];
-  const board = CATALOG.board.find(part => part.socket !== cpu.socket) ?? CATALOG.board[0];
-  return { ...DEFAULT_PICKS, cpu: cpu.id, board: board.id } as Picks;
 };
 
 describe("tool contract", () => {
@@ -49,17 +42,12 @@ describe("tool contract", () => {
   it("exposes only the stable judge-facing demo set", () => {
     expect(demoTools().map(tool => tool.name)).toEqual([...DEMO_TOOL_NAMES]);
     expect(demoTools()).toHaveLength(15);
-    expect(demoTools().some(tool => tool.name === "read_shop")).toBe(false);
-    expect(demoTools().map(tool => tool.name)).toContain("set_build_components");
-    expect(demoTools().map(tool => tool.name)).toContain("estimate_performance");
-    expect(demoTools().map(tool => tool.name)).not.toContain("set_build_component");
+    expect(TOOLS).toHaveLength(DEMO_TOOL_NAMES.length);
+    expect(TOOLS.map(tool => tool.name).sort()).toEqual([...DEMO_TOOL_NAMES].sort());
   });
 
   it("marks every tool that changes nothing as read only", () => {
-    const writers = ["set_build_component", "set_build_components", "add_to_cart", "add_build_to_cart", "create_watchdog",
-      "begin_build", "inspect_build_options", "set_build_target", "undo_build_change", "show_in_catalog",
-      "update_cart_line", "start_checkout", "remove_watchdog",
-      "select_product_variant", "focus_builder_slot"];
+    const writers = ["set_build_components", "add_to_cart", "add_build_to_cart", "create_watchdog", "begin_build", "show_in_catalog"];
     for (const tool of TOOLS) {
       const readOnly = tool.readOnlyHint === true && tool.annotations?.readOnlyHint === true;
       expect(readOnly, tool.name).toBe(!writers.includes(tool.name));
@@ -74,9 +62,8 @@ describe("tool contract", () => {
   });
 
   it("offers the build editors only on screens that show a build", () => {
-    expect(toolsForRoute("checkout").map(tool => tool.name)).not.toContain("set_build_component");
     expect(toolsForRoute("checkout").map(tool => tool.name)).not.toContain("set_build_components");
-    expect(toolsForRoute("builder").map(tool => tool.name)).toContain("fix_build_issue");
+    expect(toolsForRoute("builder").map(tool => tool.name)).toContain("list_compatible_parts");
     expect(toolsForRoute("home").map(tool => tool.name)).toContain("search_products");
   });
 });
@@ -95,8 +82,6 @@ describe("results stay inside the output budget", () => {
       call("search_products", { category: "gpu", limit: 20 }),
       call("search_products", { query: "phone" }),
       call("get_product", { productId: gpu.id }),
-      call("list_filters", { category: "gpu" }),
-      call("check_stock", { productId: gpu.id }),
       call("compare_products", { productIds: CATALOG.gpu.slice(0, 4).map(part => part.id) }),
     ];
     for (const body of calls) expect(body.length).toBeLessThanOrEqual(OUTPUT_BUDGET);
@@ -153,16 +138,6 @@ describe("search_products filters", () => {
     expect(row.shipsInDays).toBeGreaterThan(2);
   });
 
-  it("applies a facet from list_filters and narrows the result", () => {
-    const facet = JSON.parse(call("list_filters", { category: "gpu" })).facets[0];
-    const all = JSON.parse(call("search_products", { category: "gpu", limit: 20 })).total;
-    const narrowed = JSON.parse(call("search_products", {
-      category: "gpu", limit: 20, filters: { [facet.id]: [facet.values[0]] },
-    }));
-    expect(narrowed.total).toBeGreaterThan(0);
-    expect(narrowed.total).toBeLessThanOrEqual(all);
-  });
-
   it("names a filter the category does not have instead of ignoring it", () => {
     const result = JSON.parse(call("search_products", { category: "gpu", filters: { "cpu-socket": ["AM5"] } }));
     expect(result.error).toBe("unknown_filter");
@@ -182,13 +157,6 @@ describe("search_products filters", () => {
   });
 });
 
-describe("get_deals", () => {
-  it("returns only what the shop is flagging, with the kind on each", () => {
-    const sale = JSON.parse(call("get_deals", { kind: "sale", limit: 10 }));
-    expect(sale.items.length).toBeGreaterThan(0);
-    expect(sale.items.every((item: any) => item.kind === "sale")).toBe(true);
-  });
-});
 
 describe("get_reviews", () => {
   it("returns only verified commenters and includes their names", () => {
@@ -206,24 +174,7 @@ describe("get_reviews", () => {
   });
 });
 
-describe("list_brands", () => {
-  it("counts listings per brand and narrows to a category", () => {
-    const all = JSON.parse(call("list_brands"));
-    const gpu = JSON.parse(call("list_brands", { category: "gpu" }));
-    expect(all.brands.length).toBeGreaterThan(gpu.brands.length);
-    expect(gpu.brands.reduce((sum: number, b: any) => sum + b.count, 0)).toBe(CATALOG.gpu.length);
-  });
-});
 
-describe("get_checkout_fields", () => {
-  it("says what each step asks for and never carries a value", () => {
-    const tool = TOOLS.find(entry => entry.name === "get_checkout_fields")!;
-    expect(tool.readOnlyHint).toBe(true);
-    const body = JSON.stringify(tool.inputSchema);
-    expect(body).not.toContain("name");
-    expect(body).not.toContain("card");
-  });
-});
 
 describe("recommend_build", () => {
   it.each([900, 1500, 2400, 4000])("returns a compatible machine for %i dollars", budget => {
@@ -305,44 +256,7 @@ describe("recommend_build", () => {
   });
 });
 
-describe("fix_build_issue", () => {
-  it("returns nothing for a build that already fits", () => {
-    expect(fixOptions({ ...DEFAULT_PICKS } as Picks)).toEqual([]);
-  });
 
-  it("offers swaps that clear the conflict", () => {
-    const picks = clashing();
-    expect(compatibilityIssues(picks).length).toBeGreaterThan(0);
-    const options = fixOptions(picks);
-    expect(options.length).toBeGreaterThan(0);
-    for (const option of options) {
-      const next = { ...picks, [option.slot]: option.id } as Picks;
-      expect(compatibilityIssues(next), `${option.slot} ${option.name}`).toEqual([]);
-    }
-  });
-
-  it("blames a part the conflict actually names", () => {
-    const picks = clashing();
-    const slots = new Set(fixOptions(picks).map(option => option.slot));
-    expect([...slots].every(slot => (["cpu", "board"] as PcSlot[]).includes(slot))).toBe(true);
-  });
-
-  it("respects a requested slot", () => {
-    expect(fixOptions(clashing(), "1440p", "board").every(option => option.slot === "board")).toBe(true);
-  });
-});
-
-describe("explain_build_bottleneck", () => {
-  it("reports the absence of measured game data instead of inventing a bottleneck", () => {
-    const report = bottleneck({ ...DEFAULT_PICKS } as Picks);
-    expect(report.slot).toBeNull();
-    expect(report.currentFps).toBeNull();
-    expect(report.ceilingFps).toBeNull();
-    expect(report.lostFps).toBeNull();
-    expect(report.upgrade).toBeNull();
-    expect(report.basis).toContain("not a game benchmark");
-  });
-});
 
 describe("powerReport", () => {
   it("states draw, requirement and headroom the way the rule does", () => {

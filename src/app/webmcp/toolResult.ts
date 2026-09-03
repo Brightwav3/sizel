@@ -23,9 +23,9 @@ export const BATCH_CANDIDATE_OUTPUT_BUDGET = 18000;
  * totals, compatibility, clearance and power.
  *
  * Deliberately above the ordinary ceiling. The alternative an agent reaches
- * for when a slot is missing is one `check_stock` per part, which costs far
- * more context than the extra characters here, so completeness is bought
- * once rather than nine times.
+ * for when a slot is missing is one separate inventory call per part, which
+ * costs far more context than the extra characters here, so completeness is
+ * bought once rather than nine times.
  */
 export const BUILD_REPORT_BUDGET = 3000;
 

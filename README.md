@@ -2,15 +2,15 @@
 
 > **Naming note:** Sizel was developed under the working title **Rigsmith**. Some internal identifiers and historical documentation still use Rigsmith.
 
-> Current selection contract (ADR 0009): inspection and explanation fields are optional. Select known catalog ids directly; current stock, compatibility and budget checks remain mandatory. Earlier descriptions of required inspection below are historical.
+> Current selection contract: select known catalog ids directly; current stock, compatibility and budget checks remain mandatory.
 
-Sizel is a demo electronics store for phones, gaming consoles and PC components, designed for shoppers and browser agents. Product browsing, comparisons and a shopping cart form the storefront; a custom PC builder is one of its shopping tools. It carries a local catalog of 135 product records, shown as 164 shopper-visible listings once phones and selected handheld consoles expand into storage tiers; bundled case fans are not sold as separate listings. The catalog and shopping actions are exposed through 37 WebMCP tools.
+Sizel is a demo electronics store for phones, gaming consoles and PC components, designed for shoppers and browser agents. Product browsing, comparisons and a shopping cart form the storefront; a custom PC builder is one of its shopping tools. It carries a local catalog of 135 product records, shown as 164 shopper-visible listings once phones and selected handheld consoles expand into storage tiers; bundled case fans are not sold as separate listings. The catalog and shopping actions are exposed through 15 WebMCP tools.
 
 All products, brands, logos, product images, reviews, prices, stock, and delivery details are fictional or synthetic demo data. The application does not depend on an external catalog API.
 
 ## Agent-led building (31 August 2026)
 
-`recommend_build` is no longer exposed. For PC requests, agents start with `begin_build`, decide which slot to solve first, choose catalog products, and apply the complete selection with `set_build_components`. `begin_build` accepts optional `budgetShares`, such as {cpu: 20, gpu: 40}, and returns dollar allowances for every slot. It never selects a starting slot or part. Omitted slots receive the resolution-aware remainder; these are planning hints, not hard caps. `list_compatible_parts` repeats the current slot allowance next to fitting candidates and can batch several slots, while `compare_build_options` calculates explicit simulated results and deltas for alternatives supplied by the agent. Phone searches group storage variants by model by default, so one search can supply distinct comparison candidates. `inspect_build_options` is optional when more facts are needed, as are reason and tradeoff fields. The structured WebMCP route can still use the internal builder state; the public UI path uses the in-progress popup and category/product pages so visual agents compare specifications before selecting. Material tradeoffs belong in the agent conversation, not an additional page panel.
+For PC requests, agents start with `begin_build`, decide which slot to solve first, choose catalog products, and apply the complete selection with `set_build_components`. `begin_build` accepts optional `budgetShares`, such as {cpu: 20, gpu: 40}, and returns dollar allowances for every slot. It never selects a starting slot or part. Omitted slots receive the resolution-aware remainder; these are planning hints, not hard caps. `list_compatible_parts` repeats the current slot allowance next to fitting candidates and can batch several slots, while `compare_build_options` calculates explicit simulated results and deltas for alternatives supplied by the agent. Phone searches group storage variants by model by default, so one search can supply distinct comparison candidates. The public UI path uses the in-progress popup and category/product pages so visual agents compare specifications before selecting. Material tradeoffs belong in the agent conversation, not an additional page panel.
 
 Build and cart writes share UI validation and finish after React commits. A complete build must fit the exact budget and stock limits before checkout. Catalog prices, stock, and delivery are synthetic; checkout is a preview, not a payment or order service. See [ADR 0007](docs/decisions/0007-agents-select-and-explain-parts.md).
 
@@ -31,14 +31,6 @@ person knows the performance they want; the shop asks them to reason about
 sockets, memory standards, case clearance and power headroom at the same time.
 WebMCP lets an agent do that reasoning against structured tools while the
 person watches it happen on the page and keeps the final say.
-
-Two things this shop can answer that clicking cannot:
-
-- **`fix_build_issue`** — a compatibility message states a conflict but never
-  names the part to change. This returns the swaps that clear it, smallest
-  price change first, with what each does to the frame rate.
-- **`explain_build_bottleneck`** — the frame-rate model knows which component
-  caps the graphics card. No screen has ever shown that.
 
 | If you have | Read |
 | --- | --- |
@@ -111,58 +103,34 @@ describes the UI layering.
 
 The interactive application, the local catalog, and the WebMCP tool set are working. A live demo is available at [sizel.vercel.app](https://sizel.vercel.app/), and the public source repository is [github.com/Brightwav3/sizel](https://github.com/Brightwav3/sizel). The video comparison recorded 6 minutes 31 seconds without WebMCP and 2 minutes 35 seconds with WebMCP; those are run-specific observations, not a universal benchmark.
 
-Thirty-seven tool descriptors are implemented in `src/app/webmcp/`; the
-judge-facing demo registers fifteen stable tools from that list. The demo
-keeps the same descriptors while the shopper moves between the catalogue,
-product pages and the floating build summary. `show_in_catalog` makes visible navigation
-explicit, while read tools return data without changing the route. The full
-descriptor list remains available for a future storefront profile, and results
-are held inside Chrome's 1.5K character budget.
+Fifteen tool descriptors are implemented in `src/app/webmcp/` and registered
+by the judge-facing demo. The demo keeps the same descriptors while the shopper
+moves between the catalogue, product pages and the floating build summary.
+`show_in_catalog` makes visible navigation explicit, while read tools return
+data without changing the route. Results are held inside Chrome's 1.5K character
+budget.
 
 | Tool | What it does |
 | --- | --- |
-| `read_shop` | Read-only multi-section snapshot with no navigation |
 | `search_products` | Search the catalog by text, category, brand, price or stock |
 | `get_product` | One full record, with the facts compatibility checks use; use `show_in_catalog` to display it |
-| `get_current_build` | The nine slots on screen, with price, frame rate and power |
-| `list_filters` | The filters a category supports, so filter names are never guessed |
-| `list_brands` | Every brand and its listing count, for exact spelling |
-| `get_deals` | What the shop is flagging as on sale or newly arrived |
+| `get_reviews` | Verified reviews only, or `nekomentovali overeni` when none are verified |
 | `compare_products` | Two to four listings, showing only where they differ; use `show_in_catalog` for pages |
-| `check_stock` | Stock on hand and the delivery date |
 | `show_in_catalog` | Put a category, product, or cart on the shopper's screen; use the build pill for the active build |
 | `list_compatible_parts` | Fitting parts for one slot or a bounded batch, with budget-share hints |
-| `set_build_component` | Fit a part, or return a slot to its default |
 | `set_build_components` | Apply the agent's complete PC selection atomically |
 | `check_build_compatibility` | All nine slots with stock and delivery, conflicts in plain sentences, power headroom |
 | `estimate_performance` | Frame rate, noise, price, power and delivery |
-| `explain_build_bottleneck` | The part holding the frame rate down, and what it costs |
-| `fix_build_issue` | Swaps that clear a conflict, smallest price change first |
 | `begin_build` | Open the in-place build panel with the brief, hard budget and optional slot-share hints |
-| `inspect_build_options` | Return candidate facts and record optional inspection state |
 | `compare_build_options` | Compare agent-proposed whole-build alternatives without ranking or applying them |
-| `set_build_target` | Budget, resolution, frame rate and noise preference |
-| `undo_build_change` | Step the build back one change |
 | `create_watchdog` | Watch a listing for stock or a price drop |
-| `list_watchdogs` | What is being watched, with the price then and now |
-| `remove_watchdog` | Stop watching a listing |
-| `list_categories` | The departments and categories, with listing counts |
-| `get_product_variants` | The storage tiers and finishes one device is sold in |
-| `get_reviews` | Verified reviews only, or `nekomentovali overeni` when none are verified |
-| `select_product_variant` | Open one storage tier or finish on screen |
-| `focus_builder_slot` | Open the relevant PC-part category for the part being discussed |
-| `compare_build_to_product` | The build against a console or phone |
 | `add_to_cart` | Add one product to the cart |
 | `add_build_to_cart` | Add the assembled PC, refusing while it does not fit |
 | `get_cart` | Every cart line, subtotal, shipping, total and delivery |
-| `update_cart_line` | Change a line's quantity, or remove it |
-| `start_checkout` | Open the checkout; it never fills in the shopper's details |
-| `get_checkout_fields` | What checkout will ask for, so the shopper can have it ready |
 
 Read-only tools carry `readOnlyHint`, so an agent can tell which calls are
 safe to make without asking. The ones that spend money or change the build do
 not: `add_build_to_cart` refuses outright while a conflict is open, and
-`start_checkout` stops at the delivery step rather than placing an order.
 `get_reviews` returns only verified shopper text, so it carries
 `untrustedContentHint`.
 
@@ -192,7 +160,8 @@ workflow in [`AGENTS.md`](AGENTS.md): use the in-progress build popup to open
 each slot's category, open candidate product details, read **Specifications**,
 verify them against the current build, and add the part from its product page.
 The public `/pc-builder` route is intentionally unavailable; the structured
-WebMCP path keeps its optional-inspection contract from ADR 0009.
+WebMCP path selects known catalog ids directly; current stock, compatibility
+and budget checks remain mandatory.
 
 ## Data and licensing
 
