@@ -3,7 +3,9 @@
 > Current selection contract: select known catalog ids directly; current stock, compatibility and budget checks remain mandatory.
 
 Rigsmith implements the 15 descriptors registered by the judge-facing demo
-through `src/app/webmcp`. [ADR 0007](decisions/0007-agents-select-and-explain-parts.md) supersedes automatic recommendation and pre-commit replies. [ADR 0016](decisions/0016-unregistered-webmcp-descriptors-are-removed.md) defines the complete exposed surface. [Tool reference](webmcp-tools.md) is generated from descriptors.
+through `src/app/webmcp`. The demo no longer performs automatic recommendation
+or pre-commit selection. The [tool reference](webmcp-tools.md) is generated
+from the descriptors.
 
 ## Agent selection, existing UI
 
@@ -33,4 +35,4 @@ Incomplete builds report missing slots and no complete-build performance estimat
 
 Catalog data are synthetic, compatibility checks cover seven rules, and FPS is not measured performance. State is in memory; watches send no notifications. Checkout is explicitly a preview without payment or order creation. Production requires authoritative services and persistence; WebMCP does not replace them.
 
-Run `npm test` and `npm run build`. Regression tests use actual controller methods with deferred commits; separately verify native React and visible selection in the browser. See [benchmark protocol](webmcp-benchmark.md).
+Run `npm test` and `npm run build`. Regression tests use actual controller methods with deferred commits; separately verify native React and visible selection in the browser.
