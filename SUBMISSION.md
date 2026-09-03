@@ -7,6 +7,7 @@ Sizel is a fictional electronics e-shop I built with React, TypeScript and Vite.
 - Live app: https://sizel.vercel.app/
 - Public source repository: https://github.com/Brightwav3/sizel/tree/master
 - Public demo video (2:43): https://youtu.be/OWxUgB0Qxs0
+- Devpost submission: https://devpost.com/software/fidelio-r04c1o
 
 `master` is the current submission source. The cleanup from PR #9 is merged into it.
 
