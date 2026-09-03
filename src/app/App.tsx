@@ -43,7 +43,6 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     catalogOpen: false, dept: "pc", openDept: null, isLoading: true,
     picks: { ...DEFAULT_PICKS },
     chosen: [],
-    builderSlot: "cpu", builderSearch: "", builderCompatibleOnly: true, builderFacets: {},
     cornerMin: true, cornerX: null, cornerY: null,
     budget: 1800, budgetShares: {}, target: 144, res: "1440p", quiet: true,
     fitOnly: false, fastShip: false, minPrice: 0, maxPrice: 2200, useFilter: "any", brand: "any", facetFilters: {}, sort: "popular", stockOnly: false, onSale: false, search: "", recentSearches: ["quiet graphics card", "1 TB NVMe", "phone under $700"],
@@ -359,12 +358,6 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   flash() { clearTimeout(this.t); this.t = window.setTimeout(() => this.setState({ toast: null }), 2400); }
   go = (r: Route) => this.setState({ route: r, toast: null, catalogOpen: r === "category" || r === "product" ? this.state.catalogOpen : false });
 
-  toggleBuilderFacet(id: string, value: string) {
-    const selected = this.state.builderFacets[id] || [];
-    const next = selected.includes(value) ? selected.filter(item => item !== value) : [...selected, value];
-    this.setState({ builderFacets: { ...this.state.builderFacets, [id]: next } });
-  }
-
   toggleFacet(id: string, value: string) {
     const selected = this.state.facetFilters[id] || [];
     const next = selected.includes(value) ? selected.filter(item => item !== value) : [...selected, value];
@@ -383,7 +376,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   /** Atomic for UI and agents: a case and its included fans are one choice. */
   // ADR 0015: build edits preserve the shopper's current page.
   // docs/decisions/0015-build-edits-preserve-storefront-route.md
-  set(slot: PcSlot, id: string, decision?: BuildDecision, destination: "builder" | "category" | "preserve" = "preserve") {
+  set(slot: PcSlot, id: string, decision?: BuildDecision, destination: "category" | "preserve" = "preserve") {
     return this.mutate(state => {
       const item = partIn(slot, id);
       if (!BUILD_SLOTS.includes(slot) || !item) throw new ShopError('wrong_slot', 'Choose a product from this slot.');
@@ -411,7 +404,7 @@ export class RigsmithApp extends React.Component<{}, AppState> {
       if (slot === 'case') delete decisions.fans;
       const destinationState = destination === "category"
         ? { route: "category" as const, dept: "pc", openDept: null, category: slot, productSlot: slot, brand: "any", search: "" }
-        : destination === "builder" ? { route: "builder" as const, builderSlot: slot } : {};
+        : {};
       return { patch: { picks, chosen, decisions, prev: this.snapshot(state), inspected: null,
         buildRevision: state.buildRevision + 1, lastChange: null,
         ...(chosen.length === BUILD_SLOTS.length ? { cornerMin: true } : {}),
@@ -482,11 +475,6 @@ export class RigsmithApp extends React.Component<{}, AppState> {
     });
   }
 
-  resetBuild() {
-    return this.mutate(state => ({ patch: { picks: { ...DEFAULT_PICKS }, chosen: [], decisions: {}, inspected: null,
-      buildBrief: '', cornerMin: true, prev: this.snapshot(state), buildRevision: state.buildRevision + 1, builderSearch: '', lastChange: null }, result: { reset: true } }));
-  }
-
   undoBuild() {
     return this.mutate(state => {
       if (!state.prev) throw new ShopError('nothing_to_undo', 'No build change to undo.');
@@ -535,13 +523,11 @@ export class RigsmithApp extends React.Component<{}, AppState> {
   showInCatalog(patch: Partial<Pick<AppState,
     'route' | 'category' | 'productSlot' | 'dept' | 'search' | 'brand' | 'facetFilters' |
     'minPrice' | 'maxPrice' | 'sort' | 'stockOnly' | 'onSale' | 'productId' |
-    'productColorId' | 'builderSlot'>>) {
+    'productColorId'>>) {
     return this.mutate(() => ({ patch: { catalogOpen: false, ...patch }, result: { shown: patch.route } }));
   }
 
   static readonly BUILD_STEPS: PcSlot[] = ['cpu', 'board', 'ram', 'gpu', 'storage', 'cooler', 'psu', 'case', 'fans'];
-
-  setBuilderPart(slot: PcSlot, id: string) { return this.set(slot, id); }
 
   /** UI product pages return to the category after adding a part to the build. */
   setFromProduct(slot: PcSlot, id: string) { return this.set(slot, id, undefined, "category"); }

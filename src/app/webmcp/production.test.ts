@@ -414,7 +414,7 @@ describe('whole-build tradeoffs without automatic selection', () => {
 describe('shared orderability and committed writes', () => {
   it('allows an unfinished build in the cart, but requires it to be complete at checkout', async () => {
     const cpu = CATALOG.cpu.find(item => listingStock(item, 'cpu') > 0)!;
-    await app.setBuilderPart('cpu', cpu.id);
+    await app.set('cpu', cpu.id);
     expect(await app.addBuildToCart()).toMatchObject({ added: 'build', price: cpu.price });
     expect(app.state.cart).toEqual([{ kind: 'build', id: 'build', qty: 1 }]);
     expect(await app.startCheckout()).toMatchObject({ error: 'build_incomplete' });

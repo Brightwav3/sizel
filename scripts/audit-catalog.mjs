@@ -53,7 +53,7 @@ pass("every route has a screen", missingRoutes.length === 0, missingRoutes.lengt
 const viewFiles = {
   AppShell: "shared/layout/AppShell.tsx", TopBar: "shared/layout/TopBar.tsx", EshopSidebar: "shared/layout/EshopSidebar.tsx",
   HomeScreen: "features/catalog/home/HomeScreen.tsx", CategoryScreen: "features/catalog/CategoryScreen.tsx", ProductScreen: "features/product/ProductScreen.tsx",
-  BuilderScreen: "features/pc-builder/BuilderScreen.tsx", CartScreen: "features/cart/CartScreen.tsx",
+  CartScreen: "features/cart/CartScreen.tsx",
   CheckoutScreen: "features/checkout/CheckoutScreens.tsx", DoneScreen: "features/checkout/CheckoutScreens.tsx",
   FloatingBuildCard: "features/pc-builder/FloatingBuildCard.tsx", Toast: "features/pc-builder/FloatingBuildCard.tsx",
 };

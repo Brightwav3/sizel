@@ -17,8 +17,6 @@ html::-webkit-scrollbar, body::-webkit-scrollbar, #root::-webkit-scrollbar { wid
   z-index: 30;
 }
 .eshop-rail::before { display: none; }
-.eshop-rail--builder { overflow-y: auto; background: var(--surface-sunken); }
-.forge-sidebar-host { min-height: 100%; background: var(--surface-sunken); }
 .eshop-rail-scroll { height: 100%; min-height: 0; overflow-y: auto; overflow-x: hidden; scrollbar-width: none; }
 .eshop-rail-scroll::-webkit-scrollbar { width: 0; height: 0; }
 /* Catalog control: on a listing page the departments hide behind one row and
