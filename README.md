@@ -107,8 +107,9 @@ Fifteen tool descriptors are implemented in `src/app/webmcp/` and registered
 by the judge-facing demo. The demo keeps the same descriptors while the shopper
 moves between the catalogue, product pages and the floating build summary.
 `show_in_catalog` makes visible navigation explicit, while read tools return
-data without changing the route. Results are held inside Chrome's 1.5K character
-budget.
+data without changing the route. Ordinary results are held inside Chrome's
+1.5K-character budget; larger build reports, detailed comparisons and
+compatibility batches use their documented limits.
 
 | Tool | What it does |
 | --- | --- |
@@ -120,7 +121,7 @@ budget.
 | `list_compatible_parts` | Fitting parts for one slot or a bounded batch, with budget-share hints |
 | `set_build_components` | Apply the agent's complete PC selection atomically |
 | `check_build_compatibility` | All nine slots with stock and delivery, conflicts in plain sentences, power headroom |
-| `estimate_performance` | Frame rate, noise, price, power and delivery |
+| `estimate_performance` | Explicitly simulated performance, price, power and delivery; measured FPS and noise remain unavailable |
 | `begin_build` | Open the in-place build panel with the brief, hard budget and optional slot-share hints |
 | `compare_build_options` | Compare agent-proposed whole-build alternatives without ranking or applying them |
 | `create_watchdog` | Watch a listing for stock or a price drop |

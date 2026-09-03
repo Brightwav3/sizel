@@ -3,4 +3,15 @@ dist/
 *.tsbuildinfo
 vite.config.js
 vite.config.d.ts
-docs/
+# Publish the submission-facing docs; keep internal research and handoff notes local.
+docs/*
+!docs/ARCHITECTURE.md
+!docs/agent-choice-test.md
+!docs/benchmarks-cpu.md
+!docs/benchmarks-gpu.md
+!docs/benchmarks-memory-storage.md
+!docs/demo-script.md
+!docs/webmcp-architecture.md
+!docs/webmcp-tools.md
+!docs/decisions/
+!docs/decisions/*.md
