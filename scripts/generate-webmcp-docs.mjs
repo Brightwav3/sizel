@@ -1,4 +1,4 @@
-import { writeFileSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { registerHooks } from 'node:module';
 // Tool metadata imports the controller; styles have no role in this CLI.
 registerHooks({ load(url, context, nextLoad) {
@@ -168,4 +168,5 @@ Errors are JSON with \`error\` and, where useful, a recovery \`hint\`; error res
 | --- | --- |
 ${errorTable}
 `;
+mkdirSync('docs', { recursive: true });
 writeFileSync('docs/webmcp-tools.md', guide);
