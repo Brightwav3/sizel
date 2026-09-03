@@ -67,5 +67,6 @@ npm run check:catalog
 npm run audit:catalog
 ```
 
-`npm test` generates the local `docs/webmcp-tools.md` reference before running
-Vitest. The generated directory is created automatically in a clean checkout.
+`npm test` checks that the committed `docs/webmcp-tools.md` reference matches the
+current tool descriptors before running Vitest. After changing a descriptor,
+run `npm run generate:webmcp-docs`, review the diff, and commit the result.

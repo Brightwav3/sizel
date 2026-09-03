@@ -1,10 +1,12 @@
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { registerHooks } from 'node:module';
 // Tool metadata imports the controller; styles have no role in this CLI.
 registerHooks({ load(url, context, nextLoad) {
   return url.endsWith('.css') ? { format: 'module', source: 'export {};', shortCircuit: true } : nextLoad(url, context);
 } });
 const { TOOLS, DEMO_TOOL_NAMES } = await import('../src/app/webmcp/tools.ts');
+const output = new URL('../docs/webmcp-tools.md', import.meta.url);
+const check = process.argv.includes('--check');
 
 const demoNames = new Set(DEMO_TOOL_NAMES);
 const demoTools = TOOLS.filter(tool => demoNames.has(tool.name));
@@ -168,5 +170,20 @@ Errors are JSON with \`error\` and, where useful, a recovery \`hint\`; error res
 | --- | --- |
 ${errorTable}
 `;
-mkdirSync('docs', { recursive: true });
-writeFileSync('docs/webmcp-tools.md', guide);
+if (check) {
+  let committed;
+  try {
+    committed = readFileSync(output, 'utf8');
+  } catch {
+    console.error('docs/webmcp-tools.md is missing. Run npm run generate:webmcp-docs and commit the result.');
+    process.exit(1);
+  }
+  if (committed !== guide) {
+    console.error('docs/webmcp-tools.md is out of date. Run npm run generate:webmcp-docs, review the diff, and commit the result.');
+    process.exit(1);
+  }
+  console.log('docs/webmcp-tools.md is up to date.');
+} else {
+  mkdirSync(new URL('../docs/', import.meta.url), { recursive: true });
+  writeFileSync(output, guide);
+}
