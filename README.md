@@ -35,6 +35,7 @@ person watches it happen on the page and keeps the final say.
 | If you have | Read |
 | --- | --- |
 | Submission instructions | [SUBMISSION.md](SUBMISSION.md) — setup, WebMCP access, demo flow and verification |
+| Demo video | [YouTube](https://youtu.be/OWxUgB0Qxs0) — public, 2 minutes 43 seconds |
 | Three minutes | [docs/demo-script.md](docs/demo-script.md) — what to say to an agent, and what should happen |
 | Ten minutes | [docs/webmcp-architecture.md](docs/webmcp-architecture.md) — how the layer is built and what it guarantees |
 | A terminal | `npm install && npm test` — regression tests, including the tool contract |
