@@ -534,7 +534,26 @@ export class RigsmithApp extends React.Component<{}, AppState> {
 
   /** The public UI build path starts at a category, not the retired builder. */
   openBuildSlot(slot: PcSlot = "cpu") {
-    this.setState({ buildBrief: this.state.buildBrief || "PC build in progress", cornerMin: true, route: "category", dept: "pc", openDept: null, category: slot, productSlot: slot, brand: "any", search: "" });
+    this.setState({
+      buildBrief: this.state.buildBrief || "PC build in progress",
+      cornerMin: true,
+      route: "category",
+      dept: "pc",
+      openDept: null,
+      category: slot,
+      productSlot: slot,
+      brand: "any",
+      search: "",
+      fitOnly: false,
+      fastShip: false,
+      minPrice: 0,
+      maxPrice: 2200,
+      useFilter: "any",
+      facetFilters: {},
+      sort: "popular",
+      stockOnly: false,
+      onSale: false,
+    });
   }
 
   /**

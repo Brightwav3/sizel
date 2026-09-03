@@ -66,6 +66,49 @@ describe('independent agent selections', () => {
 });
 
 describe('visible catalog flow', () => {
+  it('opens the build flow with a clean PC category state', async () => {
+    app.state = {
+      ...app.state,
+      route: 'cart',
+      dept: 'phone',
+      category: 'phones',
+      productSlot: 'phones',
+      brand: 'Pear',
+      search: 'phone',
+      fitOnly: true,
+      fastShip: true,
+      minPrice: 900,
+      maxPrice: 1000,
+      useFilter: 'sale',
+      facetFilters: { camera: ['telephoto'] },
+      sort: 'priceAsc',
+      stockOnly: true,
+      onSale: true,
+    };
+
+    app.openBuildSlot('cpu');
+    await Promise.resolve();
+
+    expect(app.state).toMatchObject({
+      route: 'category',
+      dept: 'pc',
+      openDept: null,
+      category: 'cpu',
+      productSlot: 'cpu',
+      brand: 'any',
+      search: '',
+      fitOnly: false,
+      fastShip: false,
+      minPrice: 0,
+      maxPrice: 2200,
+      useFilter: 'any',
+      facetFilters: {},
+      sort: 'popular',
+      stockOnly: false,
+      onSale: false,
+    });
+  });
+
   it('keeps reads pure and lets the agent navigate explicitly', async () => {
     const phone = CATALOG.phones.find(item => item.id === 'pear-phone-16e')!;
     const [gpu, otherGpu] = CATALOG.gpu.filter(item => item.stock !== 0).slice(0, 2);
