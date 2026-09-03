@@ -34,6 +34,7 @@ person watches it happen on the page and keeps the final say.
 
 | If you have | Read |
 | --- | --- |
+| Submission instructions | [SUBMISSION.md](SUBMISSION.md) — setup, WebMCP access, demo flow and verification |
 | Three minutes | [docs/demo-script.md](docs/demo-script.md) — what to say to an agent, and what should happen |
 | Ten minutes | [docs/webmcp-architecture.md](docs/webmcp-architecture.md) — how the layer is built and what it guarantees |
 | A terminal | `npm install && npm test` — regression tests, including the tool contract |
@@ -139,6 +140,7 @@ not: `add_build_to_cart` refuses outright while a conflict is open, and
 
 | Document | What it covers |
 | --- | --- |
+| [SUBMISSION.md](SUBMISSION.md) | Self-contained setup, testing and judge instructions |
 | [docs/webmcp-tools.md](docs/webmcp-tools.md) | Every tool: parameters, results, screens, error codes |
 | [docs/webmcp-architecture.md](docs/webmcp-architecture.md) | How the layer works, budgets, safety posture, performance, testing |
 | [docs/decisions/0007-agents-select-and-explain-parts.md](docs/decisions/0007-agents-select-and-explain-parts.md) | Why agents now select and explain parts themselves |
