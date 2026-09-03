@@ -28,8 +28,8 @@ pass("adapter imports canonical products.json", adapter.includes('from "../../..
 pass("adapter exports real catalog through catalog.ts", catalog.includes('export * from "./realCatalog"'));
 pass("default picks are derived from canonical parts", ["defaultCpu.id", "defaultGpu.id", "defaultBoard.id", "defaultRam.id", "defaultStorage.id", "defaultCooler.id", "defaultPsu.id", "defaultCase.id", "defaultFans.id"].every(expression => adapter.includes(expression)));
 pass("ORDER has nine prototype slots", (adapter.match(/\{ slot: "[a-z]+"/g) ?? []).length === 9);
-// The guided walkthrough was replaced by the configurator; its recommended
-// order now lives on the controller as RigsmithApp.BUILD_STEPS.
+// The guided walkthrough UI was retired; its recommended order now lives on
+// the controller as RigsmithApp.BUILD_STEPS.
 const appSource = fs.readFileSync(path.join(sourceRoot, "app/App.tsx"), "utf8");
 const buildSteps = appSource.match(/BUILD_STEPS: PcSlot\[\] = \[([^\]]+)\]/)?.[1] ?? "";
 pass("build order has nine slots", (buildSteps.match(/[\"'][a-z]+[\"']/g) ?? []).length === 9);
